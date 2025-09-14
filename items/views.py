@@ -39,7 +39,77 @@ def create_new_item(request):
                 messages.success(request, f"Item '{item_name}' Added successfully!")
             except IntegrityError:
                 messages.error(request, f"Item '{item_name}' already exists!")
-                
+
         return render(request, "items_templates/add_new_item.html")
 
     return render(request, "items_templates/add_new_item.html")
+
+
+
+
+
+def get_item_by_name(item_name):
+
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT get_item_by_name(%s)",[item_name.upper()])
+        row = cursor.fetchone()
+
+    if row and row[0]:
+        data =  json.loads(row[0])
+        return data[0] if data else None
+
+    return None
+
+def update_item_view(request):
+    context = {}
+
+    # Case 1: Search form submitted
+    if request.method == "GET" and "search_name" in request.GET:
+        search_name = request.GET.get("search_name")
+        item = get_item_by_name(search_name)
+        if item:
+            context["item"] = item
+        else:
+            context["not_found"] = True
+        
+        print(context)
+
+    if request.method == 'POST':
+        item_id = request.POST.get("item_id")
+        data = {
+            "item_name": request.POST.get("item_name").upper(),
+            "sale_price": float(request.POST.get("sale_price") or 0),
+            "storage": request.POST.get("storage"),
+            "item_code": request.POST.get("item_code"),
+            "category": request.POST.get("category"),
+            "brand": request.POST.get("brand"),
+        }
+
+        print('-----------',data)
+        if item_id:
+            data["item_id"] = int(item_id) 
+
+        json_data = json.dumps(data)
+
+        with connection.cursor() as cursor:
+            if item_id:
+                print('-----------',item_id)
+                try:
+                    cursor.execute("SELECT update_item_from_json(%s)",[json_data])
+                    messages.success(request, f"Item '{data['item_name']}' Updated successfully!")
+                except Exception as e:
+                    messages.error(request, f"An Unexpected Error Occured! {e}")
+            else: # means adding new item
+                print('-----------',item_id)
+                try:
+                    cursor.execute("SELECT add_item_from_json(%s)",[json_data])
+                    messages.success(request, f"Item '{data['item_name']}' Added successfully!")
+                except Exception as e:
+                    messages.error(request, f"An Unexpected Error Occured! {e}")
+
+
+    return render(request, "items_templates/update_item.html",context)
+
+# TODO:  Add feature to auto complete or suggest from currently present data
+# TODO : Made helper functions to update party details 
+#        Made Views for            //         //           ///      // 
