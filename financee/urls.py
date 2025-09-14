@@ -18,8 +18,10 @@ from django.contrib import admin
 from django.urls import path, include
 
 from parties import urls as parties_urls
+from items import urls as items_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(parties_urls)),
+    path('', include(items_urls)),
 ]
