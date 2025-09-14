@@ -37,7 +37,7 @@ def create_new_party(request):
                 cursor.execute("SELECT add_party_from_json(%s);", [json_data])
                 messages.success(request, f"Party '{party_name}' created successfully!")
             except IntegrityError:
-                messages.error(request, f"Party '{party_name}' already exists! (from DB)")
+                messages.error(request, f"Party '{party_name}' already exists!")
 
         return render(request, "parties_templates/add_new_party.html")
 

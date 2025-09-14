@@ -2,5 +2,40 @@
 
 {% block title %}Add New Item{% endblock title %}
 {% block body %}
+<!-- ------------------------------Item Form----------------------------------------------------- -->
+<form method="post">
+    {% csrf_token %}
+
+    
+
+    <!-- Item Name -->
+    <label for="item_name">Item Name:</label>
+    <input type="text" id="item_name" name="item_name" placeholder="Enter item name" required><br><br>
+
+
+    <!-- Sale Price -->
+    <label for="sale_price">Sale Price:</label>
+    <input type="number" step="0.01" id="sale_price" name="sale_price" placeholder="Enter price"><br><br>
+
+    <!-- Storage -->
+    <label for="storage">Storage: <small>(optional)</small></label>
+    <input type="text" id="storage" name="storage" placeholder="e.g. Warehouse A"><br><br>
+
+    <!-- Item Code -->
+    <label for="item_code">Item Code: <small>(optional)</small></label>
+    <input type="text" id="item_code" name="item_code" placeholder="Enter unique item code"><br><br>
+
+    <!-- Category -->
+    <label for="category">Category: <small>(optional)</small></label>
+    <input type="text" id="category" name="category" placeholder="e.g. Electronics"><br><br>
+
+    <!-- Brand -->
+    <label for="brand">Brand: <small>(optional)</small></label>
+    <input type="text" id="brand" name="brand" placeholder="e.g. Samsung"><br><br>
+
+
+    <!-- Submit -->
+    <button type="submit">Submit</button>
+</form>
 
 {% endblock body %}
