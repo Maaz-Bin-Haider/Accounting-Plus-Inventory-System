@@ -1,11 +1,43 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add New Party</title>
-</head>
-<body>
+
+{% extends "base/base.html" %}
+
+{% block title %}Add New Party{% endblock title %}
+{% block body %}
     <h1>Add New Party</h1>
-</body>
-</html>
+    <!-- ------------------------------Party Form----------------------------------------------------- -->
+    <form  method="post">
+    {% csrf_token %}
+    <!-- Party Name -->
+    <label for="party_name">Party Name:</label>
+    <input type="text" id="party_name" name="party_name" placeholder="Enter party name" required><br><br>
+
+    <!-- Party Type -->
+    <label for="party_type">Party Type:</label>
+    <select id="party_type" name="party_type">
+
+        <option value="Both">Both</option>
+    </select><br><br>
+
+    <!-- Contact Info -->
+    <label for="contact_info">Contact Info:</label>
+    <input type="text" id="contact_info" name="contact_info" placeholder="e.g. 123-456789"><br><br>
+
+    <!-- Address -->
+    <label for="address">Address:</label><br>
+    <textarea id="address" name="address" rows="3" cols="40" placeholder="Enter address"></textarea><br><br>
+
+    <!-- Opening Balance -->
+    <label for="opening_balance">Opening Balance:</label>
+    <input type="number" id="opening_balance" name="opening_balance" placeholder="Enter amount"><br><br>
+
+    <!-- Balance Type -->
+    <label for="balance_type">Balance Type:</label>
+    <select id="balance_type" name="balance_type">
+        <option value="Debit">Debit</option>
+        <option value="Credit">Credit</option>
+    </select><br><br>
+
+    <!-- Submit -->
+    <button type="submit">Submit</button>
+    </form>
+{% endblock body %}
