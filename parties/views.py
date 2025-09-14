@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.db import connection
+from django.db import connection,IntegrityError
 from django.contrib import messages
 import json
 # Create your views here.
@@ -14,11 +14,12 @@ def create_new_party(request):
         balance_type = request.POST.get('balance_type')
 
         with connection.cursor() as cursor:
-            cursor.execute("SELECT 1 FROM Parties WHERE party_name = %s",[party_name.upper()])
+            cursor.execute("SELECT 1 FROM Parties WHERE UPPER(party_name) = %s",[party_name.upper()])
             exists = cursor.fetchone()
 
             if exists:
-                messages.error(request, f'Party with the name {party_name} already exists!')
+                messages.error(request, f"Party with the name '{party_name}' already exists!")
+                return render(request, "parties_templates/add_new_party.html")
             
             # insert new party if not exists
             party_details = {
@@ -32,14 +33,12 @@ def create_new_party(request):
 
             json_data = json.dumps(party_details)
 
-            cursor.execute(
-                """
-                SELECT add_party_from_json(%s);
-                """,
-                [json_data]
-            )
-        messages.success(request,f"Party '{party_name}' created successfully!")
+            try:
+                cursor.execute("SELECT add_party_from_json(%s);", [json_data])
+                messages.success(request, f"Party '{party_name}' created successfully!")
+            except IntegrityError:
+                messages.error(request, f"Party '{party_name}' already exists! (from DB)")
 
-        print(party_name,party_type,contact_info,address,opening_balance,balance_type)
+        return render(request, "parties_templates/add_new_party.html")
 
     return render(request,"parties_templates/add_new_party.html")
