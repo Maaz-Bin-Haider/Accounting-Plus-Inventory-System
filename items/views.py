@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.db import connection,IntegrityError
 from django.contrib import messages
+from django.http import JsonResponse
 import json
 
 # Create your views here.
@@ -109,6 +110,19 @@ def update_item_view(request):
 
 
     return render(request, "items_templates/update_item.html",context)
+
+
+
+def autocomplete_item(request):
+    if 'term' in request.GET:
+        term = request.GET.get('term').upper()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT item_name FROM Items WHERE UPPER(item_name) LIKE %s LIMIT 10", [term + '%'])
+            rows = cursor.fetchall()
+        suggestions = [row[0] for row in rows]
+        return JsonResponse(suggestions, safe=False)
+    return JsonResponse([], safe=False)
+
 
 # TODO:  Add feature to auto complete or suggest from currently present data
 # TODO : Made helper functions to update party details 
