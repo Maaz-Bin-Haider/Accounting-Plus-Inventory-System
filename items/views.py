@@ -105,8 +105,8 @@ def update_item_view(request):
                 try:
                     cursor.execute("SELECT add_item_from_json(%s)",[json_data])
                     messages.success(request, f"Item '{data['item_name']}' Added successfully!")
-                except Exception as e:
-                    messages.error(request, f"An Unexpected Error Occured! {e}")
+                except IntegrityError:
+                    messages.error(request, f"Item '{data['item_name']}' already exists!")
 
 
     return render(request, "items_templates/update_item.html",context)

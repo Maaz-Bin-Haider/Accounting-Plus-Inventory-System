@@ -22,9 +22,11 @@
     <button type="submit">Search</button>
 </form>
 
+{% if not_found %}
+    <p style="color: red;">Item not found in database.</p>
+{% endif %}
 
-
-<h2>{% if item %}Edit Item{% else %}Add New Item{% endif %}</h2>
+<h2>{% if item %}Edit Item{% else %}Select Item First{% endif %}</h2>
 <form method="post">
     {% csrf_token %}
     
@@ -60,9 +62,7 @@
     <button type="submit">Submit</button>
 </form>
 
-{% if not_found %}
-    <p style="color: red;">Item not found in database.</p>
-{% endif %}
+
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{% static 'js/autocomplete_item_names.js' %}"></script>
