@@ -1,0 +1,71 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+
+{% block title %} Update/Add Party {% endblock title %}
+
+{% block body %}
+<h2>Search Party</h2>
+<form method="get">
+    {% csrf_token %}
+    
+    <div class="autocomplete-container">
+        <label for="search_name">Party Name:</label>
+        <input type="text" id="search_name" name="search_name" placeholder="Enter Party Name" autocomplete="off" data-autocomplete-url="{% url 'autocomplete_party' %}">
+        <div id="suggestions" ></div>
+    </div>
+    <button type="submit">Search</button>
+</form>
+
+<h2>{% if party %}Edit Party{% else %}Select Party First{% endif %}</h2>
+    <!-- ------------------------------Party Form----------------------------------------------------- -->
+    <form  method="post">
+    {% csrf_token %}
+
+    {% if party %}
+        <input type="hidden" name="party_id" value="{{ party.party_id }}">
+    {% endif %}
+    <!-- Party Name -->
+    <label for="party_name">Party Name:</label>
+    <input type="text" id="party_name" name="party_name" value="{{party.party_name|default:''}}" required><br><br>
+
+    <!-- Party Type -->
+    <label for="party_type">Party Type:</label>
+    <select id="party_type" name="party_type">
+
+        <option value="{{party.party_type|default:'Both'}}" >Both</option>
+    </select><br><br>
+
+    <!-- Contact Info -->
+    <label for="contact_info">Contact Info:</label>
+    <input type="text" id="contact_info" name="contact_info" value="{{party.contact_info|default:''}}"><br><br>
+
+    <!-- Address -->
+    <label for="address">Address:</label><br>
+    <textarea id="address" name="address"  value="{{party.address|default:''}}"></textarea><br><br>
+
+    <input type='text' value="{{party.address|default:''}}">
+
+    <!-- Opening Balance -->
+    <label for="opening_balance">Opening Balance:</label>
+    <input type="number" id="opening_balance" name="opening_balance" value="{{party.opening_balance|default:0}}" ><br><br>
+
+    -----------------------TODO: to solve address issue in text field 
+                                 to solve balance_type issue
+                                 write view logic for updating the party from the data which came through GET form
+
+    <!-- Balance Type -->
+    <label for="balance_type">Balance Type:</label>
+    <select id="balance_type" name="balance_type">
+        <option value="Debit">Debit</option>
+        <option value="Credit">Credit</option>
+    </select><br><br>
+
+    <!-- Submit -->
+    <button type="submit">Submit</button>
+    </form>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'js/autocomplete_party_names.js' %}"></script>
+{% endblock body %}
