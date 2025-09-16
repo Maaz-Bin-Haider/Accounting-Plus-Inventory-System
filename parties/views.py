@@ -42,3 +42,7 @@ def create_new_party(request):
         return render(request, "parties_templates/add_new_party.html")
 
     return render(request,"parties_templates/add_new_party.html")
+
+
+# TODO: made search view for party , if found sync all details to an html form
+#       made an update view for party to update party details

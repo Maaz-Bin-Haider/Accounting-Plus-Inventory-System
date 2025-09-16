@@ -124,6 +124,3 @@ def autocomplete_item(request):
     return JsonResponse([], safe=False)
 
 
-# TODO:  Add feature to auto complete or suggest from currently present data
-# TODO : Made helper functions to update party details 
-#        Made Views for            //         //           ///      // 
