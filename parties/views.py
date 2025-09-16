@@ -80,6 +80,37 @@ def update_party(request):
 
         print(context)
 
+    if request.method == 'POST':
+        party_id = request.POST.get('party_id')
+        data = {
+            "party_name": request.POST.get('party_name').upper(),
+            "party_type": request.POST.get('party_type'),
+            "contact_info": request.POST.get('contact_info'),
+            "address": request.POST.get('address'),
+            "opening_balance": float(request.POST.get('opening_balance') or 0),
+            "balance_type": request.POST.get('balance_type')
+        }
+
+        if party_id:
+            data["party_id"] = int(party_id)
+        
+        json_data = json.dumps(data)
+
+        with connection.cursor() as cursor:
+            if party_id:
+                print(party_id)
+                try:
+                    cursor.execute("SELECT update_party_from_json(%s,%s)",[int(party_id),json_data])
+                    messages.success(request,f"Updated '{data['party_name']}' Sucessfully!")
+                except Exception as e:
+                    messages.error(request, f"An Unexpected Error Occured! {e}")
+            else:
+                try:
+                    cursor.execute("SELECT add_party_from_json(%s);", [json_data])
+                    messages.success(request, f"Party '{data['party_name']}' created successfully!")
+                except IntegrityError:
+                    messages.error(request, f"Party '{data['party_name']}' already exists!")
+
 
     return render(request,"parties_templates/update_party.html",context)
 

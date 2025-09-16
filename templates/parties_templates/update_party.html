@@ -5,6 +5,10 @@
 
 {% block title %} Update/Add Party {% endblock title %}
 
+{% block SeperateCssFile %}
+    <link rel="stylesheet" href="{% static 'css/update_party.css' %}">
+{% endblock SeperateCssFile %}
+
 {% block body %}
 <h2>Search Party</h2>
 <form method="get">
@@ -17,6 +21,10 @@
     </div>
     <button type="submit">Search</button>
 </form>
+
+{% if not_found %}
+    <p style="color: red;">Party not found in database.</p>
+{% endif %}
 
 <h2>{% if party %}Edit Party{% else %}Select Party First{% endif %}</h2>
     <!-- ------------------------------Party Form----------------------------------------------------- -->
@@ -43,23 +51,19 @@
 
     <!-- Address -->
     <label for="address">Address:</label><br>
-    <textarea id="address" name="address"  value="{{party.address|default:''}}"></textarea><br><br>
+    <textarea id="address" name="address">{{ party.address|default:'' }}</textarea><br><br>
 
-    <input type='text' value="{{party.address|default:''}}">
 
     <!-- Opening Balance -->
     <label for="opening_balance">Opening Balance:</label>
     <input type="number" id="opening_balance" name="opening_balance" value="{{party.opening_balance|default:0}}" ><br><br>
 
-    -----------------------TODO: to solve address issue in text field 
-                                 to solve balance_type issue
-                                 write view logic for updating the party from the data which came through GET form
 
     <!-- Balance Type -->
     <label for="balance_type">Balance Type:</label>
     <select id="balance_type" name="balance_type">
-        <option value="Debit">Debit</option>
-        <option value="Credit">Credit</option>
+        <option value="Debit" {% if party.balance_type == "Debit" %}selected{% endif %}>Debit</option>
+        <option value="Credit" {% if party.balance_type == "Credit" %}selected{% endif %}>Credit</option>
     </select><br><br>
 
     <!-- Submit -->
