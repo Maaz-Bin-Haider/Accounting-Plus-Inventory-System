@@ -36,27 +36,27 @@
     {% endif %}
     <!-- Party Name -->
     <label for="party_name">Party Name:</label>
-    <input type="text" id="party_name" name="party_name" value="{{party.party_name|default:''}}" required><br><br>
+    <input type="text" id="party_name" name="party_name" value="{{party.party_name|default:''}}" required>
 
     <!-- Party Type -->
     <label for="party_type">Party Type:</label>
     <select id="party_type" name="party_type">
 
         <option value="{{party.party_type|default:'Both'}}" >Both</option>
-    </select><br><br>
+    </select>
 
     <!-- Contact Info -->
     <label for="contact_info">Contact Info:</label>
-    <input type="text" id="contact_info" name="contact_info" value="{{party.contact_info|default:''}}"><br><br>
+    <input type="text" id="contact_info" name="contact_info" value="{{party.contact_info|default:''}}">
 
     <!-- Address -->
     <label for="address">Address:</label><br>
-    <textarea id="address" name="address">{{ party.address|default:'' }}</textarea><br><br>
+    <textarea id="address" name="address">{{ party.address|default:'' }}</textarea>
 
 
     <!-- Opening Balance -->
     <label for="opening_balance">Opening Balance:</label>
-    <input type="number" id="opening_balance" name="opening_balance" value="{{party.opening_balance|default:0}}" ><br><br>
+    <input type="number" id="opening_balance" name="opening_balance" value="{{party.opening_balance|default:0}}" >
 
 
     <!-- Balance Type -->
@@ -64,7 +64,7 @@
     <select id="balance_type" name="balance_type">
         <option value="Debit" {% if party.balance_type == "Debit" %}selected{% endif %}>Debit</option>
         <option value="Credit" {% if party.balance_type == "Credit" %}selected{% endif %}>Credit</option>
-    </select><br><br>
+    </select>
 
     <!-- Submit -->
     <button type="submit">Submit</button>
