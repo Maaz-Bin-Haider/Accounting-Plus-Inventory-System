@@ -15,6 +15,7 @@
 
 {% block body %}
 <form method='post'>
+    {% csrf_token %}
     <h2>Payment</h2>
     
     <label for="payment_date">Payment Date</label>
