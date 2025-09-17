@@ -1,0 +1,38 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+
+{% block title %} Payment {% endblock title %}
+
+{% block SeperateCssFile %}
+    <link rel="stylesheet" href="{% static 'css/payment.css' %}">
+{% endblock SeperateCssFile %}
+
+
+{% block body %}
+<form>
+    <h2>Payment Form</h2>
+    
+    <label for="party_name">Party Name</label>
+    <input type="text" id="party_name" name="party_name" placeholder="Enter Party Name" required>
+
+    <label for="amount">Amount</label>
+    <input type="number" id="amount" name="amount" placeholder="Enter Amount" required>
+
+    <label for="method">Method</label>
+    <input type="text" id="method" name="method" value="Cash" readonly>
+
+    <label for="description">Description</label>
+    <textarea id="description" name="description" placeholder="Enter Description"></textarea>
+
+    <label for="payment_date">Payment Date</label>
+    <input type="date" id="payment_date" name="payment_date" required>
+
+    <button type="submit">Submit Payment</button>
+</form>
+
+
+  <script src="{% static 'js/payment.js' %}"></script>
+{% endblock body %}
+
