@@ -16,7 +16,7 @@
     
     <div class="autocomplete-container">
         <label for="search_name">Party Name:</label>
-        <input type="text" id="search_name" name="search_name" placeholder="Enter Party Name" autocomplete="off" data-autocomplete-url="{% url 'autocomplete_party' %}">
+        <input type="text" id="search_name" name="search_name" placeholder="Enter Party Name" autocomplete="off" data-autocomplete-url="{% url 'parties:autocomplete_party' %}">
         <div id="suggestions" ></div>
     </div>
     <button type="submit">Search</button>
@@ -69,6 +69,7 @@
     <!-- Submit -->
     <button type="submit">Submit</button>
     </form>
+    
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{% static 'js/autocomplete_party_names.js' %}"></script>

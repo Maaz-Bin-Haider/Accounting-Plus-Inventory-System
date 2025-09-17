@@ -7,15 +7,24 @@
 
 {% block SeperateCssFile %}
     <link rel="stylesheet" href="{% static 'css/payment.css' %}">
+    <link rel="stylesheet" href="{% static 'css/update_party.css' %}">
 {% endblock SeperateCssFile %}
 
 
+
+
 {% block body %}
-<form>
-    <h2>Payment Form</h2>
+<form method='post'>
+    <h2>Payment</h2>
     
-    <label for="party_name">Party Name</label>
-    <input type="text" id="party_name" name="party_name" placeholder="Enter Party Name" required>
+    <label for="payment_date">Payment Date</label>
+    <input type="date" id="payment_date" name="payment_date" required>
+
+    <div class="autocomplete-container">
+        <label for="search_name">Party Name:</label>
+        <input type="text" id="search_name" name="search_name" placeholder="Enter Party Name" autocomplete="off" data-autocomplete-url="{% url 'parties:autocomplete_party' %}">
+        <div id="suggestions" ></div>
+    </div>
 
     <label for="amount">Amount</label>
     <input type="number" id="amount" name="amount" placeholder="Enter Amount" required>
@@ -26,13 +35,15 @@
     <label for="description">Description</label>
     <textarea id="description" name="description" placeholder="Enter Description"></textarea>
 
-    <label for="payment_date">Payment Date</label>
-    <input type="date" id="payment_date" name="payment_date" required>
+    
 
     <button type="submit">Submit Payment</button>
 </form>
 
 
-  <script src="{% static 'js/payment.js' %}"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="{% static 'js/payments_page.js' %}"></script>
+
+
 {% endblock body %}
 

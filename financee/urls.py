@@ -23,7 +23,7 @@ from payments import urls as payments_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include(parties_urls)),
-    path('', include(items_urls)),
-    path('',include(payments_urls)),
+    path('parties/', include(parties_urls,namespace='parties')),
+    path('items/', include(items_urls, namespace='items')),
+    path('payments/',include(payments_urls,namespace='payments')),
 ]
