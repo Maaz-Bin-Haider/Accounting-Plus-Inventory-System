@@ -1,49 +1,161 @@
-body {
-      font-family: Arial, sans-serif;
-      background: #f9f9f9;
-      align-items: center;
-      height: 100vh;
-    }
+/* ====== Payment & General Form Styling ====== */
 form {
-  background: #fff;
-  padding: 20px 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  width: 350px;
-  display: flex;          /* make form a flex container */
-  flex-direction: column; /* stack children vertically */
-}
-h2 {
-  text-align: center;
-  margin-bottom: 15px;
-}
-label {
-  font-weight: bold;
-  display: block;
-  margin: 10px 0 5px;
-}
-input, textarea {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 900px;
   width: 100%;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  margin-bottom: 12px;
-  font-size: 14px;
+  margin: 0 auto;
 }
-input[readonly] {
-  background-color: #eee;
-  cursor: not-allowed;
+
+/* field wrapper */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-button {
+
+form input,
+form textarea,
+form select {
   width: 100%;
   padding: 10px;
-  background: #007BFF;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+}
+
+/* top row (date + party name) */
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+@media (min-width: 992px) {
+  .form-row {
+    flex-direction: row;     /* side by side */
+  }
+
+  .form-row .form-group {
+    flex: 1;                 /* equal width */
+  }
+}
+
+button[type="submit"] {
+  background: linear-gradient(to right, #1e40af, #3b82f6);
   color: white;
+  padding: 12px;
   border: none;
-  border-radius: 6px;
-  font-size: 16px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
 }
-button:hover {
-  background: #0056b3;
+
+
+h2 {
+  text-align: center;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+label {
+  font-weight: 500;
+  margin-bottom: 6px;
+  display: block;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #334155;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8;
+}
+
+input:focus,
+textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  outline: none;
+}
+
+/* Autocomplete suggestions box */
+.autocomplete-container {
+  position: relative;
+}
+
+#suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-top: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+  z-index: 5;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+}
+
+#suggestions div {
+  padding: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #334155;
+  transition: background 0.2s ease;
+}
+
+#suggestions div:hover {
+  background: #f1f5f9;
+}
+
+/* Textarea tweak */
+textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+/* Submit button */
+button[type="submit"] {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: #fff;
+  font-size: 1rem;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+
+button[type="submit"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  button[type="submit"] {
+    align-self: center;
+    width: 100%;
+  }
 }

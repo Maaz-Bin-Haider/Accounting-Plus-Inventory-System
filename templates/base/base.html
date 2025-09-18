@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock title %}</title>
 
-    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/base_styling.css' %}">
     
     {% block SeperateCssFile %}
     
@@ -39,9 +41,16 @@
             </div>
         {% endif %}
       </div>
+    <!-- Background circles -->
+    <div class="bg-circle circle1"></div>
+    <div class="bg-circle circle2"></div>
+    <div class="bg-circle circle3"></div>
 
-      {% block body %}
-      {% endblock body %}
+    <div class="general_container">
+        {% block body %}
+        {% endblock body %}
+    </div>
+      
 
 </body>
 </html>

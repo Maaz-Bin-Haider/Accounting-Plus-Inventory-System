@@ -7,36 +7,51 @@
 
 {% block SeperateCssFile %}
     <link rel="stylesheet" href="{% static 'css/payment.css' %}">
-    <link rel="stylesheet" href="{% static 'css/update_party.css' %}">
+    <!-- <link rel="stylesheet" href="{% static 'css/update_party.css' %}"> --> 
 {% endblock SeperateCssFile %}
 
 
 
 
 {% block body %}
+
 <form method='post'>
     {% csrf_token %}
     <h2>Payment</h2>
     
-    <label for="payment_date">Payment Date</label>
-    <input type="date" id="payment_date" name="payment_date" required>
+    <!-- top row: date + party -->
+    <div class="form-row">
+        <div class="form-group">
+            <label for="payment_date">Payment Date</label>
+            <input type="date" id="payment_date" name="payment_date" value="{{payment_date}}" required>
+        </div>
 
-    <div class="autocomplete-container">
-        <label for="search_name">Party Name:</label>
-        <input type="text" id="search_name" name="search_name" placeholder="Enter Party Name" autocomplete="off" data-autocomplete-url="{% url 'parties:autocomplete_party' %}">
-        <div id="suggestions" ></div>
+        <div class="form-group autocomplete-container">
+            <label for="search_name">Party Name:</label>
+            <input type="text" id="search_name" name="search_name"
+                   placeholder="Enter Party Name"
+                   autocomplete="off"
+                   data-autocomplete-url="{% url 'parties:autocomplete_party' %}"
+                   value="{{party_name}}">
+            <div id="suggestions"></div>
+        </div>
     </div>
 
-    <label for="amount">Amount</label>
-    <input type="number" id="amount" name="amount" placeholder="Enter Amount" required>
+    <!-- stacked fields -->
+    <div class="form-group">
+        <label for="amount">Amount</label>
+        <input type="number" id="amount" name="amount" placeholder="Enter Amount" value="{{amount}}" required>
+    </div>
 
-    <label for="method">Method</label>
-    <input type="text" id="method" name="method" value="Cash" readonly>
+    <div class="form-group">
+        <label for="method">Method</label>
+        <input type="text" id="method" name="method" value="Cash" readonly>
+    </div>
 
-    <label for="description">Description</label>
-    <textarea id="description" name="description" placeholder="Enter Description"></textarea>
-
-    
+    <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" placeholder="Enter Description">{{description}}</textarea>
+    </div>
 
     <button type="submit">Submit Payment</button>
 </form>
