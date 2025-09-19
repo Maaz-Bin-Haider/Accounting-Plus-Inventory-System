@@ -62,28 +62,6 @@ $(document).ready(function() {
 });
 
 
-// function navigatePayment(action) {
-//     let currentId = document.getElementById("current_payment_id").value;
-
-//     fetch(`/payments/payment/get/?action=${action}&current_id=${currentId}`)
-//         .then(response => response.json())
-//         .then(data => {
-//             if (data.error) {
-//                 alert(data.error);
-//                 return;
-//             }
-//             // Update form fields
-//             document.getElementById("payment_date").value = data.payment_date || "";
-//             document.getElementById("search_name").value = data.party_name || "";
-//             document.getElementById("amount").value = data.amount || "";
-//             document.getElementById("method").value = data.method || "Cash";
-//             document.getElementById("description").value = data.description || "";
-
-//             // Update current id
-//             document.getElementById("current_payment_id").value = data.payment_id;
-//         })
-//         .catch(err => console.error("Error:", err));
-// }
 
 function navigatePayment(action) {
     let currentId = document.getElementById("current_payment_id").value;
