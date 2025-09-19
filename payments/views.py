@@ -2,76 +2,120 @@ from django.shortcuts import render
 from django.db import connection,IntegrityError
 from django.contrib import messages
 from datetime import datetime, date
+from django.http import JsonResponse
 import json
 
 # Create your views here.
 def make_payment(request):
     if request.method == 'POST':
-        payment_date_str = request.POST.get('payment_date')
-        party_name = request.POST.get('search_name')
-        amount_str = request.POST.get('amount')
-        description = request.POST.get('description')
+        action = request.POST.get("action")
+        if action == "submit":
+            payment_date_str = request.POST.get('payment_date')
+            party_name = request.POST.get('search_name')
+            amount_str = request.POST.get('amount')
+            description = request.POST.get('description')
 
-        data = {
-            "party_name":party_name.upper(),
-            "amount": amount_str,
-            "method": "Cash",
-            "description": description if description else '',
-            "payment_date": payment_date_str
-        }
+            data = {
+                "party_name":party_name.upper(),
+                "amount": amount_str,
+                "method": "Cash",
+                "description": description if description else '',
+                "payment_date": payment_date_str
+            }
 
 
-        # Validating Amount
-        try:
-            amount = float(amount_str)
-            if amount <= 0:
-                messages.error(request,"Amount must be greater than Zero.")
-                return render(request,"payments_templates/payment.html",data)
-        except:
-            messages.error(request,"Invalid amount. Please enter a valid number.")
-            return render(request,"payments_templates/payment.html",data)
-
-        # Validate payment_date (must be in correct date format)
-        try:
-            # Adjust format according to your input (e.g. "YYYY-MM-DD")
-            payment_date = datetime.strptime(payment_date_str, "%Y-%m-%d").date()
-
-            # Future Date Restriction
-            if payment_date > date.today():
-                messages.error(request, "Payment date cannot be in the future.")
+            # Validating Amount
+            try:
+                amount = float(amount_str)
+                if amount <= 0:
+                    messages.error(request,"Amount must be greater than Zero.")
+                    return render(request,"payments_templates/payment.html",data)
+            except:
+                messages.error(request,"Invalid amount. Please enter a valid number.")
                 return render(request,"payments_templates/payment.html",data)
 
-            # Making Date again Str
-            payment_date = payment_date.strftime("%Y-%m-%d")
+            # Validate payment_date (must be in correct date format)
+            try:
+                # Adjust format according to your input (e.g. "YYYY-MM-DD")
+                payment_date = datetime.strptime(payment_date_str, "%Y-%m-%d").date()
 
-        except (ValueError, TypeError):
-            messages.error(request,"Invalid date. Please enter a valid date in YYYY-MM-DD format.")
-            return render(request,"payments_templates/payment.html",data)
+                # Future Date Restriction
+                if payment_date > date.today():
+                    messages.error(request, "Payment date cannot be in the future.")
+                    return render(request,"payments_templates/payment.html",data)
 
-        
-        # validating party_name and Inserting Data
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1 FROM Parties WHERE UPPER(party_name) = %s",[party_name.upper()])
-            exists = cursor.fetchone()
-            if exists:
-                data = {
-                    "party_name":party_name.upper(),
-                    "amount": amount,
-                    "method": "Cash",
-                    "description": description if description else '',
-                    "payment_date": payment_date
-                }
-                json_data = json.dumps(data)
-                print(json_data)
-                try:
-                    cursor.execute("SELECT make_payment(%s)",[json_data])
-                    messages.success(request, f"Transaction completed: {amount} paid to {party_name}.")
-                except Exception as e:
-                    messages.error(request,f"An Unexpected Error occured Please Try Again! {e}")
-            else:
-                messages.error(request,f"No such Party exists with name '{party_name}'!")
+                # Making Date again Str
+                payment_date = payment_date.strftime("%Y-%m-%d")
+
+            except (ValueError, TypeError):
+                messages.error(request,"Invalid date. Please enter a valid date in YYYY-MM-DD format.")
                 return render(request,"payments_templates/payment.html",data)
+
+            
+            # validating party_name and Inserting Data
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1 FROM Parties WHERE UPPER(party_name) = %s",[party_name.upper()])
+                exists = cursor.fetchone()
+                if exists:
+                    data = {
+                        "party_name":party_name.upper(),
+                        "amount": amount,
+                        "method": "Cash",
+                        "description": description if description else '',
+                        "payment_date": payment_date
+                    }
+                    json_data = json.dumps(data)
+                    print(json_data)
+                    try:
+                        cursor.execute("SELECT make_payment(%s)",[json_data])
+                        messages.success(request, f"Transaction completed: {amount} paid to {party_name}.")
+                    except Exception as e:
+                        messages.error(request,f"An Unexpected Error occured Please Try Again! {e}")
+                else:
+                    messages.error(request,f"No such Party exists with name '{party_name}'!")
+                    return render(request,"payments_templates/payment.html",data)
         
 
 
     return render(request,"payments_templates/payment.html")
+
+
+def get_payment(request):
+    action = request.GET.get("action")
+    current_id = request.GET.get("current_id")
+
+    with connection.cursor() as cursor:
+        if action == "previous":
+            if not current_id:
+                cursor.execute("SELECT get_last_payment()")
+                last_payment = cursor.fetchone()
+                if last_payment:
+                    last_payment = json.loads(last_payment[0])
+                current_id = int(last_payment['payment_id']) + 1
+
+            cursor.execute("SELECT get_previous_payment(%s)", [current_id])
+            result = cursor.fetchone()
+ 
+            if not result or not result[0]:
+                print('-----',result)
+                return JsonResponse({
+                    "error": "No previous payment found.",
+                    "info": "You are already at the first payment."
+                }, status=200)
+            
+        elif action == "next":
+            cursor.execute("SELECT get_next_payment(%s)", [current_id])
+            result = cursor.fetchone()
+
+            if not result or not result[0]:
+                print('-----',result)
+                return JsonResponse({
+                    "error": "No next payment found.",
+                    "info": "You are already at the latest payment."
+                }, status=200)
+        else:
+            return JsonResponse({"error": "Invalid action"}, status=400)
+
+    return JsonResponse(json.loads(result[0]))
+
+

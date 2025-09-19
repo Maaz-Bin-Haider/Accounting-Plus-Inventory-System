@@ -53,8 +53,30 @@
         <textarea id="description" name="description" placeholder="Enter Description">{{description}}</textarea>
     </div>
 
-    <button type="submit">Submit Payment</button>
+    <button type="submit" name="action" value="submit">Submit Payment</button>
+
+    
+
 </form>
+
+{% comment %} <form method="post">
+    {% csrf_token %}
+    {% if payment_id %}
+        <input type="hidden" name="current_payment_id" value="{{payment_id}}">
+    {% endif %}
+    
+    <div class="button-group">
+        <button type="submit" name="action" value="previous">Previous</button>
+        <button type="submit" name="action" value="next">Next</button>
+    </div>
+</form> {% endcomment %}
+
+<input type="hidden" id="current_payment_id" value="{{payment_id}}">
+
+<div class="button-group">
+    <button type="button" onclick="navigatePayment('previous')">Previous</button>
+    <button type="button" onclick="navigatePayment('next')">Next</button>
+</div>
 
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
