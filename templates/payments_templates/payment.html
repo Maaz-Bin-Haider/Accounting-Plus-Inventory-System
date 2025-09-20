@@ -53,7 +53,8 @@
         <textarea id="description" name="description" placeholder="Enter Description">{{description}}</textarea>
     </div>
 
-    <button type="submit" name="action" value="submit">Submit Payment</button>
+    
+    <button type="submit" name="action" value="submit">{% if payment_id is not None %} Update Payment {% else %}Save Payment{% endif %}</button>
 
     
 

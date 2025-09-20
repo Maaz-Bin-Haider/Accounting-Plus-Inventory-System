@@ -86,6 +86,14 @@ function navigatePayment(action) {
 
             // update hidden id
             document.getElementById("current_payment_id").value = data.payment_id;
+
+            // update button text
+            let submitBtn = document.querySelector("#paymentForm button[type=submit]");
+            if (data.payment_id) {
+                submitBtn.textContent = "Update Payment";
+            } else {
+                submitBtn.textContent = "Save Payment";
+            }
         })
         .catch(err => console.error("Error:", err));
 }
