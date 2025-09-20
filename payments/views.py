@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.db import connection,IntegrityError
+from django.db import connection,DatabaseError
 from django.contrib import messages
 from datetime import datetime, date
 from django.http import JsonResponse
@@ -83,58 +83,62 @@ def make_payment(request):
 def get_payment(request):
     action = request.GET.get("action")
     current_id = request.GET.get("current_id")
-
-    with connection.cursor() as cursor:
-        if action == "previous":
-            if not current_id:
-                try:
+    try:
+        with connection.cursor() as cursor:
+            if action == "previous":
+                if not current_id:
                     cursor.execute("SELECT get_last_payment()")
                     last_payment = cursor.fetchone()
-                except:
-                    return JsonResponse({
-                        "error": "Something went wrong!",
-                        "info": "Error while fetching previous payment"
-                    }, status=200)
-                if last_payment:
-                    last_payment = json.loads(last_payment[0])
-                current_id = int(last_payment['payment_id']) + 1
+                    if not last_payment or not last_payment[0]:
+                        return JsonResponse({"error": "No payments found."}, status=404)
+                    
+                    try:
+                        last_payment = json.loads(last_payment[0])
+                        current_id = int(last_payment['payment_id']) + 1
+                    except Exception:
+                        return JsonResponse({"error":"Invalid last payment data"},status=500)
 
-            try:
+                try:
+                        current_id = int(current_id)
+                except (ValueError, TypeError):
+                    return JsonResponse({"error": "Invalid current_id."}, status=400)
+                
+
                 cursor.execute("SELECT get_previous_payment(%s)", [current_id])
                 result = cursor.fetchone()
-            except:
-                return JsonResponse({
-                    "error": "Something went wrong!",
-                    "info": "Error while fetching previous payment"
-                }, status=200)
- 
-            if not result or not result[0]:
-                print('-----',result)
-                return JsonResponse({
-                    "error": "No previous payment found.",
-                    "info": "You are already at the first payment."
-                }, status=200)
-            
-        elif action == "next":
-            try:
+
+                if not result or not result[0]:
+                    print('-----',result)
+                    return JsonResponse({
+                        "error": "No previous payment found.",
+                        "info": "You are already at the first payment."
+                    }, status=404)
+                
+            elif action == "next":
+                try:
+                        current_id = int(current_id)
+                except (ValueError, TypeError):
+                    return JsonResponse({"error": "Invalid current_id."}, status=400)
+
                 cursor.execute("SELECT get_next_payment(%s)", [current_id])
                 result = cursor.fetchone()
-            except:
-                return JsonResponse({
-                    "error": "Something went wrong!",
-                    "info": "Error while fetching next payment"
-                }, status=200)
 
-            if not result or not result[0]:
-                print('-----',result)
-                return JsonResponse({
-                    "error": "No next payment found.",
-                    "info": "You are already at the latest payment."
-                }, status=200)
-        else:
-            return JsonResponse({"error": "Invalid action"}, status=400)
+                if not result or not result[0]:
+                    print('-----',result)
+                    return JsonResponse({
+                        "error": "No next payment found.",
+                        "info": "You are already at the latest payment."
+                    }, status=404)
+            else:
+                return JsonResponse({"error": "Invalid action"}, status=400)
+    except DatabaseError:
+         return JsonResponse({"error": "Database error."}, status=500)
 
-    return JsonResponse(json.loads(result[0]))
+
+    try:
+        return JsonResponse(json.loads(result[0]))
+    except Exception:
+        return JsonResponse({"error": "Invalid payment data format."}, status=500)
 
 
 # TODO: Add logic to update when previous and next payment
