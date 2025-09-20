@@ -82,7 +82,8 @@ def make_payment(request):
                 else:
                     messages.error(request,f"No such Party exists with name '{party_name}'!")
                     return render(request,"payments_templates/payment.html",data)
-        
+        if action == "delete":
+            print("Delete is Clicked")
 
 
     return render(request,"payments_templates/payment.html")

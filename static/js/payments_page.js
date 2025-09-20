@@ -97,3 +97,32 @@ function navigatePayment(action) {
         })
         .catch(err => console.error("Error:", err));
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("paymentForm");
+  let confirmedDelete = false; // flag
+
+  form.addEventListener("submit", function (e) {
+    const btn = e.submitter; // which button triggered the submit
+
+    if (btn && btn.value === "delete" && !confirmedDelete) {
+      e.preventDefault(); // stop normal submission
+
+      Swal.fire({
+        title: "Are you sure?",
+        text: "This action cannot be undone!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "Cancel"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          confirmedDelete = true;     // mark confirmed
+          form.requestSubmit(btn);    // re-trigger submit with same button
+        }
+      });
+    }
+  });
+});
