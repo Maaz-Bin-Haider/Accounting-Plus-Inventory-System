@@ -87,14 +87,26 @@ def get_payment(request):
     with connection.cursor() as cursor:
         if action == "previous":
             if not current_id:
-                cursor.execute("SELECT get_last_payment()")
-                last_payment = cursor.fetchone()
+                try:
+                    cursor.execute("SELECT get_last_payment()")
+                    last_payment = cursor.fetchone()
+                except:
+                    return JsonResponse({
+                        "error": "Something went wrong!",
+                        "info": "Error while fetching previous payment"
+                    }, status=200)
                 if last_payment:
                     last_payment = json.loads(last_payment[0])
                 current_id = int(last_payment['payment_id']) + 1
 
-            cursor.execute("SELECT get_previous_payment(%s)", [current_id])
-            result = cursor.fetchone()
+            try:
+                cursor.execute("SELECT get_previous_payment(%s)", [current_id])
+                result = cursor.fetchone()
+            except:
+                return JsonResponse({
+                    "error": "Something went wrong!",
+                    "info": "Error while fetching previous payment"
+                }, status=200)
  
             if not result or not result[0]:
                 print('-----',result)
@@ -104,8 +116,14 @@ def get_payment(request):
                 }, status=200)
             
         elif action == "next":
-            cursor.execute("SELECT get_next_payment(%s)", [current_id])
-            result = cursor.fetchone()
+            try:
+                cursor.execute("SELECT get_next_payment(%s)", [current_id])
+                result = cursor.fetchone()
+            except:
+                return JsonResponse({
+                    "error": "Something went wrong!",
+                    "info": "Error while fetching next payment"
+                }, status=200)
 
             if not result or not result[0]:
                 print('-----',result)
@@ -119,3 +137,5 @@ def get_payment(request):
     return JsonResponse(json.loads(result[0]))
 
 
+# TODO: Add logic to update when previous and next payment
+        # Add exception handling in above task
