@@ -15,7 +15,7 @@
 
 {% block body %}
 
-<form method='post'>
+<form method='post' id="paymentForm">
     {% csrf_token %}
     <h2>Payment</h2>
     
@@ -60,7 +60,7 @@
 </form>
 
 
-<input type="hidden" id="current_payment_id" value="{{payment_id}}">
+<input type="hidden" id="current_payment_id" name="current_id" value="{{payment_id}}" form="paymentForm">
 
 <div class="button-group">
     <button type="button" onclick="navigatePayment('previous')">Previous</button>

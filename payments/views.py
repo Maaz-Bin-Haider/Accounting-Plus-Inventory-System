@@ -9,6 +9,7 @@ import json
 def make_payment(request):
     if request.method == 'POST':
         action = request.POST.get("action")
+        payment_id = request.POST.get("current_id")
         if action == "submit":
             payment_date_str = request.POST.get('payment_date')
             party_name = request.POST.get('search_name')
@@ -58,19 +59,26 @@ def make_payment(request):
                 exists = cursor.fetchone()
                 if exists:
                     data = {
-                        "party_name":party_name.upper(),
-                        "amount": amount,
-                        "method": "Cash",
-                        "description": description if description else '',
-                        "payment_date": payment_date
-                    }
+                            "party_name":party_name.upper(),
+                            "amount": amount,
+                            "method": "Cash",
+                            "description": description if description else '',
+                            "payment_date": payment_date
+                        }
                     json_data = json.dumps(data)
                     print(json_data)
-                    try:
-                        cursor.execute("SELECT make_payment(%s)",[json_data])
-                        messages.success(request, f"Transaction completed: {amount} paid to {party_name}.")
-                    except Exception as e:
-                        messages.error(request,f"An Unexpected Error occured Please Try Again! {e}")
+                    if not payment_id: # Means new payment
+                        try:
+                            cursor.execute("SELECT make_payment(%s)",[json_data])
+                            messages.success(request, f"Transaction completed: {amount} paid to {party_name}.")
+                        except Exception as e:
+                            messages.error(request,f"An Unexpected Error occured Please Try Again! {e}")
+                    else:   # Means we have to update payment 
+                        try:
+                            cursor.execute("SELECT update_payment(%s,%s)",[payment_id,json_data])
+                            messages.success(request, f"Transaction Updated: {amount} paid to {party_name}.")
+                        except Exception as e:
+                            messages.error(request,f"An Unexpected Error occured Please Try Again! {e}")
                 else:
                     messages.error(request,f"No such Party exists with name '{party_name}'!")
                     return render(request,"payments_templates/payment.html",data)
