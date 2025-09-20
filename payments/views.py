@@ -84,6 +84,24 @@ def make_payment(request):
                     return render(request,"payments_templates/payment.html",data)
         if action == "delete":
             print("Delete is Clicked")
+            if not payment_id:
+                messages.error(request,"Navigate to Payment first which you want to delete")
+                return render(request,"payments_templates/payment.html")
+            try:
+                payment_id = int(payment_id)
+            except:
+                messages.error(request,"Navigate to Payment first which you want to delete")
+                return render(request,"payments_templates/payment.html")
+            
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT delete_payment(%s)",[payment_id])
+                    messages.success(request,"Payment delete Sucessfully.")
+                    return render(request,"payments_templates/payment.html")
+            except Exception:
+                messages.error(request,"Unable to delete this Payment! Try Again..")
+                return render(request,"payments_templates/payment.html")
+            
 
 
     return render(request,"payments_templates/payment.html")
