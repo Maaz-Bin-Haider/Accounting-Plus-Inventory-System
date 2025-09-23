@@ -159,3 +159,108 @@ button[type="submit"]:hover {
     width: 100%;
   }
 }
+
+.dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+#paymentsDropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #fff;
+    border: 1px solid #ccc;
+    width: 400px;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 5px;
+    z-index: 1000;
+    box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+/* Sticky date header */
+.payment-date-header {
+    background: #ededef;
+    font-weight: bold;
+    font-size: 13px;
+    padding: 6px 10px;
+    border-bottom: 1px solid #ddd;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    color: #333;
+}
+
+/* Each payment row */
+.payment-row {
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    cursor: pointer;
+    position: relative; /* needed for tooltip */
+    transition: background 0.2s ease;
+}
+.payment-row:hover {
+    background: #f4f6ff;
+}
+
+.payment-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.payment-ref,
+.payment-party {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    font-size: 13px;
+    color: #444;
+}
+
+.payment-amount {
+    text-align: right;
+    color: #28a745;
+    font-weight: bold;
+    margin-top: 4px;
+    flex-shrink: 0;
+}
+
+/* Tooltip */
+.payment-tooltip {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 10px;
+    transform: translateY(-5px);
+    background: rgba(50, 50, 50, 0.9);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    max-width: 280px;
+    word-wrap: break-word;
+    white-space: normal;
+    z-index: 10000;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+.payment-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 15px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: rgba(50, 50, 50, 0.9) transparent transparent transparent;
+}
+.payment-row:hover .payment-tooltip {
+    display: block;
+}

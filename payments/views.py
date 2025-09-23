@@ -4,6 +4,7 @@ from django.contrib import messages
 from datetime import datetime, date
 from django.http import JsonResponse
 import json
+from psycopg2.extras import Json
 
 # Create your views here.
 def make_payment(request):
@@ -102,8 +103,6 @@ def make_payment(request):
                 messages.error(request,"Unable to delete this Payment! Try Again..")
                 return render(request,"payments_templates/payment.html")
             
-
-
     return render(request,"payments_templates/payment.html")
 
 
@@ -168,5 +167,13 @@ def get_payment(request):
         return JsonResponse({"error": "Invalid payment data format."}, status=500)
 
 
-# TODO: Add logic to update when previous and next payment
-        # Add exception handling in above task
+# TODO: Made a  box for to view payment history in reverse order 
+        # also add a search box to view payment date wise
+
+def get_old_payments(request):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT get_last_20_payments_json(%s)",[Json({})])
+        data = cursor.fetchone()
+    data = json.loads(data[0])
+    print(data)
+    return JsonResponse(data,safe=False)

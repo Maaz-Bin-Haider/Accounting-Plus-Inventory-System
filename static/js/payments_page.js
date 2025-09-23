@@ -126,3 +126,84 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 });
+
+function fetchOldPayments() {
+    $.ajax({
+        url: "/payments/get-old-payments/",
+        type: "GET",
+        dataType: "json",
+        success: function(response) {
+            console.log("✅ Response from Django:", response);
+
+            if (response.length === 0) {
+                Swal.fire("No payments found");
+                return;
+            }
+
+            // Build HTML with a search box and a scrollable list
+            let html = "";
+            let currentDate = null;
+
+            response.forEach(payment => {
+                // Add a date header when the date changes
+                if (payment.payment_date !== currentDate) {
+                    currentDate = payment.payment_date;
+                    html += `
+                        <div class="payment-date-header">
+                            ${currentDate}
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="payment-row"
+                        data-search="${(payment.party_name + ' ' + (payment.reference_no || '')).toLowerCase()}">
+
+                        <div class="payment-top">
+                            <span class="payment-ref">${payment.reference_no || ""}</span>
+                            <span class="payment-party">${payment.party_name}</span>
+                            <div class="payment-amount">${payment.amount}</div>
+                        </div>
+
+                        <!-- Tooltip -->
+                        <div class="payment-tooltip">
+                            ${payment.description || "No description available"}
+                        </div>
+                    </div>
+                `;
+            });
+
+            $("#paymentsDropdown").html(html);
+
+            html += "</div>";
+
+            Swal.fire({
+                title: "Last Payments",
+                html: html,
+                width: "600px",
+                confirmButtonText: "Close",
+                didOpen: () => {
+                    const searchBox = document.getElementById("paymentSearch");
+                    const rows = document.querySelectorAll(".payment-row");
+
+                    searchBox.addEventListener("input", function () {
+                        let query = this.value.toLowerCase();
+                        rows.forEach(row => {
+                            let text = row.getAttribute("data-search");
+                            row.style.display = text.includes(query) ? "block" : "none";
+                        });
+                    });
+                }
+            });
+        },
+        error: function(xhr, status, error) {
+            console.error("❌ AJAX Error:", error);
+            Swal.fire("Error loading payments");
+        }
+    });
+}
+
+// Button event
+$("#togglePaymentsBtn").on("click", function() {
+    fetchOldPayments();
+});
