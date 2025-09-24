@@ -127,9 +127,9 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-function fetchOldPayments() {
+function fetchPayments(url) {
     $.ajax({
-        url: "/payments/get-old-payments/",
+        url: url,
         type: "GET",
         dataType: "json",
         success: function(response) {
@@ -183,7 +183,7 @@ function fetchOldPayments() {
             html += "</div>";
 
             Swal.fire({
-                title: "📑 Last Payments",
+                title: "📑 Payments",
                 html: html,
                 width: "650px",
                 confirmButtonText: "Close",
@@ -257,7 +257,41 @@ function fetchOldPayments() {
         }
     });
 }
-// Button event
-$("#togglePaymentsBtn").on("click", function() {
-    fetchOldPayments();
+// Button event to fetch last 20 payments
+$("#btnOldPayments").on("click", function() {
+    fetchPayments("/payments/get-old-payments/");
+});
+
+// Asking for start and End Dates
+$("#btnVendorPayments").on("click", function () {
+    const today = new Date().toISOString().split("T")[0];
+    Swal.fire({
+        title: "📅 Select Date Range",
+        html: `
+            <label>From Date</label><br>
+            <input type="date" id="fromDate" class="swal2-input" style="width:70%">
+            <br>
+            <label>To Date</label><br>
+            <input type="date" id="toDate" class="swal2-input" style="width:70%" value="${today}">
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: "Fetch Payments",
+        preConfirm: () => {
+            const fromDate = document.getElementById("fromDate").value;
+            const toDate = document.getElementById("toDate").value;
+            if (!fromDate || !toDate) {
+                Swal.showValidationMessage("⚠️ Both dates are required");
+                return false;
+            }
+            return { fromDate, toDate };
+        }
+    }).then(result => {
+        if (result.isConfirmed) {
+            const { fromDate, toDate } = result.value;
+
+            // Calling fetchPayments functions with dates
+            fetchPayments(`/payments/get-payments-date-wise/?from=${fromDate}&to=${toDate}`);
+        }
+    });
 });

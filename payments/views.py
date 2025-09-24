@@ -216,3 +216,57 @@ def get_old_payments(request):
             {"error": "An unexpected error occurred.", "details": str(e)}, 
             status=500
         )
+    
+def get_payments_date_wise(request):
+    try:
+        from_date_str = request.GET.get("from")
+        to_date_str = request.GET.get("to")
+
+        if not from_date_str or not to_date_str:
+            return JsonResponse({"error": "Missing date range"}, status=400)
+        
+        # Validating Dates (must be in correct date format)
+        try:
+            # Adjust format according to your input (e.g. "YYYY-MM-DD")
+            from_date = datetime.strptime(from_date_str, "%Y-%m-%d").date()
+            to_date = datetime.strptime(to_date_str, "%Y-%m-%d").date()
+
+            # Future Date Restriction
+            if from_date > date.today() or to_date > date.today():
+                return JsonResponse({"error": "Dates can't be in Future"}, status=400)
+
+            # Making Date again Str
+            from_date = from_date.strftime("%Y-%m-%d")
+            to_date = to_date.strftime("%Y-%m-%d")
+
+        except (ValueError, TypeError):
+            JsonResponse({"error": "Invalid date. Please enter a valid date in YYYY-MM-DD format."}, status=400)
+        
+        dates = {
+            "start_date": from_date,
+            "end_date": to_date
+        }
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT get_payments_by_date_json(%s)",
+                [json.dumps(dates)]
+            )
+            data = cursor.fetchone()
+
+        if not data or not data[0]:
+            return JsonResponse([], safe=False)
+        
+        try:
+            data = json.loads(data[0])
+        except (json.JSONDecodeError, TypeError):
+            return JsonResponse(
+                {"error": "Failed to parse payment data."}, 
+                status=500
+            )
+
+        return JsonResponse(data, safe=False)
+
+    except Exception as e:
+        print(e)
+        return JsonResponse({"error": str(e)}, status=500)
