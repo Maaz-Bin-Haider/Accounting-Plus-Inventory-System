@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.db import connection,DatabaseError
 from django.contrib import messages
 from datetime import datetime, date
@@ -76,12 +76,14 @@ def make_payment(request):
                         try:
                             cursor.execute("SELECT make_payment(%s)",[json_data])
                             messages.success(request, f"Transaction completed: {amount} paid to {party_name}.")
+                            return redirect("payments:payment")
                         except Exception as e:
                             messages.error(request,f"An Unexpected Error occured Please Try Again! {e}")
                     else:   # Means we have to update payment 
                         try:
                             cursor.execute("SELECT update_payment(%s,%s)",[payment_id,json_data])
                             messages.success(request, f"Transaction Updated: {amount} paid to {party_name}.")
+                            return redirect("payments:payment")
                         except Exception as e:
                             messages.error(request,f"An Unexpected Error occured Please Try Again! {e}")
                 else:
@@ -102,7 +104,7 @@ def make_payment(request):
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_payment(%s)",[payment_id])
                     messages.success(request,"Payment delete Sucessfully.")
-                    return render(request,"payments_templates/payment.html")
+                    return redirect("payments:payment")
             except Exception:
                 messages.error(request,"Unable to delete this Payment! Try Again..")
                 return render(request,"payments_templates/payment.html")
