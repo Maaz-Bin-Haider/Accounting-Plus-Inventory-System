@@ -133,54 +133,58 @@ function fetchOldPayments() {
         type: "GET",
         dataType: "json",
         success: function(response) {
-            console.log("✅ Response from Django:", response);
-
             if (response.length === 0) {
                 Swal.fire("No payments found");
                 return;
             }
 
-            // Build HTML with a search box and a scrollable list
-            let html = "";
+            // Add search + scrollable list
+            let html = `
+                <input type="text" id="paymentSearch" placeholder="🔍 Search by Party or Ref #"
+                       style="width: 95%; padding: 8px 10px; margin-bottom: 10px;
+                              border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+                <div id="paymentsList" style="max-height: 350px; overflow-y: auto; text-align:left;">
+            `;
+
             let currentDate = null;
 
             response.forEach(payment => {
-                // Add a date header when the date changes
                 if (payment.payment_date !== currentDate) {
                     currentDate = payment.payment_date;
                     html += `
-                        <div class="payment-date-header">
-                            ${currentDate}
-                        </div>
+                        <div class="payment-date-group">
+                            <div class="payment-date-header">Date: ${currentDate}</div>
                     `;
                 }
 
                 html += `
                     <div class="payment-row"
-                        data-search="${(payment.party_name + ' ' + (payment.reference_no || '')).toLowerCase()}">
-
+                        data-party="${payment.party_name.toLowerCase()}"
+                        data-ref="${(payment.reference_no || '').toLowerCase()}">
                         <div class="payment-top">
                             <span class="payment-ref">${payment.reference_no || ""}</span>
                             <span class="payment-party">${payment.party_name}</span>
                             <div class="payment-amount">${payment.amount}</div>
                         </div>
-
-                        <!-- Tooltip -->
                         <div class="payment-tooltip">
                             ${payment.description || "No description available"}
                         </div>
                     </div>
                 `;
-            });
 
-            $("#paymentsDropdown").html(html);
+                // Close date group at the end
+                if (payment === response[response.length - 1] ||
+                    response[response.indexOf(payment)+1]?.payment_date !== currentDate) {
+                    html += `</div>`;
+                }
+            });
 
             html += "</div>";
 
             Swal.fire({
-                title: "Last Payments",
+                title: "📑 Last Payments",
                 html: html,
-                width: "600px",
+                width: "650px",
                 confirmButtonText: "Close",
                 didOpen: () => {
                     const searchBox = document.getElementById("paymentSearch");
@@ -188,21 +192,29 @@ function fetchOldPayments() {
 
                     searchBox.addEventListener("input", function () {
                         let query = this.value.toLowerCase();
+
+                        // Filter rows
                         rows.forEach(row => {
-                            let text = row.getAttribute("data-search");
-                            row.style.display = text.includes(query) ? "block" : "none";
+                            let party = row.getAttribute("data-party");
+                            let ref = row.getAttribute("data-ref");
+                            row.style.display =
+                                (party.includes(query) || ref.includes(query)) ? "flex" : "none";
+                        });
+
+                        // Hide empty date groups
+                        document.querySelectorAll(".payment-date-group").forEach(group => {
+                            const visibleRows = group.querySelectorAll(".payment-row[style*='display: flex']");
+                            group.style.display = visibleRows.length > 0 ? "block" : "none";
                         });
                     });
                 }
             });
         },
         error: function(xhr, status, error) {
-            console.error("❌ AJAX Error:", error);
             Swal.fire("Error loading payments");
         }
     });
 }
-
 // Button event
 $("#togglePaymentsBtn").on("click", function() {
     fetchOldPayments();

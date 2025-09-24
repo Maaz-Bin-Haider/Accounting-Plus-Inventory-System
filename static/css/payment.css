@@ -184,54 +184,62 @@ button[type="submit"]:hover {
 
 /* Sticky date header */
 .payment-date-header {
-    background: #ededef;
-    font-weight: bold;
+    background: #f9fafb;
+    font-weight: 600;
     font-size: 13px;
-    padding: 6px 10px;
-    border-bottom: 1px solid #ddd;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
     position: sticky;
     top: 0;
     z-index: 5;
-    color: #333;
+    color: #555;
+    border-radius: 6px;
 }
 
-/* Each payment row */
+/* Payment row */
 .payment-row {
-    padding: 8px 10px;
-    border-bottom: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f1f1;
     font-size: 14px;
     cursor: pointer;
-    position: relative; /* needed for tooltip */
-    transition: background 0.2s ease;
+    position: relative;
+    background: #fff;
+    border-radius: 8px;
+    margin: 6px 8px;
+    transition: all 0.2s ease;
 }
 .payment-row:hover {
-    background: #f4f6ff;
+    background: #f5f7ff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
+/* Payment row top section */
 .payment-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
-.payment-ref,
-.payment-party {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
+.payment-ref {
     font-size: 13px;
-    color: #444;
+    font-weight: 500;
+    color: #7ca6c3;
+}
+
+.payment-party {
+    font-size: 14px;
+    font-weight: 600;
+    color: #818086;
+    flex: 1;
 }
 
 .payment-amount {
-    text-align: right;
-    color: #28a745;
-    font-weight: bold;
-    margin-top: 4px;
-    flex-shrink: 0;
+    font-weight: 700;
+    color: #448a50;
+    font-size: 14px;
 }
 
 /* Tooltip */
@@ -239,9 +247,9 @@ button[type="submit"]:hover {
     display: none;
     position: absolute;
     bottom: 100%;
-    left: 10px;
+    left: 15px;
     transform: translateY(-5px);
-    background: rgba(50, 50, 50, 0.9);
+    background: rgba(30, 30, 30, 0.95);
     color: white;
     padding: 6px 10px;
     border-radius: 6px;
@@ -250,7 +258,7 @@ button[type="submit"]:hover {
     word-wrap: break-word;
     white-space: normal;
     z-index: 10000;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 .payment-tooltip::after {
     content: "";
@@ -259,7 +267,7 @@ button[type="submit"]:hover {
     left: 15px;
     border-width: 6px;
     border-style: solid;
-    border-color: rgba(50, 50, 50, 0.9) transparent transparent transparent;
+    border-color: rgba(30, 30, 30, 0.95) transparent transparent transparent;
 }
 .payment-row:hover .payment-tooltip {
     display: block;
