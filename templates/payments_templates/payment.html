@@ -7,7 +7,6 @@
 
 {% block SeperateCssFile %}
     <link rel="stylesheet" href="{% static 'css/payment.css' %}">
-    <!-- <link rel="stylesheet" href="{% static 'css/update_party.css' %}"> --> 
 {% endblock SeperateCssFile %}
 
 
@@ -15,14 +14,14 @@
 
 {% block body %}
 <div class="dropdown-container">
-    <button id="btnOldPayments">Payments History</button>
-    <button id="btnVendorPayments">Payments Date-Wise</button>
+    <button id="btnOldPayments">📜 Payments History</button>
+    <button id="btnVendorPayments">📅 Payments Date-Wise</button>
 </div>
 
 
 <form method='post' id="paymentForm">
     {% csrf_token %}
-    <h2>Payment</h2>
+    <h2><span class="paymet-icon">💳</span> Payment</h2>
     
     <!-- top row: date + party -->
     <div class="form-row">
@@ -59,9 +58,15 @@
     </div>
 
     
-    <button type="submit" name="action" value="submit">Save Payment</button>
-    <button type="submit" name="action" value="delete" class="delete-btn">Delete</button>
-
+    <div class="btn-row">
+        <button type="submit" name="action" value="submit" class="save-and-update-btn">
+            <i class="fa-solid fa-floppy-disk"></i>  Save Payment
+        </button>
+        
+        <button type="submit" name="action" value="delete" class="delete-btn">
+            <i class="fa-solid fa-trash"></i>  Delete
+        </button>
+    </div>
     
 
 </form>
@@ -70,13 +75,13 @@
 <input type="hidden" id="current_payment_id" name="current_id" value="{{payment_id}}" form="paymentForm">
 
 <div class="button-group">
-    <button type="button" onclick="navigatePayment('previous')">Previous</button>
-    <button type="button" onclick="navigatePayment('next')">Next</button>
+    <button type="button" onclick="navigatePayment('previous')"><i class="fa-solid fa-arrow-left"></i> Previous</button>
+    <button type="button" onclick="navigatePayment('next')">Next <i class="fa-solid fa-arrow-right"></i></button>
 </div>
 
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="{% static 'js/payments_page.js' %}"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'js/payments_page.js' %}"></script>
 
 
 {% endblock body %}

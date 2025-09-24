@@ -5,7 +5,7 @@
       background: linear-gradient(135deg, #dbeafe, #fef9c3);
       min-height: 100vh;
       margin: 0;
-      padding: 40px 15px;
+      padding: 20px 15px;
       display: flex;
       justify-content: center;
       align-items: flex-start;
@@ -39,11 +39,11 @@
       backdrop-filter: blur(15px);
       border-radius: 20px;
       padding: 2.5rem;
-      width: fit-content;       /* 👈 content-based width */
-      max-width: 90vw;          /* 👈 safe cap for small screens */
+      width: fit-content;      
+      max-width: 90vw;          
       box-shadow: 0 10px 30px rgba(0,0,0,0.1);
       animation: slideUp 0.7s ease-out;
-      margin: 2rem auto;        /* 👈 keep it centered */
+      margin: 0.2rem auto;        
     }
 
     h2 {
@@ -110,13 +110,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
-    button[type="submit"] {
-      background: linear-gradient(135deg, #2563eb, #3b82f6);
-      color: #fff;
-      font-size: 1rem;
-      padding: 12px 22px;
-      border-radius: 12px;
-    }
+   
 
     button[type="submit"]:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.2); }
 

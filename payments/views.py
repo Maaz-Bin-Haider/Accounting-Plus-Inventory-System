@@ -25,6 +25,10 @@ def make_payment(request):
                 "payment_date": payment_date_str
             }
 
+            # If party name is Empty
+            if not party_name:
+                messages.error(request,"Please Enter a party Name!")
+                return render(request,"payments_templates/payment.html",data)
 
             # Validating Amount
             try:
@@ -181,8 +185,6 @@ def get_payment(request):
         return JsonResponse({"error": "Invalid payment data format."}, status=500)
 
 
-# TODO: Made a  box for to view payment history in reverse order 
-        # also add a search box to view payment date wise
 
 def get_old_payments(request):
     try:
@@ -270,3 +272,6 @@ def get_payments_date_wise(request):
     except Exception as e:
         print(e)
         return JsonResponse({"error": str(e)}, status=500)
+    
+
+# TODO: GIve proper styling to payments page and move on to receipts section
