@@ -138,7 +138,6 @@ function fetchOldPayments() {
                 return;
             }
 
-            // Add search + scrollable list
             let html = `
                 <input type="text" id="paymentSearch" placeholder="🔍 Search by Party or Ref #"
                        style="width: 95%; padding: 8px 10px; margin-bottom: 10px;
@@ -148,33 +147,35 @@ function fetchOldPayments() {
 
             let currentDate = null;
 
-            response.forEach(payment => {
+            response.forEach((payment, index) => {
                 if (payment.payment_date !== currentDate) {
                     currentDate = payment.payment_date;
                     html += `
                         <div class="payment-date-group">
-                            <div class="payment-date-header">Date: ${currentDate}</div>
+                            <div class="payment-date-header">${currentDate}</div>
                     `;
                 }
 
                 html += `
                     <div class="payment-row"
                         data-party="${payment.party_name.toLowerCase()}"
-                        data-ref="${(payment.reference_no || '').toLowerCase()}">
+                        data-ref="${(payment.reference_no || '').toLowerCase()}"
+                        data-id="${payment.payment_id}">
+
                         <div class="payment-top">
                             <span class="payment-ref">${payment.reference_no || ""}</span>
                             <span class="payment-party">${payment.party_name}</span>
                             <div class="payment-amount">${payment.amount}</div>
                         </div>
+
                         <div class="payment-tooltip">
                             ${payment.description || "No description available"}
                         </div>
                     </div>
                 `;
 
-                // Close date group at the end
                 if (payment === response[response.length - 1] ||
-                    response[response.indexOf(payment)+1]?.payment_date !== currentDate) {
+                    response[index + 1]?.payment_date !== currentDate) {
                     html += `</div>`;
                 }
             });
@@ -190,10 +191,9 @@ function fetchOldPayments() {
                     const searchBox = document.getElementById("paymentSearch");
                     const rows = document.querySelectorAll(".payment-row");
 
+                    // 🔎 Search filter
                     searchBox.addEventListener("input", function () {
                         let query = this.value.toLowerCase();
-
-                        // Filter rows
                         rows.forEach(row => {
                             let party = row.getAttribute("data-party");
                             let ref = row.getAttribute("data-ref");
@@ -201,16 +201,58 @@ function fetchOldPayments() {
                                 (party.includes(query) || ref.includes(query)) ? "flex" : "none";
                         });
 
-                        // Hide empty date groups
+                        // Hide empty groups
                         document.querySelectorAll(".payment-date-group").forEach(group => {
                             const visibleRows = group.querySelectorAll(".payment-row[style*='display: flex']");
                             group.style.display = visibleRows.length > 0 ? "block" : "none";
                         });
                     });
+
+                    // 🔗 Click handler for rows
+                    rows.forEach(row => {
+                        row.addEventListener("click", function () {
+                            const paymentId = this.getAttribute("data-id");
+                            fetch(`/payments/payment/get/?current_id=${paymentId}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.error) {
+                                        // show message when at boundary
+                                        if (data.info) {
+                                            alert(data.info);
+                                        }
+                                        return;
+                                    }
+
+                                    // Closing the popup before updating form
+                                    Swal.close();
+
+                                    // update form fields
+                                    document.getElementById("payment_date").value = data.payment_date || "";
+                                    document.getElementById("search_name").value = data.party_name || "";
+                                    document.getElementById("amount").value = data.amount || "";
+                                    document.getElementById("method").value = data.method || "Cash";
+                                    document.getElementById("description").value = data.description || "";
+
+                                    // update hidden id
+                                    document.getElementById("current_payment_id").value = data.payment_id;
+
+                                    // update button text
+                                    let submitBtn = document.querySelector("#paymentForm button[type=submit]");
+                                    if (data.payment_id) {
+                                        submitBtn.textContent = "Update Payment";
+                                    } else {
+                                        submitBtn.textContent = "Save Payment";
+                                    }
+                                })
+                                .catch(err => console.error("Error:", err));
+
+                    
+                        });
+                    });
                 }
             });
         },
-        error: function(xhr, status, error) {
+        error: function() {
             Swal.fire("Error loading payments");
         }
     });

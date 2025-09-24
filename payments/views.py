@@ -142,7 +142,7 @@ def get_payment(request):
                 
             elif action == "next":
                 try:
-                        current_id = int(current_id)
+                    current_id = int(current_id)
                 except (ValueError, TypeError):
                     return JsonResponse({"error": "Invalid current_id."}, status=400)
 
@@ -156,7 +156,20 @@ def get_payment(request):
                         "info": "You are already at the latest payment."
                     }, status=404)
             else:
-                return JsonResponse({"error": "Invalid action"}, status=400)
+                try:
+                    current_id = int(current_id)
+                except (ValueError, TypeError):
+                    return JsonResponse({"error": "Invalid current_id."}, status=400)
+
+                cursor.execute("SELECT get_payment_details(%s)", [current_id])
+                result = cursor.fetchone()
+
+                if not result or not result[0]:
+                    print('-----',result)
+                    return JsonResponse({
+                        "error": "No payment found.",
+                        "info": "Can't Find this payment may be some Internet issue!."
+                    }, status=404)
     except DatabaseError:
          return JsonResponse({"error": "Database error."}, status=500)
 
@@ -175,5 +188,5 @@ def get_old_payments(request):
         cursor.execute("SELECT get_last_20_payments_json(%s)",[Json({})])
         data = cursor.fetchone()
     data = json.loads(data[0])
-    print(data)
+    # print(data)
     return JsonResponse(data,safe=False)
