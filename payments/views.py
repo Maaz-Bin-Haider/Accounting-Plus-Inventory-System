@@ -105,7 +105,8 @@ def make_payment(request):
             
     return render(request,"payments_templates/payment.html")
 
-
+# if action is previous it call previous function from DB,
+#  if next then same and if no action is provided it call get_payment_details() which fetches current payment using ID.
 def get_payment(request):
     action = request.GET.get("action")
     current_id = request.GET.get("current_id")
@@ -155,7 +156,7 @@ def get_payment(request):
                         "error": "No next payment found.",
                         "info": "You are already at the latest payment."
                     }, status=404)
-            else:
+            else: # No action is provided means we have to fetch payment with current ID
                 try:
                     current_id = int(current_id)
                 except (ValueError, TypeError):
@@ -184,9 +185,34 @@ def get_payment(request):
         # also add a search box to view payment date wise
 
 def get_old_payments(request):
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT get_last_20_payments_json(%s)",[Json({})])
-        data = cursor.fetchone()
-    data = json.loads(data[0])
-    # print(data)
-    return JsonResponse(data,safe=False)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT get_last_20_payments_json(%s)", [Json({})])
+            data = cursor.fetchone()
+
+        if not data or not data[0]:
+            return JsonResponse(
+                {"error": "No payment data found."}, 
+                status=404
+            )
+
+        try:
+            data = json.loads(data[0])
+        except (json.JSONDecodeError, TypeError):
+            return JsonResponse(
+                {"error": "Failed to parse payment data."}, 
+                status=500
+            )
+
+        return JsonResponse(data, safe=False)
+
+    except DatabaseError as e:
+        return JsonResponse(
+            {"error": "Database error occurred.", "details": str(e)}, 
+            status=500
+        )
+    except Exception as e:
+        return JsonResponse(
+            {"error": "An unexpected error occurred.", "details": str(e)}, 
+            status=500
+        )
