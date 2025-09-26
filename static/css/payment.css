@@ -191,7 +191,8 @@ button[type="submit"]:hover {
 
 
 /* Sticky date header */
-.payment-date-header {
+.payment-date-header,
+.receipt-date-header {
     background: #f9fafb;
     font-weight: 600;
     font-size: 13px;
@@ -205,7 +206,9 @@ button[type="submit"]:hover {
 }
 
 /* Payment row */
-.payment-row {
+
+.payment-row,
+.receipt-row {
     display: flex;
     flex-direction: column;
     padding: 10px 14px;
@@ -218,40 +221,46 @@ button[type="submit"]:hover {
     margin: 6px 8px;
     transition: all 0.2s ease;
 }
-.payment-row:hover {
+.payment-row:hover,
+.receipt-row:hover {
     background: #f5f7ff;
     box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
 /* Payment row top section */
-.payment-top {
+.payment-top,
+.receipt-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 10px;
 }
 
-.payment-ref {
+.payment-ref,
+.receipt-ref {
     font-size: 13px;
     font-weight: 500;
     color: #7ca6c3;
 }
 
-.payment-party {
+.payment-party,
+.receipt-party {
     font-size: 14px;
     font-weight: 600;
     color: #818086;
     flex: 1;
 }
 
-.payment-amount {
+.payment-amount,
+.receipt-amount {
     font-weight: 700;
     color: #448a50;
     font-size: 14px;
 }
 
 /* Tooltip */
-.payment-tooltip {
+.payment-tooltip,
+.receipt-tooltip {
     display: none;
     position: absolute;
     bottom: 100%;

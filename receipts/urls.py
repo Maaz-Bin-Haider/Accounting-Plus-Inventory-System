@@ -1,5 +1,4 @@
 from django.urls import path
-
 from .views import make_receipt, get_receipt,get_old_receipts,get_receipts_date_wise
 
 app_name = "receipts"

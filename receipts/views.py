@@ -12,10 +12,12 @@ def make_receipt(request):
         action = request.POST.get("action")
         receipt_id = request.POST.get("current_id")
         if action == "submit":
-            receipt_date_str = request.POST.get('payment_date')
+            receipt_date_str = request.POST.get('receipt_date')
             party_name = request.POST.get('search_name')
             amount_str = request.POST.get('amount')
             description = request.POST.get('description')
+
+            print(receipt_date_str,'--------')
 
             data = {
                 "party_name":party_name.upper(),
