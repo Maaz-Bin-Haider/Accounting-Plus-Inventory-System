@@ -1,11 +1,12 @@
 from django.urls import path
 
+from .views import make_receipt, get_receipt,get_old_receipts,get_receipts_date_wise
 
 app_name = "receipts"
 
 urlpatterns = [
-    path('payment/',make_payment,name="payment"),
-    path("payment/get/", get_payment, name="get_payment"),
-    path('get-old-payments/',get_old_payments,name="get_old_payments"),
-    path('get-payments-date-wise/',get_payments_date_wise,name="get_payments_date_wise"),
+    path('receipt/',make_receipt,name="receipt"),
+    path("receipt/get/", get_receipt, name="get_receipt"),
+    path('get-old-receipts/',get_old_receipts,name="get_old_receipts"),
+    path('get-receipts-date-wise/',get_receipts_date_wise,name="get_receipts_date_wise"),
 ]

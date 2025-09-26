@@ -276,4 +276,4 @@ def get_receipts_date_wise(request):
         return JsonResponse({"error": str(e)}, status=500)
     
 
-# TODO: GIve proper styling to payments page and move on to receipts section
+
