@@ -21,7 +21,7 @@ input[type=number] {
   align-items: flex-start;
 }
 
-.item-row input.item_name {
+.item-row .item_name_field {
   flex: 2;
   min-width: 150px;
 }
@@ -153,27 +153,51 @@ button[type="submit"]:hover {
     width: 100%;
 }
 
-#suggestions {
-    border: 1px solid #ccc;
-    display: none;
-    position: absolute;
-    background: #fff;
-    max-height: 200px;
-    overflow-y: auto;
-    width: 100%;
-    z-index: 1000;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+.items_suggestions,#suggestions,#items_suggestions {
+  border: none;
+  display: none;
+  position: absolute;
+  background: #fff;
+  max-height: 250px;
+  overflow-y: auto;
+  width: 100%;
+  z-index: 1000;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+  animation: fadeIn 0.15s ease-in-out;
 }
 
-#suggestions div {
-    padding: 10px;
-    cursor: pointer;
-    border-bottom: 1px solid #eee;
-    transition: background 0.2s;
+.items_suggestions div, #suggestion div, #items_suggestions div {
+  padding: 12px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f1f1;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+  color: #333;
 }
 
-#suggestions div:hover {
-    background-color: #3498db;
-    color: #fff;
+.items_suggestions div:last-child, #suggestions div:last-child, #items_suggestions div:last-child {
+  border-bottom: none;
+}
+
+.items_suggestions div:hover, #suggestions div:hover, #items_suggestions div:hover {
+  background-color:#4f93d2;
+  color: #fff;
+  border-radius: 8px;
+  margin: 2px;
+}
+
+#totalBox {
+  text-align: right;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #4f93d2;
+  margin-top: 1.5rem;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: none;
+  display: inline-block;
+}
+#totalBox span {
+  color: #4f93d2;
 }

@@ -29,6 +29,7 @@ function removeSerial(row) {
     updateQty(row);
   }
 }
+// <input type="text" class="item_name" placeholder="Item name"></input>
 
 function addItemRow() {
   const itemsDiv = document.getElementById("items");
@@ -36,7 +37,13 @@ function addItemRow() {
   const row = document.createElement("div");
   row.className = "item-row";
   row.innerHTML = `
-    <input type="text" class="item_name" placeholder="Item name">
+    
+    <div class="item_name_field autocomplete-container">
+        <input type="text" class="item_name item_search_name" placeholder="Item name"
+              autocomplete="off"
+              data-autocomplete-url="${autocompleteItemUrl}">
+        <div class="items_suggestions"></div>
+    </div>
     <input type="number" class="unit_price" placeholder="Unit price">
     <input type="number" class="qty-box" readonly value="0">
     <div class="serials"></div>
@@ -174,4 +181,48 @@ $(document).ready(function() {
             $("#suggestions").hide();
         }
     });
+});
+
+
+
+$(document).on("input", ".item_search_name", function() {
+    let input = $(this);
+    let query = input.val();
+    let suggestionsBox = input.siblings(".items_suggestions");
+    let autocompleteUrl = input.data("autocomplete-url");
+
+    if (query.length >= 1) {
+        $.ajax({
+            url: autocompleteUrl,
+            data: { term: query },
+            dataType: "json",
+            success: function(data) {
+                suggestionsBox.empty();
+                if (data.length > 0) {
+                    data.forEach(function(item) {
+                        $("<div>")
+                            .text(item)
+                            .css({padding: "5px", cursor: "pointer", borderBottom: "1px solid #ddd"})
+                            .appendTo(suggestionsBox)
+                            .on("click", function() {
+                                input.val(item);
+                                suggestionsBox.hide();
+                            });
+                    });
+                    suggestionsBox.show();
+                } else {
+                    suggestionsBox.hide();
+                }
+            }
+        });
+    } else {
+        suggestionsBox.hide();
+    }
+});
+
+// Hide dropdown when clicking outside
+$(document).on("click", function(e) {
+    if (!$(e.target).closest(".item_search_name, .items_suggestions").length) {
+        $(".items_suggestions").hide();
+    }
 });
