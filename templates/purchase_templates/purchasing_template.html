@@ -11,9 +11,14 @@
 
   <h2>🛒 Create Purchase</h2>
   <form onsubmit="buildAndSubmit(event)">
-    <div class="party-name">
+    {% comment %} <div class="party-name">
       <label for="party_name">Party:</label>
       <input type="text" id="party_name" name="party_name" placeholder="Enter party name" required>
+    </div> {% endcomment %}
+    <div class="party-name autocomplete-container">
+        <label for="search_name">Party Name:</label>
+        <input type="text" id="search_name" name="search_name" placeholder="Enter Party Name" autocomplete="off" data-autocomplete-url="{% url 'parties:autocomplete_party' %}" required>
+        <div id="suggestions" ></div>
     </div>
 
     <div class="invoice-date">
@@ -34,5 +39,6 @@
     </div>
   </form>
 </div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{% static 'js/purchasing_script.js' %}"></script>
 {% endblock body %}
