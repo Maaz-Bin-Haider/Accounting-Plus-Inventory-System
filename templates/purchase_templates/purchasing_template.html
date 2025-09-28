@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Purchase{% endblock title %}
+
+{% block SeperateCssFile %}
+<link rel="stylesheet" href="{% static 'css/purchasing_styling.css' %}">
+{% endblock SeperateCssFile %}
+
+{% block body %}
+<div class="purchase-container">
+  <h2>🛒 Create Purchase</h2>
+  <form onsubmit="buildAndSubmit(event)">
+    <div>
+      <label for="party_name">Party:</label>
+      <input type="text" id="party_name" name="party_name" placeholder="Enter party name" required>
+    </div>
+
+    <div>
+      <label for="purchase_date">Purchase Date:</label>
+      <input type="date" id="purchase_date" name="purchase_date">
+    </div>
+
+    <div>
+      <h3>Items</h3>
+      <div id="items"></div>
+      <button type="button" class="btn add-item" onclick="addItemRow()">+ Add Item</button>
+    </div>
+
+    <div id="totalBox">Total Invoice Amount: <span id="totalAmount">0.00</span></div>
+
+    <div class="actions">
+      <button type="submit" class="btn">Create Purchase</button>
+    </div>
+  </form>
+</div>
+<script src="{% static 'js/purchasing_script.js' %}"></script>
+{% endblock body %}

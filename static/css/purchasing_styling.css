@@ -1,0 +1,179 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+.purchase-container {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  border-radius: 20px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 1000px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  color: #fff;
+  animation: fadeIn 0.6s ease-in-out;
+}
+
+.purchase-container h2,
+.purchase-container h3 {
+  text-align: center;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.purchase-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.purchase-container label {
+  font-weight: 500;
+  margin-bottom: 6px;
+  display: block;
+  color: #f0f0f0;
+}
+
+.purchase-container input,
+.purchase-container textarea,
+.purchase-container button {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+}
+
+.purchase-container input[type="text"],
+.purchase-container input[type="number"],
+.purchase-container input[type="date"],
+.purchase-container textarea {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.purchase-container input::placeholder,
+.purchase-container textarea::placeholder {
+  color: #e5e5e5;
+}
+
+.purchase-container input:focus,
+.purchase-container textarea:focus {
+  background: rgba(255, 255, 255, 0.35);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.25);
+}
+
+/* Remove number arrows */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.item-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.item-row input.item_name {
+  flex: 2;
+  min-width: 150px;
+}
+
+.item-row input.unit_price {
+  flex: 1;
+  min-width: 100px;
+}
+
+.item-row .qty-box {
+  flex: 0 0 60px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.serials {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 160px;
+}
+.serials input { width: 100%; }
+
+.btn {
+  cursor: pointer;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.btn:hover { transform: translateY(-2px); }
+
+.btn.add-serial {
+  background: linear-gradient(135deg, #36d1dc, #5b86e5);
+  color: #fff;
+}
+.btn.remove-serial {
+  background: linear-gradient(135deg, #f9d423, #ff4e50);
+  color: #fff;
+}
+.btn.remove-item {
+  background: linear-gradient(135deg, #ff6a00, #ee0979);
+  color: #fff;
+}
+.btn.add-item {
+  background: linear-gradient(135deg, #43e97b, #38f9d7);
+  color: #fff;
+  margin-top: 10px;
+}
+
+#totalBox {
+  text-align: right;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #fff;
+  margin-top: 1rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+button[type="submit"] {
+  background: linear-gradient(135deg, #ff7eb3, #ff758c);
+  color: #fff;
+  font-size: 1rem;
+  padding: 12px 20px;
+}
+
+button[type="submit"]:hover {
+  box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .item-row { flex-direction: column; }
+  #totalBox { text-align: center; }
+  .actions { justify-content: center; }
+}
