@@ -38,9 +38,9 @@ function addItemRow() {
     <input type="number" class="unit_price" placeholder="Unit price">
     <input type="number" class="qty-box" readonly value="0">
     <div class="serials"></div>
-    <button type="button" class="btn add-serial">+ Serial</button>
-    <button type="button" class="btn remove-serial">- Serial</button>
-    <button type="button" class="btn remove-item">Remove</button>
+    <button type="button" class="custom-btn add-serial">+ Serial</button>
+    <button type="button" class="custom-btn remove-serial">- Serial</button>
+    <button type="button" class="custom-btn remove-item">Remove</button>
   `;
 
   row.querySelector(".add-serial").onclick = () => addSerial(row);

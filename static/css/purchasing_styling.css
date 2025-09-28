@@ -1,69 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
-.purchase-container {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(15px);
-  border-radius: 20px;
-  padding: 2rem;
-  width: 100%;
-  max-width: 1000px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  color: #fff;
-  animation: fadeIn 0.6s ease-in-out;
-}
 
-.purchase-container h2,
-.purchase-container h3 {
-  text-align: center;
-  margin-bottom: 1rem;
-  font-weight: 600;
-  color: #fff;
-}
-
-.purchase-container form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.purchase-container label {
-  font-weight: 500;
-  margin-bottom: 6px;
-  display: block;
-  color: #f0f0f0;
-}
-
-.purchase-container input,
-.purchase-container textarea,
-.purchase-container button {
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.95rem;
-}
-
-.purchase-container input[type="text"],
-.purchase-container input[type="number"],
-.purchase-container input[type="date"],
-.purchase-container textarea {
-  width: 100%;
-  padding: 0.8rem 1rem;
-  border-radius: 12px;
-  border: none;
-  background: rgba(255, 255, 255, 0.25);
-  color: #fff;
-  transition: all 0.3s ease;
-}
-
-.purchase-container input::placeholder,
-.purchase-container textarea::placeholder {
-  color: #e5e5e5;
-}
-
-.purchase-container input:focus,
-.purchase-container textarea:focus {
-  background: rgba(255, 255, 255, 0.35);
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(255,255,255,0.25);
-}
 
 /* Remove number arrows */
 input[type=number]::-webkit-inner-spin-button,
@@ -111,34 +48,55 @@ input[type=number] {
 }
 .serials input { width: 100%; }
 
-.btn {
+.custom-btn {
   cursor: pointer;
   padding: 8px 14px;
   border: none;
   border-radius: 10px;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   font-size: 0.85rem;
   font-weight: 600;
 }
 
-.btn:hover { transform: translateY(-2px); }
+.custom-btn:hover { 
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+ }
 
-.btn.add-serial {
-  background: linear-gradient(135deg, #36d1dc, #5b86e5);
+.custom-btn.add-serial {
+  background: #3b82f6;
   color: #fff;
+  border-radius: 12px;
 }
-.btn.remove-serial {
-  background: linear-gradient(135deg, #f9d423, #ff4e50);
+.custom-btn.add-serial:hover{
+    background: #2365ce;
+}
+.custom-btn.remove-serial {
+  background: #ef4444;
   color: #fff;
+  border-radius: 12px;
 }
-.btn.remove-item {
-  background: linear-gradient(135deg, #ff6a00, #ee0979);
+.custom-btn.remove-serial:hover {
+  background: #dc2626; /* darker red */
+}
+
+.custom-btn.remove-item {
+  background: #f97316;
   color: #fff;
+  border-radius: 12px;
 }
-.btn.add-item {
-  background: linear-gradient(135deg, #43e97b, #38f9d7);
+.custom-btn.remove-item:hover {
+  background: #ea580c; /* darker orange */
+}
+
+.custom-btn.add-item {
+  background: #10b981;
   color: #fff;
   margin-top: 10px;
+  border-radius: 12px;
+}
+.custom-btn.add-item:hover {
+  background: #059669; /* darker green */
 }
 
 #totalBox {
@@ -157,7 +115,8 @@ input[type=number] {
 }
 
 button[type="submit"] {
-  background: linear-gradient(135deg, #ff7eb3, #ff758c);
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  border-radius: 12px;
   color: #fff;
   font-size: 1rem;
   padding: 12px 20px;
@@ -176,4 +135,13 @@ button[type="submit"]:hover {
   .item-row { flex-direction: column; }
   #totalBox { text-align: center; }
   .actions { justify-content: center; }
+}
+
+
+.items-comtainer h3 {
+  text-align: center;
+  margin: 10px 0; /* adjust top & bottom spacing */
+}
+.invoice-date{
+    margin-top: 0.7rem!important;
 }
