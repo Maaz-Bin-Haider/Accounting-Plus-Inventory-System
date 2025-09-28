@@ -21,6 +21,7 @@ from parties import urls as parties_urls
 from items import urls as items_urls
 from payments import urls as payments_urls
 from receipts import urls as receipt_urls
+from purchase import urls as purchase_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -28,4 +29,5 @@ urlpatterns = [
     path('items/', include(items_urls, namespace='items')),
     path('payments/',include(payments_urls,namespace='payments')),
     path('receipts/',include(receipt_urls, namespace='receipts')),
+    path('purchase/',include(purchase_urls,namespace='purchase')),
 ]
