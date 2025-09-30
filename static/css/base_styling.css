@@ -128,3 +128,26 @@
       #totalBox { text-align: center; }
       .actions { justify-content: center; }
     }
+
+/* Django Messages styling */
+
+.top-messages-container {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000; /* ensures it's above everything */
+  width: 90%;
+  max-width: 800px;
+  pointer-events: none; /* so clicks pass through */
+}
+
+.alert-container {
+  pointer-events: auto; /* allow clicks on close buttons if you use them */
+}
+
+.alert {
+  margin-bottom: 10px;
+  opacity: 0.95;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}

@@ -92,6 +92,17 @@ function calculateTotal() {
   document.getElementById("totalAmount").textContent = total.toFixed(2);
 }
 
+function getCSRFToken() {
+  const name = "csrftoken";
+  const cookies = document.cookie.split(";").map(c => c.trim());
+  for (let c of cookies) {
+    if (c.startsWith(name + "=")) {
+      return decodeURIComponent(c.split("=")[1]);
+    }
+  }
+  return null;
+}
+
 function buildAndSubmit(event) {
   event.preventDefault();
   const partyName = document.getElementById("search_name").value.trim();
@@ -100,8 +111,13 @@ function buildAndSubmit(event) {
     purchaseDate = new Date().toISOString().slice(0,10);
   }
   if (!partyName) {
-    alert("Party name is required.");
-    document.getElementById("party_name").focus();
+    Swal.fire({
+      icon: "warning",
+      title: "Missing Party Name",
+      text: "Please enter the party name before submitting.",
+      confirmButtonText: "OK"
+    });
+    document.getElementById("search_name").focus();
     return;
   }
   const items = [];
@@ -113,17 +129,74 @@ function buildAndSubmit(event) {
       .map(s => s.value.trim())
       .filter(s => s);
     const qty = serials.length;
+
     if (item_name && qty > 0 && !isNaN(unit_price) && unit_price > 0) {
       items.push({ item_name, qty, unit_price, serials });
     }
   });
   if (items.length === 0) {
-    alert("Please enter at least one valid item with name, unit price, and serial(s).");
+    Swal.fire({
+      icon: "warning",
+      title: "Invalid Items",
+      text: "Please enter at least one valid item with name, unit price, and serial(s).",
+      confirmButtonText: "OK"
+    });
     return;
   }
-  const payload = { party_name: partyName, purchase_date: purchaseDate, items: items };
-  console.log("Submitting JSON:", JSON.stringify(payload, null, 2));
-  alert("Payload:\n" + JSON.stringify(payload, null, 2));
+  const payload = { 
+    party_name: partyName,
+    purchase_date: purchaseDate, 
+    items: items 
+  };
+  // Send JSON to backend
+  fetch("/purchase/purchasing/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCSRFToken()
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(async res => {
+    if (!res.ok) {
+      // Try to extract JSON error if backend sends one
+      let errMsg = "Something went wrong on the server.";
+      try {
+        const errorData = await res.json();
+        if (errorData.message) errMsg = errorData.message;
+      } catch {
+        // fallback to generic error
+      }
+      throw new Error(errMsg);
+    }
+    return res.json();
+  })
+  .then(data => {
+    if (data.success) {
+      Swal.fire({
+        icon: "success",
+        title: "Success 🎉",
+        text: data.message || "Your purchase was submitted successfully!",
+        timer: 5000,
+        showConfirmButton: false
+      });
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: data.message || "There was a problem with your submission."
+      });
+    }
+  })
+  .catch(err => {
+    Swal.fire({
+      icon: "error",
+      title: "Submission Failed",
+      text: err.message || "An unexpected error occurred. Please try again."
+    });
+  });
+  // console.log("Submitting JSON:", JSON.stringify(payload, null, 2));
+  // alert("Payload:\n" + JSON.stringify(payload, null, 2));
 }
 
 window.onload = function() {

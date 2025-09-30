@@ -53,6 +53,19 @@
         {% endblock body %}
     </div>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll(".alert").forEach(alert => {
+                if (alert.classList.contains("alert-success")) {
+                setTimeout(() => {
+                    alert.style.transition = "opacity 0.5s ease";
+                    alert.style.opacity = "0";
+                    setTimeout(() => alert.remove(), 500); // remove after fade
+                }, 5000); // 5 seconds
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>
