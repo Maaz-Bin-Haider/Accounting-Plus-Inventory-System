@@ -201,3 +201,10 @@ button[type="submit"]:hover {
 #totalBox span {
   color: #4f93d2;
 }
+
+.suggestion-item.highlight {
+  background-color:#4f93d2;
+  color: #fff;
+  border-radius: 8px;
+  margin: 2px;
+}

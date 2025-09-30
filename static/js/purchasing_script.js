@@ -11,7 +11,7 @@ function updateQty(row) {
   calculateTotal();
 }
 
-function addSerial(row) {
+function addSerial(row, autoFocus = true) {
   const serialsDiv = row.querySelector(".serials");
   const input = document.createElement("input");
   input.type = "text";
@@ -20,6 +20,11 @@ function addSerial(row) {
   input.onkeydown = (e) => handleEnterKey(e, input);
   serialsDiv.appendChild(input);
   updateQty(row);
+
+  if (autoFocus) {
+    input.focus();
+  }
+  
 }
 
 function removeSerial(row) {
@@ -27,11 +32,19 @@ function removeSerial(row) {
   if (serialsDiv.lastChild) {
     serialsDiv.removeChild(serialsDiv.lastChild);
     updateQty(row);
+
+    // 👇 Focus handling
+    const remaining = serialsDiv.querySelectorAll("input");
+    if (remaining.length > 0) {
+      remaining[remaining.length - 1].focus(); // focus last serial
+    } else {
+      row.querySelector(".add-serial").focus(); // fallback
+    }
   }
 }
 // <input type="text" class="item_name" placeholder="Item name"></input>
 
-function addItemRow() {
+function addItemRow(shouldFocus = true) {
   const itemsDiv = document.getElementById("items");
 
   const row = document.createElement("div");
@@ -60,7 +73,12 @@ function addItemRow() {
   itemsDiv.appendChild(row);
   enforceSequentialValidation();
 
-  addSerial(row);
+  addSerial(row,false);
+
+  // Only focus item_name if shouldFocus is true
+  if (shouldFocus) {
+    row.querySelector(".item_name").focus();
+  }
 }
 
 function calculateTotal() {
@@ -109,7 +127,7 @@ function buildAndSubmit(event) {
 }
 
 window.onload = function() {
-  for (let i = 0; i < 3; i++) addItemRow();
+  for (let i = 0; i < 3; i++) addItemRow(false);
   enforceSequentialValidation();
   const today = new Date().toISOString().slice(0, 10);
   document.getElementById("purchase_date").value = today;
@@ -123,7 +141,7 @@ function handleEnterKey(e, input) {
       input.focus();
       return;
     }
-    const formInputs = Array.from(document.querySelectorAll("input, select, textarea"));
+    const formInputs = Array.from(document.querySelectorAll("input, select, textarea")).filter(el => !el.hasAttribute("readonly"));
     const index = formInputs.indexOf(input);
     if (index > -1 && index < formInputs.length - 1) {
       formInputs[index + 1].focus();
@@ -139,90 +157,248 @@ function enforceSequentialValidation() {
   });
 }
 
+// suggestionsBox for party names
+// $(document).ready(function() {
+//     let autocompleteUrl = $("#search_name").data("autocomplete-url");
 
-$(document).ready(function() {
+//     $("#search_name").on("input", function() {
+//         let query = $(this).val();
+//         let suggestionsBox = $("#suggestions");
+
+//         if(query.length >= 1){
+//             $.ajax({
+//                 url: autocompleteUrl,
+//                 data: {'term': query},
+//                 dataType: 'json',
+//                 success: function(data){
+//                     suggestionsBox.empty();
+//                     if(data.length > 0){
+//                         data.forEach(function(party){
+//                             $("<div>")
+//                                 .text(party)
+//                                 .css({padding: "5px", cursor: "pointer", borderBottom: "1px solid #ddd"})
+//                                 .appendTo(suggestionsBox)
+//                                 .on("click", function(){
+//                                     $("#search_name").val(party);
+//                                     suggestionsBox.hide();
+//                                     $("#purchase_date").focus();
+//                                 });
+//                         });
+//                         suggestionsBox.show();
+//                     } else {
+//                         suggestionsBox.hide();
+//                     }
+//                 }
+//             });
+//         } else {
+//             suggestionsBox.hide();
+//         }
+//     });
+
+//     $(document).on("click", function(e){
+//         if(!$(e.target).closest("#search_name, #suggestions").length){
+//             $("#suggestions").hide();
+//         }
+//     });
+// });
+$(document).ready(function () {
     let autocompleteUrl = $("#search_name").data("autocomplete-url");
+    let selectedIndex = -1; // for keyboard navigation
 
-    $("#search_name").on("input", function() {
+    $("#search_name").on("input", function () {
         let query = $(this).val();
         let suggestionsBox = $("#suggestions");
+        selectedIndex = -1; // reset when typing
 
-        if(query.length >= 1){
+        if (query.length >= 1) {
             $.ajax({
                 url: autocompleteUrl,
-                data: {'term': query},
-                dataType: 'json',
-                success: function(data){
+                data: { term: query },
+                dataType: "json",
+                success: function (data) {
                     suggestionsBox.empty();
-                    if(data.length > 0){
-                        data.forEach(function(party){
+                    if (data.length > 0) {
+                        data.forEach(function (party) {
                             $("<div>")
+                                .addClass("suggestion-item")
                                 .text(party)
-                                .css({padding: "5px", cursor: "pointer", borderBottom: "1px solid #ddd"})
+                                .css({
+                                    padding: "5px",
+                                    cursor: "pointer",
+                                    borderBottom: "1px solid #ddd",
+                                })
                                 .appendTo(suggestionsBox)
-                                .on("click", function(){
+                                .on("click", function () {
                                     $("#search_name").val(party);
                                     suggestionsBox.hide();
+                                    $("#purchase_date").focus(); // move to next field
                                 });
                         });
                         suggestionsBox.show();
                     } else {
                         suggestionsBox.hide();
                     }
-                }
+                },
             });
         } else {
             suggestionsBox.hide();
         }
     });
 
-    $(document).on("click", function(e){
-        if(!$(e.target).closest("#search_name, #suggestions").length){
+    // Keyboard navigation with auto-scroll
+    $("#search_name").on("keydown", function (e) {
+        let items = $("#suggestions .suggestion-item");
+
+        if (items.length === 0) return;
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            selectedIndex = (selectedIndex + 1) % items.length;
+            items.removeClass("highlight");
+            let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
+            selectedItem.scrollIntoView({ block: "nearest" }); // 👈 auto-scroll
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+            items.removeClass("highlight");
+            let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
+            selectedItem.scrollIntoView({ block: "nearest" }); // 👈 auto-scroll
+        } else if (e.key === "Enter") {
+            e.preventDefault();
+            if (selectedIndex >= 0) {
+                items.eq(selectedIndex).trigger("click");
+            }
+        }
+    });
+
+    $(document).on("click", function (e) {
+        if (!$(e.target).closest("#search_name, #suggestions").length) {
             $("#suggestions").hide();
         }
     });
 });
 
 
+// suggestionsBox for item names
+let selectedIndex = -1; // track highlighted suggestion per input
 
-$(document).on("input", ".item_search_name", function() {
+// Autocomplete input event
+$(document).on("input", ".item_search_name", function () {
     let input = $(this);
     let query = input.val();
     let suggestionsBox = input.siblings(".items_suggestions");
     let autocompleteUrl = input.data("autocomplete-url");
+    selectedIndex = -1; // reset index when typing
 
     if (query.length >= 1) {
         $.ajax({
             url: autocompleteUrl,
             data: { term: query },
             dataType: "json",
-            success: function(data) {
+            success: function (data) {
                 suggestionsBox.empty();
                 if (data.length > 0) {
-                    data.forEach(function(item) {
+                    data.forEach(function (item) {
                         $("<div>")
+                            .addClass("suggestion-item")
                             .text(item)
-                            .css({padding: "5px", cursor: "pointer", borderBottom: "1px solid #ddd"})
+                            .css({
+                                padding: "5px",
+                                cursor: "pointer",
+                                borderBottom: "1px solid #ddd",
+                            })
                             .appendTo(suggestionsBox)
-                            .on("click", function() {
+                            .on("click", function () {
                                 input.val(item);
                                 suggestionsBox.hide();
+                                // Move focus to next field in the row (unit price)
+                                input.closest(".item-row").find(".unit_price").focus();
                             });
                     });
                     suggestionsBox.show();
                 } else {
                     suggestionsBox.hide();
                 }
-            }
+            },
         });
     } else {
         suggestionsBox.hide();
     }
 });
 
+// Keyboard navigation with auto-scroll
+$(document).on("keydown", ".item_search_name", function (e) {
+    let input = $(this);
+    let suggestionsBox = input.siblings(".items_suggestions");
+    let items = suggestionsBox.find(".suggestion-item");
+
+    if (items.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+        e.preventDefault();
+        selectedIndex = (selectedIndex + 1) % items.length;
+        items.removeClass("highlight");
+        let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
+        selectedItem.scrollIntoView({ block: "nearest" }); // 👈 auto-scroll
+    } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+        items.removeClass("highlight");
+        let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
+        selectedItem.scrollIntoView({ block: "nearest" }); // 👈 auto-scroll
+    } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (selectedIndex >= 0) {
+            items.eq(selectedIndex).trigger("click");
+        }
+    }
+});
+
 // Hide dropdown when clicking outside
-$(document).on("click", function(e) {
+$(document).on("click", function (e) {
     if (!$(e.target).closest(".item_search_name, .items_suggestions").length) {
         $(".items_suggestions").hide();
     }
 });
+
+// $(document).on("input", ".item_search_name", function() {
+//     let input = $(this);
+//     let query = input.val();
+//     let suggestionsBox = input.siblings(".items_suggestions");
+//     let autocompleteUrl = input.data("autocomplete-url");
+
+//     if (query.length >= 1) {
+//         $.ajax({
+//             url: autocompleteUrl,
+//             data: { term: query },
+//             dataType: "json",
+//             success: function(data) {
+//                 suggestionsBox.empty();
+//                 if (data.length > 0) {
+//                     data.forEach(function(item) {
+//                         $("<div>")
+//                             .text(item)
+//                             .css({padding: "5px", cursor: "pointer", borderBottom: "1px solid #ddd"})
+//                             .appendTo(suggestionsBox)
+//                             .on("click", function() {
+//                                 input.val(item);
+//                                 suggestionsBox.hide();
+//                             });
+//                     });
+//                     suggestionsBox.show();
+//                 } else {
+//                     suggestionsBox.hide();
+//                 }
+//             }
+//         });
+//     } else {
+//         suggestionsBox.hide();
+//     }
+// });
+
+// // Hide dropdown when clicking outside
+// $(document).on("click", function(e) {
+//     if (!$(e.target).closest(".item_search_name, .items_suggestions").length) {
+//         $(".items_suggestions").hide();
+//     }
+// });
