@@ -180,6 +180,7 @@ function buildAndSubmit(event) {
         timer: 5000,
         showConfirmButton: false
       });
+      window.location.reload();
     } else {
       Swal.fire({
         icon: "error",

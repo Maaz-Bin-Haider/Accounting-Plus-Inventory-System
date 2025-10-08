@@ -11,7 +11,6 @@ def purchasing(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            # print(data)
             # validation example
             if not data.get("party_name"):
                 return JsonResponse({"success": False, "message": "Party name is required."})
@@ -23,14 +22,17 @@ def purchasing(request):
                 return JsonResponse({"success": False, "message": "Atlest one item is required to make a Purchase"})
             
 
-            # Validating Party name
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT 1 FROM Parties WHERE UPPER(party_name) = %s",[data.get("party_name").upper()])
-                exists = cursor.fetchone()
+            try:
+                # Validating Party name
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT 1 FROM Parties WHERE UPPER(party_name) = %s",[data.get("party_name").upper()])
+                    exists = cursor.fetchone()
 
-                if not exists:
-                    return JsonResponse({"success": False, "message": f"Party with '{data.get("party_name")}' Not exists!"})
-                
+                    if not exists:
+                        return JsonResponse({"success": False, "message": f"Party with '{data.get("party_name")}' Not exists!"})
+            except:
+                return JsonResponse({"success": False, "message": "Invalid Party-Name"})
+
             # Validate purchase_date (must be in correct date format)
             try:
                 # Adjust format according to your input (e.g. "YYYY-MM-DD")
@@ -54,18 +56,18 @@ def purchasing(request):
                     unit_price = item["unit_price"]
                     serials = item["serials"]
 
-                    print(qty,type(qty))
-                    print(unit_price,type(unit_price))
-                    print(serials,type(serials))
 
                     # validating item name
-                    with connection.cursor() as cursor:
-                        cursor.execute("SELECT 1 FROM Items WHERE UPPER(item_name) = %s",[item_name.upper()])
-                        exists = cursor.fetchone()
+                    try:
+                        with connection.cursor() as cursor:
+                            cursor.execute("SELECT 1 FROM Items WHERE UPPER(item_name) = %s",[item_name.upper()])
+                            exists = cursor.fetchone()
 
-                        if not exists:
-                            return JsonResponse({"success": False, "message": f"Item with '{item_name.upper()}' Not exists!"})
-                        
+                            if not exists:
+                                return JsonResponse({"success": False, "message": f"Item with '{item_name.upper()}' Not exists!"})
+                    except:
+                        return JsonResponse({"success": False, "message": "Invalid Item-name"})
+
                     # validating quantity 
                     try:
                         qty = int(qty)
@@ -98,12 +100,11 @@ def purchasing(request):
                         return JsonResponse({"success": False, "message": "Invalid Serial Number!"})
                     
             except:
-                pass
+                return JsonResponse({"success": False, "message": "Unexpected Error Please try again!"})
             
             # Execute DB function
             try:
-                print('Enter Execution Block------')
-                # 1️⃣ Find the vendor ID
+                # Find the vendor ID
                 with connection.cursor() as cursor:
                     cursor.execute("""
                         SELECT party_id 
@@ -130,15 +131,17 @@ def purchasing(request):
                         SELECT create_purchase(%s, %s, %s::jsonb);
                     """, [party_id, purchase_date, items_json])
 
-                    # 4️⃣ Fetch the returned invoice ID
+                    # Fetch the returned invoice ID
                     invoice_id = cursor.fetchone()[0]
                     return JsonResponse({"success": True, "message": "Purchase Successfull"})
             except:
-                pass
-            
-
-            return JsonResponse({"success": True, "message": "Data loaded successfully"})
+                return JsonResponse({"success": False, "message": "Failed to make Payment, try again!"})   
         except Exception:
             return JsonResponse({"success": False, "message": "Invalid request data!"})
 
     return render(request, "purchase_templates/purchasing_template.html")
+
+
+
+# TODO:
+# item addition sale price float error handling
