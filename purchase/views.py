@@ -113,32 +113,29 @@ def purchasing(request):
                     result = cursor.fetchone()
                     if not result:
                         return JsonResponse({"success": False, "message": f"Party '{data.get("party_name")}' not found in Parties."})
-                    vendor_id = result[0]
+                    party_id = result[0]
                     
                     
                     # Prepare your purchase items data
                     items_data = []
                     for item in data.get("items"):
                         items_data.append(item)
-                    print(items_data,'----ooe-----',vendor_id)
 
             
-                # Convert Python list → JSON string
-                items_json = json.dumps(items_data)
+                    # Convert Python list → JSON string
+                    items_json = json.dumps(items_data)
 
-                # # 3️⃣ Call the Postgres function `create_purchase`
-                # cursor.execute("""
-                #     SELECT create_purchase(%s, %s, %s::jsonb);
-                # """, [vendor_id, date.today(), items_json])
+                    # Postgres function `create_purchase`
+                    cursor.execute("""
+                        SELECT create_purchase(%s, %s, %s::jsonb);
+                    """, [party_id, purchase_date, items_json])
 
-                # # 4️⃣ Fetch the returned invoice ID
-                # invoice_id = cursor.fetchone()[0]
+                    # 4️⃣ Fetch the returned invoice ID
+                    invoice_id = cursor.fetchone()[0]
+                    return JsonResponse({"success": True, "message": "Purchase Successfull"})
             except:
                 pass
             
-            
-            # if data.get("party_name") != 'ff':
-            #     return JsonResponse({"success": False, "message": "Party name is required."})
 
             return JsonResponse({"success": True, "message": "Data loaded successfully"})
         except Exception:
