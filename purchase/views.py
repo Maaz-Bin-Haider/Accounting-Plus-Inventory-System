@@ -164,7 +164,7 @@ def get_purchase(request):
                 except:
                     return JsonResponse({"success": False, "message": "Data base Connection Error While getting Previous Purchase!"})
             
-            # Validating previous purchase ID
+            # Validating Current purchase ID
             try:
                 current_id = int(current_id)
             except (ValueError, TypeError):
@@ -179,8 +179,34 @@ def get_purchase(request):
                     return JsonResponse({"success": False, "message": "No Previous Purchase Found"})
             except:
                 return JsonResponse({"success": False, "message": "Data base Connection Error While getting Previous Purchase!"})
+        elif action == "next":
+            # Validating Current purchase ID
+            try:
+                current_id = int(current_id)
+            except (ValueError, TypeError):
+                return JsonResponse({"success": False, "message": "Invalid Previous Purchase ID!"})
+            
+            # Fetching Next purchase data from DB
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT get_next_purchase(%s)",[current_id])
+                    result_data = cursor.fetchone()
+                if not result_data or result_data[0]:
+                    return JsonResponse({"success": False, "message": "No Next Purchase Found"})
+            except:
+                return JsonResponse({"success": False, "message": "Data base Connection Error While getting Next Purchase!"})
+            
+        else:
+            pass
+
     except:
-        pass
+        return JsonResponse({"success": False, "message": "Data base Error!"})
+    
+    # Sending to frontend
+    try:
+        return JsonResponse(json.loads(result_data[0]))
+    except Exception:
+        return JsonResponse({"success": False, "message": "Invalid purchase data format."})
 
 
 # TODO:
