@@ -34,6 +34,12 @@
       <button type="submit" class="custom-btn">Create Purchase</button>
     </div>
   </form>
+  <input type="hidden" id="current_purchase_id" name="current_id" value="{{purchase_id}}">
+
+  <div class="button-group">
+      <button type="button" onclick="navigatePurchase('previous')"><i class="fa-solid fa-arrow-left"></i> Previous</button>
+      <button type="button" onclick="navigatePurchase('next')">Next <i class="fa-solid fa-arrow-right"></i></button>
+  </div>
 </div>
 <script>
   const autocompleteItemUrl = "{% url 'items:autocomplete_item' %}";

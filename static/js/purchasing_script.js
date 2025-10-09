@@ -476,3 +476,121 @@ $(document).on("click", function (e) {
 //         $(".items_suggestions").hide();
 //     }
 // });
+
+
+
+async function navigatePurchase(action) {
+  console.log(action)
+  try {
+    const currentId = document.getElementById("current_purchase_id").value || "";
+
+    // Fetch from Django view
+    const response = await fetch(`/purchase/get-purchase/?action=${action}&current_id=${currentId}`, {
+      method: "GET",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    });
+
+    let data = await response.json();
+
+    // Handle backend errors
+    if (data.success === false) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: data.message || "An error occurred!",
+      });
+      return;
+    }
+
+    // Parse JSON string coming from backend
+    if (typeof data === "string") {
+      data = JSON.parse(data);
+    }
+
+    // If Django wrapped the JSON in data.result_data[0] or similar, parse accordingly
+    if (typeof data === "object" && data.hasOwnProperty("purchase_invoice_id") === false) {
+      try {
+        data = JSON.parse(Object.values(data)[0]);
+      } catch (e) {}
+    }
+
+    renderPurchaseData(data);
+  } catch (error) {
+    console.error("Error navigating purchase:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "An unexpected error occurred while fetching purchase data.",
+    });
+  }
+}
+
+function renderPurchaseData(data) {
+  /*
+    Example incoming structure:
+    {
+      "purchase_invoice_id" : 2,
+      "Party" : "ZAHID",
+      "invoice_date" : "2025-10-09",
+      "total_amount" : 3000.00,
+      "description" : "Purchase Invoice 2",
+      "items" : [
+        {"item_name":"DJI MAVIC 3 PRO","qty":1,"unit_price":500.00,"serials":["1111dedede"]},
+        {"item_name":"IPHONE 16 128 GB","qty":1,"unit_price":900.00,"serials":["nnn21nnm"]},
+        {"item_name":"SONY DE II LENSE","qty":2,"unit_price":800.00,"serials":["555555","9999999"]}
+      ]
+    }
+  */
+
+  // Update form fields
+  document.getElementById("search_name").value = data.Party || "";
+  document.getElementById("purchase_date").value = data.invoice_date || "";
+  document.getElementById("current_purchase_id").value = data.purchase_invoice_id || "";
+
+  // Clear existing items
+  const itemsContainer = document.getElementById("items");
+  itemsContainer.innerHTML = "";
+
+  // Render items
+  if (data.items && Array.isArray(data.items)) {
+    data.items.forEach((item, index) => {
+      const itemDiv = document.createElement("div");
+      itemDiv.classList.add("item-row");
+      itemDiv.innerHTML = `
+        <div class="item-field">
+          <label>Item:</label>
+          <input type="text" value="${item.item_name}" readonly>
+        </div>
+        <div class="item-field">
+          <label>Qty:</label>
+          <input type="number" value="${item.qty}" readonly>
+        </div>
+        <div class="item-field">
+          <label>Price:</label>
+          <input type="number" value="${item.unit_price}" readonly>
+        </div>
+        <div class="item-field">
+          <label>Serials:</label>
+          <input type="text" value="${(item.serials || []).join(", ")}" readonly>
+        </div>
+      `;
+      itemsContainer.appendChild(itemDiv);
+    });
+  }
+
+  // Update total amount
+  document.getElementById("totalAmount").textContent = data.total_amount
+    ? parseFloat(data.total_amount).toFixed(2)
+    : "0.00";
+
+  // Sweet success alert
+  Swal.fire({
+    icon: "success",
+    title: "Purchase Loaded",
+    text: `Showing Purchase Invoice #${data.purchase_invoice_id}`,
+    timer: 1500,
+    showConfirmButton: false,
+  });
+}

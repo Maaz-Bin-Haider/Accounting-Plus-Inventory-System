@@ -145,25 +145,31 @@ def get_purchase(request):
     action = request.GET.get("action")
     current_id = request.GET.get("current_id")
 
+    
+
     try:
         if action == "previous":
+            
             if not current_id:
+                print('ENter')
                 # getting and  previous purchase ID
                 try:
                     with connection.cursor() as cursor:
                         cursor.execute("SELECT get_last_purchase_id()")
                         last_purchase = cursor.fetchone()
+                        
                         if not last_purchase or not last_purchase[0]:
                             return JsonResponse({"success": False, "message": "No Last Purchase!"})
                         
                         try:
-                            last_purchase = json.loads(last_purchase[0])
+                            last_purchase = last_purchase[0]
+    
                             current_id = int(last_purchase) + 1
                         except:
                             return JsonResponse({"success": False, "message": "Invalid Last Purchase data!"})
                 except:
                     return JsonResponse({"success": False, "message": "Data base Connection Error While getting Previous Purchase!"})
-            
+    
             # Validating Current purchase ID
             try:
                 current_id = int(current_id)
@@ -175,7 +181,8 @@ def get_purchase(request):
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT get_previous_purchase(%s)",[current_id])
                     result_data = cursor.fetchone()
-                if not result_data or result_data[0]:
+                 
+                if not result_data or not result_data[0]:
                     return JsonResponse({"success": False, "message": "No Previous Purchase Found"})
             except:
                 return JsonResponse({"success": False, "message": "Data base Connection Error While getting Previous Purchase!"})
@@ -204,7 +211,8 @@ def get_purchase(request):
     
     # Sending to frontend
     try:
-        return JsonResponse(json.loads(result_data[0]))
+        print(result_data[0])
+        return JsonResponse(json.dumps(result_data[0]))
     except Exception:
         return JsonResponse({"success": False, "message": "Invalid purchase data format."})
 
