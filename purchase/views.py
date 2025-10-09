@@ -193,7 +193,17 @@ def purchasing(request):
                 return JsonResponse({"success": False, "message": "Invalid request data!"})
 
         if action == "delete":
-            pass
+            print("DELETE")
+            if not purchase_id:
+                return JsonResponse({"success": False, "message": "Navigate to Purchase Invoice first!"})
+            
+            # Executing Delete
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT delete_purchase(%s)",[purchase_id])
+                    return JsonResponse({"success": True, "message": "Deleted Successfully"})
+            except Exception:
+                return JsonResponse({"success": False, "message": "Unable to delete this Purchase! Try Again.."})
     return render(request, "purchase_templates/purchasing_template.html")
 
 def get_purchase(request):

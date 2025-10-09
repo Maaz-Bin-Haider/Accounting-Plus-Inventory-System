@@ -109,6 +109,7 @@ function buildAndSubmit(event) {
   const action = form.querySelector('button[type="submit"][clicked="true"]')?.value; // ⭐ NEW
   console.log("Action:", action);
 
+
   const partyName = document.getElementById("search_name").value.trim();
   let purchaseDate = document.getElementById("purchase_date").value;
   if (!purchaseDate) {
@@ -672,4 +673,39 @@ function renderPurchaseData(data) {
   //   showConfirmButton: false,
   // });
 }
+
+
+const deleteButton = document.querySelector(".delete-btn");
+
+function confirmDelete(event) {
+  event.preventDefault(); // stop the form from submitting immediately
+
+  Swal.fire({
+    title: "Are you sure?",
+    text: "This purchase will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // ✅ Temporarily remove this listener so the next click doesn’t reopen the alert
+      deleteButton.removeEventListener("click", confirmDelete);
+
+      // ✅ Trigger the real submit (calls your buildAndSubmit normally)
+      deleteButton.click();
+
+      // ✅ Reattach the listener for next time
+      setTimeout(() => {
+        deleteButton.addEventListener("click", confirmDelete);
+      }, 100);
+    }
+  });
+}
+
+deleteButton.addEventListener("click", confirmDelete);
+
+
 
