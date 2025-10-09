@@ -105,6 +105,10 @@ function getCSRFToken() {
 
 function buildAndSubmit(event) {
   event.preventDefault();
+  const form = event.target;
+  const action = form.querySelector('button[type="submit"][clicked="true"]')?.value; // ⭐ NEW
+  console.log("Action:", action);
+
   const partyName = document.getElementById("search_name").value.trim();
   let purchaseDate = document.getElementById("purchase_date").value;
   if (!purchaseDate) {
@@ -143,10 +147,13 @@ function buildAndSubmit(event) {
     });
     return;
   }
-  const payload = { 
+  const currentId = document.getElementById("current_purchase_id").value || null;
+  const payload = {
+    purchase_id: currentId,
     party_name: partyName,
     purchase_date: purchaseDate, 
-    items: items 
+    items: items,
+    action: action,
   };
   // Send JSON to backend
   fetch("/purchase/purchasing/", {
@@ -173,14 +180,18 @@ function buildAndSubmit(event) {
   })
   .then(data => {
     if (data.success) {
+      console.log('oooe')
       Swal.fire({
         icon: "success",
         title: "Success 🎉",
         text: data.message || "Your purchase was submitted successfully!",
-        timer: 5000,
+        timer: 1500,
         showConfirmButton: false
+      }).then(() => {
+        // After 3 seconds (when the alert closes)
+        window.location.reload();
       });
-      window.location.reload();
+      // window.location.reload();
     } else {
       Swal.fire({
         icon: "error",
@@ -199,6 +210,14 @@ function buildAndSubmit(event) {
   // console.log("Submitting JSON:", JSON.stringify(payload, null, 2));
   // alert("Payload:\n" + JSON.stringify(payload, null, 2));
 }
+document.querySelectorAll('button[type="submit"]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    // Remove 'clicked' from all buttons
+    document.querySelectorAll('button[type="submit"]').forEach(b => b.removeAttribute('clicked'));
+    // Mark the one that was clicked
+    this.setAttribute('clicked', 'true');
+  });
+});
 
 window.onload = function() {
   for (let i = 0; i < 3; i++) addItemRow(false);
@@ -479,8 +498,12 @@ $(document).on("click", function (e) {
 
 
 
+
+
+
+
 async function navigatePurchase(action) {
-  console.log(action)
+
   try {
     const currentId = document.getElementById("current_purchase_id").value || "";
 
@@ -493,6 +516,7 @@ async function navigatePurchase(action) {
     });
 
     let data = await response.json();
+
 
     // Handle backend errors
     if (data.success === false) {
@@ -527,70 +551,125 @@ async function navigatePurchase(action) {
   }
 }
 
-function renderPurchaseData(data) {
-  /*
-    Example incoming structure:
-    {
-      "purchase_invoice_id" : 2,
-      "Party" : "ZAHID",
-      "invoice_date" : "2025-10-09",
-      "total_amount" : 3000.00,
-      "description" : "Purchase Invoice 2",
-      "items" : [
-        {"item_name":"DJI MAVIC 3 PRO","qty":1,"unit_price":500.00,"serials":["1111dedede"]},
-        {"item_name":"IPHONE 16 128 GB","qty":1,"unit_price":900.00,"serials":["nnn21nnm"]},
-        {"item_name":"SONY DE II LENSE","qty":2,"unit_price":800.00,"serials":["555555","9999999"]}
-      ]
-    }
-  */
+// function renderPurchaseData(data) {
 
-  // Update form fields
+
+//   // Update form fields
+//   document.getElementById("search_name").value = data.Party || "";
+//   document.getElementById("purchase_date").value = data.invoice_date || "";
+//   document.getElementById("current_purchase_id").value = data.purchase_invoice_id || "";
+
+//   // Clear existing items
+//   const itemsContainer = document.getElementById("items");
+//   itemsContainer.innerHTML = "";
+
+//   // Render items
+//   if (data.items && Array.isArray(data.items)) {
+//     data.items.forEach((item, index) => {
+//       const itemDiv = document.createElement("div");
+//       itemDiv.classList.add("item-row");
+//       itemDiv.innerHTML = `
+//         <div class="item-field">
+//           <label>Item:</label>
+//           <input type="text" value="${item.item_name}" readonly>
+//         </div>
+//         <div class="item-field">
+//           <label>Qty:</label>
+//           <input type="number" value="${item.qty}" readonly>
+//         </div>
+//         <div class="item-field">
+//           <label>Price:</label>
+//           <input type="number" value="${item.unit_price}" readonly>
+//         </div>
+//         <div class="item-field">
+//           <label>Serials:</label>
+//           <input type="text" value="${(item.serials || []).join(", ")}" readonly>
+//         </div>
+//       `;
+//       itemsContainer.appendChild(itemDiv);
+//     });
+//   }
+
+//   // Update total amount
+//   document.getElementById("totalAmount").textContent = data.total_amount
+//     ? parseFloat(data.total_amount).toFixed(2)
+//     : "0.00";
+
+// }
+
+function renderPurchaseData(data) {
+  // Update header fields
   document.getElementById("search_name").value = data.Party || "";
   document.getElementById("purchase_date").value = data.invoice_date || "";
   document.getElementById("current_purchase_id").value = data.purchase_invoice_id || "";
 
   // Clear existing items
-  const itemsContainer = document.getElementById("items");
-  itemsContainer.innerHTML = "";
-
-  // Render items
-  if (data.items && Array.isArray(data.items)) {
-    data.items.forEach((item, index) => {
-      const itemDiv = document.createElement("div");
-      itemDiv.classList.add("item-row");
-      itemDiv.innerHTML = `
-        <div class="item-field">
-          <label>Item:</label>
-          <input type="text" value="${item.item_name}" readonly>
+  const itemsDiv = document.getElementById("items");
+  itemsDiv.innerHTML = "";
+  // Render each item row in the same structure as addItemRow()
+  if (Array.isArray(data.items)) {
+    data.items.forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "item-row";
+      row.innerHTML = `
+        <div class="item_name_field autocomplete-container">
+            <input type="text" class="item_name item_search_name" 
+                placeholder="Item name" 
+                value="${item.item_name || ""}"
+                autocomplete="off"
+                data-autocomplete-url="${autocompleteItemUrl}">
+            <div class="items_suggestions"></div>
         </div>
-        <div class="item-field">
-          <label>Qty:</label>
-          <input type="number" value="${item.qty}" readonly>
-        </div>
-        <div class="item-field">
-          <label>Price:</label>
-          <input type="number" value="${item.unit_price}" readonly>
-        </div>
-        <div class="item-field">
-          <label>Serials:</label>
-          <input type="text" value="${(item.serials || []).join(", ")}" readonly>
-        </div>
+        <input type="number" class="unit_price" placeholder="Unit price" value="${item.unit_price || 0}">
+        <input type="number" class="qty-box" readonly value="${item.qty || 0}">
+        <div class="serials"></div>
+        <button type="button" class="custom-btn add-serial">+ Serial</button>
+        <button type="button" class="custom-btn remove-serial">- Serial</button>
+        <button type="button" class="custom-btn remove-item">Remove</button>
       `;
-      itemsContainer.appendChild(itemDiv);
+
+      // Bind button actions (reuse same logic)
+      row.querySelector(".add-serial").onclick = () => addSerial(row);
+      row.querySelector(".remove-serial").onclick = () => removeSerial(row);
+      row.querySelector(".remove-item").onclick = () => { row.remove(); calculateTotal(); };
+      row.querySelector(".unit_price").oninput = () => calculateTotal();
+
+      // Append serials
+      const serialsDiv = row.querySelector(".serials");
+      if (Array.isArray(item.serials)) {
+        item.serials.forEach(serial => {
+          const input = document.createElement("input");
+          input.type = "text";
+          input.placeholder = "Serial";
+          input.value = serial;
+          input.oninput = () => updateQty(row);
+          input.onkeydown = (e) => handleEnterKey(e, input);
+          serialsDiv.appendChild(input);
+        });
+      }
+      // update button text
+      let submitBtn = document.querySelector("#purchaseForm button[type=submit]");
+      if (data.purchase_invoice_id) {
+          submitBtn.textContent = "Update Purchase";
+      } else {
+          submitBtn.textContent = "Save Purchase";
+      }
+
+      itemsDiv.appendChild(row);
+      updateQty(row);
     });
   }
 
   // Update total amount
-  document.getElementById("totalAmount").textContent = data.total_amount
-    ? parseFloat(data.total_amount).toFixed(2)
-    : "0.00";
+  document.getElementById("totalAmount").textContent =
+    data.total_amount ? parseFloat(data.total_amount).toFixed(2) : "0.00";
 
-  // Sweet success alert
-  Swal.fire({
-    icon: "success",
-    title: "Purchase Loaded",
-    text: `Showing Purchase Invoice #${data.purchase_invoice_id}`,
-    timer: 1500,
-    showConfirmButton: false,
-  });
+  // Swal.fire({
+  //   icon: "success",
+  //   title: "Purchase Loaded",
+  //   text: `Purchase #${data.purchase_invoice_id} loaded successfully.`,
+  //   timer: 2000,
+  //   showConfirmButton: false,
+  // });
 }
+

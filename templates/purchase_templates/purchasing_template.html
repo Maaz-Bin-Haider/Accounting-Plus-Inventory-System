@@ -10,7 +10,7 @@
 {% block body %}
 
   <h2>🛒 Create Purchase</h2>
-  <form onsubmit="buildAndSubmit(event)">
+  <form onsubmit="buildAndSubmit(event)" id="purchaseForm">
     <div class="party-name autocomplete-container">
         <label for="search_name">Party Name:</label>
         <input type="text" id="search_name" name="search_name" placeholder="Enter Party Name" autocomplete="off" data-autocomplete-url="{% url 'parties:autocomplete_party' %}" required>
@@ -30,11 +30,20 @@
 
     <div id="totalBox">Total Invoice Amount: <span id="totalAmount">0.00</span></div>
 
-    <div class="actions">
+    {% comment %} <div class="actions">
       <button type="submit" class="custom-btn">Create Purchase</button>
+    </div> {% endcomment %}
+    <div class="btn-row actions">
+        <button type="submit" name="action" value="submit" class="save-and-update-btn">
+            <i class="fa-solid fa-floppy-disk"></i>  Save Purchase
+        </button>
+        
+        <button type="submit" name="action" value="delete" class="delete-btn">
+            <i class="fa-solid fa-trash"></i>  Delete
+        </button>
     </div>
   </form>
-  <input type="hidden" id="current_purchase_id" name="current_id" value="{{purchase_id}}">
+  <input type="hidden" id="current_purchase_id" name="current_id" value="{{purchase_id}}" form="purchaseForm">
 
   <div class="button-group">
       <button type="button" onclick="navigatePurchase('previous')"><i class="fa-solid fa-arrow-left"></i> Previous</button>

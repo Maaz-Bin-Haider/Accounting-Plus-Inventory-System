@@ -11,134 +11,189 @@ def purchasing(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            # validation example
-            if not data.get("party_name"):
-                return JsonResponse({"success": False, "message": "Party name is required."})
-            
-            if not data.get("purchase_date"):
-                return JsonResponse({"success": False, "message": "Date name is required."})
-            
-            if not data.get("items"):
-                return JsonResponse({"success": False, "message": "Atlest one item is required to make a Purchase"})
-            
-
+            action = data.get("action")  
+            print(action,'---------')
+            purchase_id = data.get("purchase_id")
+            if purchase_id:
+                purchase_id = int(purchase_id)
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "message": "Invalid JSON"})
+        
+        if action == "submit":
+            print('Entererd')
             try:
-                # Validating Party name
-                with connection.cursor() as cursor:
-                    cursor.execute("SELECT 1 FROM Parties WHERE UPPER(party_name) = %s",[data.get("party_name").upper()])
-                    exists = cursor.fetchone()
+                data = json.loads(request.body)
+                # validation example
+                if not data.get("party_name"):
+                    return JsonResponse({"success": False, "message": "Party name is required."})
+                
+                if not data.get("purchase_date"):
+                    return JsonResponse({"success": False, "message": "Date name is required."})
+                
+                if not data.get("items"):
+                    return JsonResponse({"success": False, "message": "Atlest one item is required to make a Purchase"})
+                
 
-                    if not exists:
-                        return JsonResponse({"success": False, "message": f"Party with '{data.get("party_name")}' Not exists!"})
-            except:
-                return JsonResponse({"success": False, "message": "Invalid Party-Name"})
+                try:
+                    # Validating Party name
+                    with connection.cursor() as cursor:
+                        cursor.execute("SELECT 1 FROM Parties WHERE UPPER(party_name) = %s",[data.get("party_name").upper()])
+                        exists = cursor.fetchone()
 
-            # Validate purchase_date (must be in correct date format)
-            try:
-                # Adjust format according to your input (e.g. "YYYY-MM-DD")
-                purchase_date = datetime.strptime(data.get("purchase_date"), "%Y-%m-%d").date()
+                        if not exists:
+                            return JsonResponse({"success": False, "message": f"Party with '{data.get("party_name")}' Not exists!"})
+                except:
+                    return JsonResponse({"success": False, "message": "Invalid Party-Name"})
 
-                # Future Date Restriction
-                if purchase_date > date.today():
-                    return JsonResponse({"success": False, "message": "Purchase date cannot be in the future."})
+                # Validate purchase_date (must be in correct date format)
+                try:
+                    # Adjust format according to your input (e.g. "YYYY-MM-DD")
+                    purchase_date = datetime.strptime(data.get("purchase_date"), "%Y-%m-%d").date()
 
-                # Making Date again Str
-                purchase_date = purchase_date.strftime("%Y-%m-%d")
+                    # Future Date Restriction
+                    if purchase_date > date.today():
+                        return JsonResponse({"success": False, "message": "Purchase date cannot be in the future."})
 
-            except (ValueError, TypeError):
-                return JsonResponse({"success": False, "message": "Invalid date. Please enter a valid date in YYYY-MM-DD format."})
-            
-            # validate Items
-            try: 
-                for item in data.get("items"):
-                    item_name = item["item_name"]
-                    qty = item["qty"]
-                    unit_price = item["unit_price"]
-                    serials = item["serials"]
+                    # Making Date again Str
+                    purchase_date = purchase_date.strftime("%Y-%m-%d")
+
+                except (ValueError, TypeError):
+                    return JsonResponse({"success": False, "message": "Invalid date. Please enter a valid date in YYYY-MM-DD format."})
+                
+                # validate Items
+                try: 
+                    for item in data.get("items"):
+                        item_name = item["item_name"]
+                        qty = item["qty"]
+                        unit_price = item["unit_price"]
+                        serials = item["serials"]
 
 
-                    # validating item name
-                    try:
-                        with connection.cursor() as cursor:
-                            cursor.execute("SELECT 1 FROM Items WHERE UPPER(item_name) = %s",[item_name.upper()])
-                            exists = cursor.fetchone()
-
-                            if not exists:
-                                return JsonResponse({"success": False, "message": f"Item with '{item_name.upper()}' Not exists!"})
-                    except:
-                        return JsonResponse({"success": False, "message": "Invalid Item-name"})
-
-                    # validating quantity 
-                    try:
-                        qty = int(qty)
-                        if qty <= 0:
-                            return JsonResponse({"success": False, "message": "Invalid Quantity"})
-                    except:
-                        return JsonResponse({"success": False, "message": "Invalid Quantity"})
-
-                    # validating unit price
-                    try:
-                        unit_price = float(unit_price)
-                        if unit_price <= 0:
-                            return JsonResponse({"success": False, "message": "Invalid Price"})
-                    except:
-                        return JsonResponse({"success": False, "message": "Invalid Price"})
-                    
-
-                    # Validating Serials
-                    try:
-                        for serial in serials:
-
+                        # validating item name
+                        try:
                             with connection.cursor() as cursor:
-                                cursor.execute("SELECT in_stock FROM get_serial_number_details(%s)",[serial])
-
+                                cursor.execute("SELECT 1 FROM Items WHERE UPPER(item_name) = %s",[item_name.upper()])
                                 exists = cursor.fetchone()
 
-                                if exists:
-                                    return JsonResponse({"success": False, "message": f"The Serial '{serial}' already exists in Stock!"})
+                                if not exists:
+                                    return JsonResponse({"success": False, "message": f"Item with '{item_name.upper()}' Not exists!"})
+                        except:
+                            return JsonResponse({"success": False, "message": "Invalid Item-name"})
+
+                        # validating quantity 
+                        try:
+                            qty = int(qty)
+                            if qty <= 0:
+                                return JsonResponse({"success": False, "message": "Invalid Quantity"})
+                        except:
+                            return JsonResponse({"success": False, "message": "Invalid Quantity"})
+
+                        # validating unit price
+                        try:
+                            unit_price = float(unit_price)
+                            if unit_price <= 0:
+                                return JsonResponse({"success": False, "message": "Invalid Price"})
+                        except:
+                            return JsonResponse({"success": False, "message": "Invalid Price"})
+                        
+
+                        # Validating Serials
+                        if not purchase_id:
+                            try:
+                                for serial in serials:
+
+                                    with connection.cursor() as cursor:
+                                        cursor.execute("SELECT in_stock FROM get_serial_number_details(%s)",[serial])
+
+                                        exists = cursor.fetchone()
+
+                                        if exists:
+                                            return JsonResponse({"success": False, "message": f"The Serial '{serial}' already exists in Stock!"})
+                            except:
+                                return JsonResponse({"success": False, "message": "Invalid Serial Number!"})
+                        
+                except:
+                    return JsonResponse({"success": False, "message": "Unexpected Error Please try again!"})
+                
+                # Execute DB function
+                if not purchase_id: # means new Sale
+                    try:
+                        # Find the vendor ID
+                        with connection.cursor() as cursor:
+                            cursor.execute("""
+                                SELECT party_id 
+                                FROM Parties 
+                                WHERE party_name = %s
+                            """, [data.get("party_name")])
+                            result = cursor.fetchone()
+                            if not result:
+                                return JsonResponse({"success": False, "message": f"Party '{data.get("party_name")}' not found in Parties."})
+                            party_id = result[0]
+                            
+                            
+                            # Prepare your purchase items data
+                            items_data = []
+                            for item in data.get("items"):
+                                items_data.append(item)
+
+                    
+                            # Convert Python list → JSON string
+                            items_json = json.dumps(items_data)
+
+                            # Postgres function `create_purchase`
+                            cursor.execute("""
+                                SELECT create_purchase(%s, %s, %s::jsonb);
+                            """, [party_id, purchase_date, items_json])
+
+                            # Fetch the returned invoice ID
+                            invoice_id = cursor.fetchone()[0]
+                            return JsonResponse({"success": True, "message": "Purchase Successfull"})
                     except:
-                        return JsonResponse({"success": False, "message": "Invalid Serial Number!"})
+                        return JsonResponse({"success": False, "message": "Failed to make Purchase, try again!"})  
+                else: # if purchase ID Exists Means we have to update
+                    try:
+                        with connection.cursor() as cursor:
+                            cursor.execute("""
+                                SELECT party_id 
+                                FROM Parties 
+                                WHERE party_name = %s
+                            """, [data.get("party_name")])
+                            result = cursor.fetchone()
+                            if not result:
+                                return JsonResponse({"success": False, "message": f"Party '{data.get("party_name")}' not found in Parties."})
+                            party_id = result[0]
+                            
+                            
+                            # Prepare your purchase items data
+                            items_data = []
+                            for item in data.get("items"):
+                                items_data.append(item)
+
                     
-            except:
-                return JsonResponse({"success": False, "message": "Unexpected Error Please try again!"})
-            
-            # Execute DB function
-            try:
-                # Find the vendor ID
-                with connection.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT party_id 
-                        FROM Parties 
-                        WHERE party_name = %s
-                    """, [data.get("party_name")])
-                    result = cursor.fetchone()
-                    if not result:
-                        return JsonResponse({"success": False, "message": f"Party '{data.get("party_name")}' not found in Parties."})
-                    party_id = result[0]
+                            # Convert Python list → JSON string
+                            items_json = json.dumps(items_data)
+                            print(items_json)
+                            print(type(items_json))
+
+                            # Postgres function `update_purchase_invoice`
+                            cursor.execute("""
+                                SELECT update_purchase_invoice(%s, %s::jsonb, %s, %s);
+                            """, [purchase_id, items_json, data.get("party_name"), purchase_date])
+
+                            # Fetch the returned invoice ID
+                            invoice_id = cursor.fetchone()[0]
+                            return JsonResponse({"success": True, "message": "Update Successfull"})
+
+                    except:
+                        return JsonResponse({"success": False, "message": "Failed to Update Purchase, try again!"})  
+
                     
-                    
-                    # Prepare your purchase items data
-                    items_data = []
-                    for item in data.get("items"):
-                        items_data.append(item)
 
-            
-                    # Convert Python list → JSON string
-                    items_json = json.dumps(items_data)
+            except Exception:
+                return JsonResponse({"success": False, "message": "Invalid request data!"})
 
-                    # Postgres function `create_purchase`
-                    cursor.execute("""
-                        SELECT create_purchase(%s, %s, %s::jsonb);
-                    """, [party_id, purchase_date, items_json])
-
-                    # Fetch the returned invoice ID
-                    invoice_id = cursor.fetchone()[0]
-                    return JsonResponse({"success": True, "message": "Purchase Successfull"})
-            except:
-                return JsonResponse({"success": False, "message": "Failed to make Payment, try again!"})   
-        except Exception:
-            return JsonResponse({"success": False, "message": "Invalid request data!"})
-
+        if action == "delete":
+            pass
     return render(request, "purchase_templates/purchasing_template.html")
 
 def get_purchase(request):
@@ -151,7 +206,7 @@ def get_purchase(request):
         if action == "previous":
             
             if not current_id:
-                print('ENter')
+                
                 # getting and  previous purchase ID
                 try:
                     with connection.cursor() as cursor:
@@ -191,14 +246,16 @@ def get_purchase(request):
             try:
                 current_id = int(current_id)
             except (ValueError, TypeError):
-                return JsonResponse({"success": False, "message": "Invalid Previous Purchase ID!"})
+                return JsonResponse({"success": False, "message": "No Next Purchase Found"})
             
             # Fetching Next purchase data from DB
             try:
+
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT get_next_purchase(%s)",[current_id])
                     result_data = cursor.fetchone()
-                if not result_data or result_data[0]:
+
+                if not result_data or not result_data[0]:
                     return JsonResponse({"success": False, "message": "No Next Purchase Found"})
             except:
                 return JsonResponse({"success": False, "message": "Data base Connection Error While getting Next Purchase!"})
@@ -212,7 +269,7 @@ def get_purchase(request):
     # Sending to frontend
     try:
         print(result_data[0])
-        return JsonResponse(json.dumps(result_data[0]))
+        return JsonResponse(result_data[0])
     except Exception:
         return JsonResponse({"success": False, "message": "Invalid purchase data format."})
 
