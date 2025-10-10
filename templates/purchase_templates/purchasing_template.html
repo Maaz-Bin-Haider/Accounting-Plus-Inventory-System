@@ -8,13 +8,24 @@
 {% endblock SeperateCssFile %}
 
 {% block body %}
-  <button type="button" class="custom-btn" onclick="purchaseHistory()">
-    📜 View Last 20 Purchases
+  {% comment %} <button type="button" class="custom-btn" onclick="purchaseHistory()">
+    📜 Purchase Invoices
   </button>
 
   <button type="button" class="custom-btn" onclick="purchaseDateWise()">
-    📅 View Purchases by Date Range
+    📅 View Purchases by Date
   </button>
+   {% endcomment %}
+  <div class="button-row-top">
+    <button type="button" class="custom-btn" onclick="purchaseHistory()">
+      📜 Purchase Invoices
+    </button>
+
+    <button type="button" class="custom-btn" onclick="purchaseDateWise()">
+      📅 View Purchases by Date
+    </button>
+  </div>
+
   <h2>🛒 Create Purchase</h2>
   <form onsubmit="buildAndSubmit(event)" id="purchaseForm">
     <div class="party-name autocomplete-container">

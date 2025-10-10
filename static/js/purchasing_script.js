@@ -225,7 +225,13 @@ window.onload = function() {
   enforceSequentialValidation();
   const today = new Date().toISOString().slice(0, 10);
   document.getElementById("purchase_date").value = today;
-  document.getElementById("search_name").focus();
+  // document.getElementById("search_name").focus();
+  // ✅ Only focus "search_name" when no popup is open
+  // setTimeout(() => {
+  //   if (!document.querySelector(".swal2-container")) {
+  //     document.getElementById("search_name").focus();
+  //   }
+  // }, 500);
 };
 
 function handleEnterKey(e, input) {
@@ -779,8 +785,89 @@ deleteButton.addEventListener("click", confirmDelete);
 //     });
 //   }
 // }
-// ------------------ Purchase Invoices Summary--------------------------------
-// Generic fetch function for purchase summaries
+
+// // ------------------ Purchase Invoices Summary--------------------------------
+// // Generic fetch function for purchase summaries
+// async function fetchPurchaseSummary(from = null, to = null) {
+//   try {
+//     let url = "/purchase/get-purchase-summary/";
+//     if (from && to) {
+//       url += `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+//     }
+
+//     const response = await fetch(url);
+//     const data = await response.json();
+    
+
+//     if (!data.success && !Array.isArray(data)) {
+//       Swal.fire({
+//         icon: "error",
+//         title: "Error",
+//         text: data.message || "Failed to fetch purchase summary.",
+//       });
+//       return;
+//     }
+    
+
+//     // ✅ If API returns valid list of purchases
+//     let rows = "";
+//     if (Array.isArray(data) && data.length > 0) {
+      
+//       data.forEach((purchase, idx) => {
+//         rows += `
+//           <tr 
+//             style="cursor:pointer;" 
+//             onclick="viewPurchaseDetails(${purchase.purchase_invoice_id})"
+//             onmouseover="this.style.background='#f0f8ff';"
+//             onmouseout="this.style.background='';"
+//           >
+//             <td>${idx + 1}</td>
+//             <td>${purchase.purchase_invoice_id}</td>
+//             <td>${purchase.invoice_date}</td>
+//             <td>${purchase.vendor}</td>
+//             <td>${purchase.total_amount.toFixed(2)}</td>
+//           </tr>`;
+//       });
+//     } else {
+//       rows = `<tr><td colspan="5">No data found</td></tr>`;
+//     }
+
+//     // 🧾 Build styled HTML table
+//     const htmlTable = `
+//       <div style="max-height:400px; overflow-y:auto;">
+//         <table style="width:100%; border-collapse:collapse; font-size:14px;">
+//           <thead>
+//             <tr style="background:#f4f4f4; text-align:left;">
+//               <th>#</th>
+//               <th>Invoice ID</th>
+//               <th>Date</th>
+//               <th>Vendor</th>
+//               <th>Total Amount</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             ${rows}
+//           </tbody>
+//         </table>
+//       </div>`;
+
+//     // 🎉 Show SweetAlert popup with table
+//     Swal.fire({
+//       title: "📜 Purchase Summary",
+//       html: htmlTable,
+//       width: "700px",
+//       confirmButtonText: "Close",
+//     });
+//   } catch (error) {
+//     Swal.fire({
+//       icon: "error",
+//       title: "Network Error",
+//       text: error.message || "Unable to fetch purchase summary. Please try again!",
+//     });
+//   }
+// }
+
+// ------------------ Purchase Invoices Summary (Enhanced UI) ------------------
 async function fetchPurchaseSummary(from = null, to = null) {
   try {
     let url = "/purchase/get-purchase-summary/";
@@ -790,7 +877,6 @@ async function fetchPurchaseSummary(from = null, to = null) {
 
     const response = await fetch(url);
     const data = await response.json();
-    
 
     if (!data.success && !Array.isArray(data)) {
       Swal.fire({
@@ -800,57 +886,177 @@ async function fetchPurchaseSummary(from = null, to = null) {
       });
       return;
     }
-    
 
-    // ✅ If API returns valid list of purchases
+    // ✅ Build the table rows
     let rows = "";
     if (Array.isArray(data) && data.length > 0) {
-      
       data.forEach((purchase, idx) => {
         rows += `
           <tr 
-            style="cursor:pointer;" 
+            class="purchase-row"
+            data-vendor="${purchase.vendor.toLowerCase()}"
+            style="cursor:pointer; transition:background 0.2s;"
             onclick="viewPurchaseDetails(${purchase.purchase_invoice_id})"
-            onmouseover="this.style.background='#f0f8ff';"
+            onmouseover="this.style.background='#f3f4f6';"
             onmouseout="this.style.background='';"
           >
             <td>${idx + 1}</td>
             <td>${purchase.purchase_invoice_id}</td>
             <td>${purchase.invoice_date}</td>
             <td>${purchase.vendor}</td>
-            <td>${purchase.total_amount.toFixed(2)}</td>
+            <td style="text-align:right;">${purchase.total_amount.toFixed(2)}</td>
           </tr>`;
       });
     } else {
-      rows = `<tr><td colspan="5">No data found</td></tr>`;
+      rows = `<tr><td colspan="5" style="text-align:center;">No data found</td></tr>`;
     }
 
-    // 🧾 Build styled HTML table
-    const htmlTable = `
-      <div style="max-height:400px; overflow-y:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:14px;">
+    // 🧾 Build styled HTML with search bar
+    const htmlContent = `
+      <style>
+        .purchase-container {
+          font-family: 'Inter', system-ui, sans-serif;
+          max-height: 450px;
+          overflow-y: auto;
+          padding: 5px;
+          border-radius: 8px;
+        }
+        .purchase-search {
+          width: 100%;
+          padding: 8px 12px;
+          margin-bottom: 10px;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          font-size: 14px;
+          outline: none;
+          transition: all 0.2s;
+        }
+        .purchase-search:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
+        }
+        table.purchase-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 14px;
+        }
+        table.purchase-table th, table.purchase-table td {
+          padding: 8px 10px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        table.purchase-table th {
+          background: #f9fafb;
+          font-weight: 600;
+          color: #374151;
+        }
+        table.purchase-table tbody tr:hover {
+          background: #f3f4f6;
+        }
+      </style>
+
+      <input 
+        type="text" 
+        class="purchase-search" 
+        placeholder="🔍 Search by Vendor name..." 
+        onkeyup="filterPurchaseTable(this.value)" 
+      />
+
+      <div class="purchase-container">
+        <table class="purchase-table">
           <thead>
-            <tr style="background:#f4f4f4; text-align:left;">
+            <tr>
               <th>#</th>
               <th>Invoice ID</th>
               <th>Date</th>
               <th>Vendor</th>
-              <th>Total Amount</th>
+              <th style="text-align:right;">Total Amount</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="purchaseSummaryBody">
             ${rows}
           </tbody>
         </table>
-      </div>`;
+      </div>
+    `;
+  
+    // Helper to temporarily disable background focus
+    function disableBackgroundFocus() {
+      const inputs = document.querySelectorAll("input, textarea, select, [tabindex]");
+      inputs.forEach(el => {
+        el.dataset.prevTabindex = el.getAttribute("tabindex");
+        el.setAttribute("tabindex", "-1");
+      });
+    }
 
-    // 🎉 Show SweetAlert popup with table
+    // Restore focus when popup closes
+    function enableBackgroundFocus() {
+      const inputs = document.querySelectorAll("input, textarea, select, [tabindex]");
+      inputs.forEach(el => {
+        if (el.dataset.prevTabindex !== undefined) {
+          el.setAttribute("tabindex", el.dataset.prevTabindex);
+          delete el.dataset.prevTabindex;
+        } else {
+          el.removeAttribute("tabindex");
+        }
+      });
+    }
+    // 🎉 SweetAlert popup
+    disableBackgroundFocus();
+
     Swal.fire({
       title: "📜 Purchase Summary",
-      html: htmlTable,
-      width: "700px",
+      html: htmlContent,
+      width: "750px",
       confirmButtonText: "Close",
+      showConfirmButton: true,
+      focusConfirm: false,
+      allowOutsideClick: false,
+      allowEnterKey: true,
+      allowEscapeKey: true,
+      didOpen: (popup) => {
+        const input = popup.querySelector(".purchase-search");
+
+        // 🧠 Stop all background inputs from catching focus events
+        document.querySelectorAll("input, textarea, select").forEach(el => {
+          el.blur();
+        });
+
+        // 🛑 Stop event bubbling that can cause refocus
+        popup.addEventListener("focusin", e => e.stopPropagation());
+        popup.addEventListener("keydown", e => e.stopPropagation());
+
+        // 🧩 Try multiple ways to force focus after rendering
+        setTimeout(() => {
+          if (input) {
+            input.focus();
+            input.select();
+            // 👇 Forcefully focus again a bit later in case other scripts interfere
+            setTimeout(() => input.focus(), 400);
+            setTimeout(() => input.focus(), 800);
+          }
+        }, 100);
+      },
+
+      willClose: () => {
+        // Re-enable background focus when popup closes
+        enableBackgroundFocus();
+      }
     });
+
+
+    // document.addEventListener("focusin", (e) => {
+    //   console.log("Focus moved to:", e.target);
+    // }, true);
+    // Swal.fire({
+    //   html: `<input type="text" id="testSearch" placeholder="type here">`,
+    //   didOpen: () => {
+    //     const input = document.getElementById("testSearch");
+    //     input.focus();
+    //   }
+    // });
+
+
+
   } catch (error) {
     Swal.fire({
       icon: "error",
@@ -858,6 +1064,25 @@ async function fetchPurchaseSummary(from = null, to = null) {
       text: error.message || "Unable to fetch purchase summary. Please try again!",
     });
   }
+}
+
+// // 🔍 Live search filter function
+// function filterPurchaseTable(query) {
+//   query = query.toLowerCase().trim();
+//   const rows = document.querySelectorAll("#purchaseSummaryBody .purchase-row");
+
+//   rows.forEach(row => {
+//     const vendor = row.dataset.vendor;
+//     row.style.display = vendor.includes(query) ? "" : "none";
+//   });
+// }
+function filterPurchaseTable(query) {
+  query = query.toLowerCase().trim();
+  const rows = document.querySelectorAll("#purchaseSummaryBody .purchase-row");
+  rows.forEach(row => {
+    const vendor = row.dataset.vendor;
+    row.style.display = vendor.includes(query) ? "" : "none";
+  });
 }
 
 // 🧮 1️⃣ Button: Fetch Last 20 Purchases
