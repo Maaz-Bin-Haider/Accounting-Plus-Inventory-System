@@ -272,7 +272,6 @@ def get_payments_date_wise(request):
         return JsonResponse(data, safe=False)
 
     except Exception as e:
-        print(e)
         return JsonResponse({"error": str(e)}, status=500)
     
 

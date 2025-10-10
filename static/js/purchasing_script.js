@@ -708,4 +708,113 @@ function confirmDelete(event) {
 deleteButton.addEventListener("click", confirmDelete);
 
 
+// Generic fetch function for purchase summaries
+async function fetchPurchaseSummary(from = null, to = null) {
+  try {
+    let url = "/purchase/get-purchase-summary/";
+    if (from && to) {
+      url += `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+    }
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.success && !Array.isArray(data)) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: data.message || "Failed to fetch purchase summary.",
+      });
+      return;
+    }
+
+    // ✅ If API returns valid list of purchases
+    let rows = "";
+    if (Array.isArray(data)) {
+      data.forEach((purchase, idx) => {
+        rows += `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>${purchase.purchase_invoice_id}</td>
+            <td>${purchase.invoice_date}</td>
+            <td>${purchase.vendor}</td>
+            <td>${purchase.total_amount.toFixed(2)}</td>
+          </tr>`;
+      });
+    } else {
+      rows = `<tr><td colspan="5">No data found</td></tr>`;
+    }
+
+    // 🧾 Build a styled HTML table
+    const htmlTable = `
+      <div style="max-height:400px; overflow-y:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:14px;">
+          <thead>
+            <tr style="background:#f4f4f4; text-align:left;">
+              <th>#</th>
+              <th>Invoice ID</th>
+              <th>Date</th>
+              <th>Vendor</th>
+              <th>Total Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>`;
+
+    // 🎉 Show SweetAlert popup with table
+    Swal.fire({
+      title: "📜 Purchase Summary",
+      html: htmlTable,
+      width: "700px",
+      confirmButtonText: "Close",
+    });
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Network Error",
+      text: error.message || "Unable to fetch purchase summary. Please try again!",
+    });
+  }
+}
+
+// 🧮 1️⃣ Button: Fetch Last 20 Purchases
+function purchaseHistory() {
+  fetchPurchaseSummary();
+}
+
+// 📅 2️⃣ Button: Fetch Purchases by Date Range
+function purchaseDateWise() {
+  const today = new Date().toISOString().split("T")[0];
+    Swal.fire({
+        title: "📅 Select Date Range",
+        html: `
+            <label>From Date</label><br>
+            <input type="date" id="fromDate" class="swal2-input" style="width:70%">
+            <br>
+            <label>To Date</label><br>
+            <input type="date" id="toDate" class="swal2-input" style="width:70%" value="${today}">
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: "Fetch Payments",
+        preConfirm: () => {
+            const fromDate = document.getElementById("fromDate").value;
+            const toDate = document.getElementById("toDate").value;
+            if (!fromDate || !toDate) {
+                Swal.showValidationMessage("⚠️ Both dates are required");
+                return false;
+            }
+            return { fromDate, toDate };
+        }
+    }).then(result => {
+        if (result.isConfirmed) {
+            const { fromDate, toDate } = result.value;
+
+            fetchPurchaseSummary(fromDate, toDate);
+        }
+    });
+}
 
