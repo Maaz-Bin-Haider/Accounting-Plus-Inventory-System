@@ -1,0 +1,75 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Create Sale{% endblock title %}
+
+{% block SeperateCssFile %}
+<link rel="stylesheet" href="{% static 'css/purchasing_styling.css' %}">
+{% endblock SeperateCssFile %}
+
+{% block body %}
+  {% comment %} <button type="button" class="custom-btn" onclick="purchaseHistory()">
+    📜 Purchase Invoices
+  </button>
+
+  <button type="button" class="custom-btn" onclick="purchaseDateWise()">
+    📅 View Purchases by Date
+  </button>
+   {% endcomment %}
+  <div class="button-row-top">
+    <button type="button" class="custom-btn" onclick="saleHistory()">
+      📜 Sale Invoices
+    </button>
+
+    <button type="button" class="custom-btn" onclick="saleDateWise()">
+      📅 View Sales by Date
+    </button>
+  </div>
+
+  <h2>🛒 Create Sale</h2>
+  <form onsubmit="buildAndSubmit(event)" id="saleForm">
+    <div class="party-name autocomplete-container">
+        <label for="search_name">Party Name:</label>
+        <input type="text" id="search_name" name="search_name" placeholder="Enter Party Name" autocomplete="off" data-autocomplete-url="{% url 'parties:autocomplete_party' %}" required>
+        <div id="suggestions" ></div>
+    </div>
+
+    <div class="invoice-date">
+      <label for="sale_date">Sale Date:</label>
+      <input type="date" id="sale_date" name="sale_date">
+    </div>
+
+    <div class="items-comtainer">
+      <h3>Items</h3>
+      <div id="items"></div>
+      <button type="button" class="custom-btn add-item" onclick="addItemRow()">+ Add Item</button>
+    </div>
+
+    <div id="totalBox">Total Invoice Amount: <span id="totalAmount">0.00</span></div>
+
+    {% comment %} <div class="actions">
+      <button type="submit" class="custom-btn">Create Purchase</button>
+    </div> {% endcomment %}
+    <div class="btn-row actions">
+        <button type="submit" name="action" value="submit" class="save-and-update-btn">
+            <i class="fa-solid fa-floppy-disk"></i>  Save Sale
+        </button>
+        
+        <button type="submit" name="action" value="delete" class="delete-btn">
+            <i class="fa-solid fa-trash"></i>  Delete
+        </button>
+    </div>
+  </form>
+  <input type="hidden" id="current_sale_id" name="current_id" value="{{sale_id}}" form="saleForm">
+
+  <div class="button-group">
+      <button type="button" onclick="navigateSale('previous')"><i class="fa-solid fa-arrow-left"></i> Previous</button>
+      <button type="button" onclick="navigateSale('next')">Next <i class="fa-solid fa-arrow-right"></i></button>
+  </div>
+</div>
+<script>
+  const autocompleteItemUrl = "{% url 'items:autocomplete_item' %}";
+</script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'js/sales_script.js' %}"></script>
+{% endblock body %}

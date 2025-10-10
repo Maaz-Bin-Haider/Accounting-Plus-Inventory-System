@@ -12,7 +12,6 @@ def purchasing(request):
         try:
             data = json.loads(request.body)
             action = data.get("action")  
-            print(action,'---------')
             purchase_id = data.get("purchase_id")
             if purchase_id:
                 purchase_id = int(purchase_id)
@@ -116,7 +115,7 @@ def purchasing(request):
                     return JsonResponse({"success": False, "message": "Unexpected Error Please try again!"})
                 
                 # Execute DB function
-                if not purchase_id: # means new Sale
+                if not purchase_id: # means new Purchase
                     try:
                         # Find the vendor ID
                         with connection.cursor() as cursor:
@@ -209,9 +208,6 @@ def purchasing(request):
 def get_purchase(request):
     action = request.GET.get("action")
     current_id = request.GET.get("current_id")
-
-    
-
     try:
         if action == "previous":
             

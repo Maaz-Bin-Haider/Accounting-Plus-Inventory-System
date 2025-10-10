@@ -111,7 +111,7 @@ function buildAndSubmit(event) {
 
 
   const partyName = document.getElementById("search_name").value.trim();
-  let purchaseDate = document.getElementById("purchase_date").value;
+  let purchaseDate = document.getElementById("sale_date").value;
   if (!purchaseDate) {
     purchaseDate = new Date().toISOString().slice(0,10);
   }
@@ -148,16 +148,16 @@ function buildAndSubmit(event) {
     });
     return;
   }
-  const currentId = document.getElementById("current_purchase_id").value || null;
+  const currentId = document.getElementById("current_sale_id").value || null;
   const payload = {
-    purchase_id: currentId,
+    sale_id: currentId,
     party_name: partyName,
-    purchase_date: purchaseDate, 
+    sale_date: purchaseDate, 
     items: items,
     action: action,
   };
   // Send JSON to backend
-  fetch("/purchase/purchasing/", {
+  fetch("/sale/sales/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -185,7 +185,7 @@ function buildAndSubmit(event) {
       Swal.fire({
         icon: "success",
         title: "Success 🎉",
-        text: data.message || "Your purchase was submitted successfully!",
+        text: data.message || "Your sale was submitted successfully!",
         timer: 1500,
         showConfirmButton: false
       }).then(() => {
@@ -224,7 +224,7 @@ window.onload = function() {
   for (let i = 0; i < 3; i++) addItemRow(false);
   enforceSequentialValidation();
   const today = new Date().toISOString().slice(0, 10);
-  document.getElementById("purchase_date").value = today;
+  document.getElementById("sale_date").value = today;
   // document.getElementById("search_name").focus();
   // ✅ Only focus "search_name" when no popup is open
   // setTimeout(() => {
@@ -257,6 +257,7 @@ function enforceSequentialValidation() {
   });
 }
 
+// --------------------------------Auto suggest Party Name-----------------------
 
 $(document).ready(function () {
     let autocompleteUrl = $("#search_name").data("autocomplete-url");
@@ -288,7 +289,7 @@ $(document).ready(function () {
                                 .on("click", function () {
                                     $("#search_name").val(party);
                                     suggestionsBox.hide();
-                                    $("#purchase_date").focus(); // move to next field
+                                    $("#sale_date").focus(); // move to next field
                                 });
                         });
                         suggestionsBox.show();
@@ -335,7 +336,7 @@ $(document).ready(function () {
     });
 });
 
-
+// --------------------------------Auto suggest Item Name-----------------------
 // suggestionsBox for item names
 let selectedIndex = -1; // track highlighted suggestion per input
 
@@ -383,7 +384,7 @@ $(document).on("input", ".item_search_name", function () {
     }
 });
 
-// Keyboard navigation with auto-scroll
+// ---------------------------------Keyboard navigation with auto-scroll---------------------
 $(document).on("keydown", ".item_search_name", function (e) {
     let input = $(this);
     let suggestionsBox = input.siblings(".items_suggestions");
@@ -420,15 +421,14 @@ $(document).on("click", function (e) {
 
 
 
+//          to navigate to a particular sale
 
-
-async function navigatePurchase(action) {
-
+async function navigateSale(action) {
   try {
-    const currentId = document.getElementById("current_purchase_id").value || "";
+    const currentId = document.getElementById("current_sale_id").value || "";
 
     // Fetch from Django view
-    const response = await fetch(`/purchase/get-purchase/?action=${action}&current_id=${currentId}`, {
+    const response = await fetch(`/sale/get-sale/?action=${action}&current_id=${currentId}`, {
       method: "GET",
       headers: {
         "X-Requested-With": "XMLHttpRequest",
@@ -454,30 +454,30 @@ async function navigatePurchase(action) {
     }
 
     // If Django wrapped the JSON in data.result_data[0] or similar, parse accordingly
-    if (typeof data === "object" && data.hasOwnProperty("purchase_invoice_id") === false) {
+    if (typeof data === "object" && data.hasOwnProperty("sales_invoice_id") === false) {
       try {
         data = JSON.parse(Object.values(data)[0]);
       } catch (e) {}
     }
 
-    renderPurchaseData(data);
+    renderSaleData(data);
   } catch (error) {
-    console.error("Error navigating purchase:", error);
+    console.error("Error navigating sale:", error);
     Swal.fire({
       icon: "error",
       title: "Error",
-      text: "An unexpected error occurred while fetching purchase data.",
+      text: "An unexpected error occurred while fetching sale data.",
     });
   }
 }
 
-// function renderPurchaseData(data) {
+// function renderSaleData(data) {
 
-function renderPurchaseData(data) {
+function renderSaleData(data) {
   // Update header fields
   document.getElementById("search_name").value = data.Party || "";
-  document.getElementById("purchase_date").value = data.invoice_date || "";
-  document.getElementById("current_purchase_id").value = data.purchase_invoice_id || "";
+  document.getElementById("sale_date").value = data.invoice_date || "";
+  document.getElementById("current_sale_id").value = data.sales_invoice_id || "";
 
   // Clear existing items
   const itemsDiv = document.getElementById("items");
@@ -524,11 +524,11 @@ function renderPurchaseData(data) {
         });
       }
       // update button text
-      let submitBtn = document.querySelector("#purchaseForm button[type=submit]");
+      let submitBtn = document.querySelector("#saleForm button[type=submit]");
       if (data.purchase_invoice_id) {
-          submitBtn.textContent = "Update Purchase";
+          submitBtn.textContent = "Update Sale";
       } else {
-          submitBtn.textContent = "Save Purchase";
+          submitBtn.textContent = "Save Sale";
       }
 
       itemsDiv.appendChild(row);
@@ -540,13 +540,6 @@ function renderPurchaseData(data) {
   document.getElementById("totalAmount").textContent =
     data.total_amount ? parseFloat(data.total_amount).toFixed(2) : "0.00";
 
-  // Swal.fire({
-  //   icon: "success",
-  //   title: "Purchase Loaded",
-  //   text: `Purchase #${data.purchase_invoice_id} loaded successfully.`,
-  //   timer: 2000,
-  //   showConfirmButton: false,
-  // });
 }
 
 
@@ -557,7 +550,7 @@ function confirmDelete(event) {
 
   Swal.fire({
     title: "Are you sure?",
-    text: "This purchase will be permanently deleted!",
+    text: "This sale will be permanently deleted!",
     icon: "warning",
     showCancelButton: true,
     confirmButtonColor: "#d33",
@@ -588,9 +581,9 @@ deleteButton.addEventListener("click", confirmDelete);
 // // Generic fetch function for purchase summaries
 
 // ------------------ Purchase Invoices Summary (Enhanced UI) ------------------
-async function fetchPurchaseSummary(from = null, to = null) {
+async function fetchSaleSummary(from = null, to = null) {
   try {
-    let url = "/purchase/get-purchase-summary/";
+    let url = "/sale/get-sale-summary/";
     if (from && to) {
       url += `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
     }
@@ -602,7 +595,7 @@ async function fetchPurchaseSummary(from = null, to = null) {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: data.message || "Failed to fetch purchase summary.",
+        text: data.message || "Failed to fetch sale summary.",
       });
       return;
     }
@@ -610,21 +603,21 @@ async function fetchPurchaseSummary(from = null, to = null) {
     // ✅ Build the table rows
     let rows = "";
     if (Array.isArray(data) && data.length > 0) {
-      data.forEach((purchase, idx) => {
+      data.forEach((sale, idx) => {
         rows += `
           <tr 
-            class="purchase-row"
-            data-vendor="${purchase.vendor.toLowerCase()}"
+            class="sale-row"
+            data-vendor="${sale.customer.toLowerCase()}"
             style="cursor:pointer; transition:background 0.2s;"
-            onclick="viewPurchaseDetails(${purchase.purchase_invoice_id})"
+            onclick="viewSaleDetails(${sale.sales_invoice_id})"
             onmouseover="this.style.background='#f3f4f6';"
             onmouseout="this.style.background='';"
           >
             <td>${idx + 1}</td>
-            <td>${purchase.purchase_invoice_id}</td>
-            <td>${purchase.invoice_date}</td>
-            <td>${purchase.vendor}</td>
-            <td style="text-align:right;">${purchase.total_amount.toFixed(2)}</td>
+            <td>${sale.sales_invoice_id}</td>
+            <td>${sale.invoice_date}</td>
+            <td>${sale.customer}</td>
+            <td style="text-align:right;">${sale.total_amount.toFixed(2)}</td>
           </tr>`;
       });
     } else {
@@ -634,14 +627,14 @@ async function fetchPurchaseSummary(from = null, to = null) {
     // 🧾 Build styled HTML with search bar
     const htmlContent = `
       <style>
-        .purchase-container {
+        .sale-container {
           font-family: 'Inter', system-ui, sans-serif;
           max-height: 450px;
           overflow-y: auto;
           padding: 5px;
           border-radius: 8px;
         }
-        .purchase-search {
+        .sale-search {
           width: 100%;
           padding: 8px 12px;
           margin-bottom: 10px;
@@ -651,48 +644,48 @@ async function fetchPurchaseSummary(from = null, to = null) {
           outline: none;
           transition: all 0.2s;
         }
-        .purchase-search:focus {
+        .sale-search:focus {
           border-color: #2563eb;
           box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
         }
-        table.purchase-table {
+        table.sale-table {
           width: 100%;
           border-collapse: collapse;
           font-size: 14px;
         }
-        table.purchase-table th, table.purchase-table td {
+        table.sale-table th, table.sale-table td {
           padding: 8px 10px;
           border-bottom: 1px solid #e5e7eb;
         }
-        table.purchase-table th {
+        table.sale-table th {
           background: #f9fafb;
           font-weight: 600;
           color: #374151;
         }
-        table.purchase-table tbody tr:hover {
+        table.sale-table tbody tr:hover {
           background: #f3f4f6;
         }
       </style>
 
       <input 
         type="text" 
-        class="purchase-search" 
+        class="sale-search" 
         placeholder="🔍 Search by Vendor name..." 
-        onkeyup="filterPurchaseTable(this.value)" 
+        onkeyup="filterSaleTable(this.value)" 
       />
 
-      <div class="purchase-container">
-        <table class="purchase-table">
+      <div class="sale-container">
+        <table class="sale-table">
           <thead>
             <tr>
               <th>#</th>
               <th>Invoice ID</th>
               <th>Date</th>
-              <th>Vendor</th>
+              <th>Customer</th>
               <th style="text-align:right;">Total Amount</th>
             </tr>
           </thead>
-          <tbody id="purchaseSummaryBody">
+          <tbody id="saleSummaryBody">
             ${rows}
           </tbody>
         </table>
@@ -724,7 +717,7 @@ async function fetchPurchaseSummary(from = null, to = null) {
     disableBackgroundFocus();
 
     Swal.fire({
-      title: "📜 Purchase Summary",
+      title: "📜 Sale Summary",
       html: htmlContent,
       width: "750px",
       confirmButtonText: "Close",
@@ -734,7 +727,7 @@ async function fetchPurchaseSummary(from = null, to = null) {
       allowEnterKey: true,
       allowEscapeKey: true,
       didOpen: (popup) => {
-        const input = popup.querySelector(".purchase-search");
+        const input = popup.querySelector(".sale-search");
 
         // 🧠 Stop all background inputs from catching focus events
         document.querySelectorAll("input, textarea, select").forEach(el => {
@@ -769,27 +762,27 @@ async function fetchPurchaseSummary(from = null, to = null) {
     Swal.fire({
       icon: "error",
       title: "Network Error",
-      text: error.message || "Unable to fetch purchase summary. Please try again!",
+      text: error.message || "Unable to fetch sale summary. Please try again!",
     });
   }
 }
 
-function filterPurchaseTable(query) {
+function filterSaleTable(query) {
   query = query.toLowerCase().trim();
-  const rows = document.querySelectorAll("#purchaseSummaryBody .purchase-row");
+  const rows = document.querySelectorAll("#saleSummaryBody .sale-row");
   rows.forEach(row => {
     const vendor = row.dataset.vendor;
     row.style.display = vendor.includes(query) ? "" : "none";
   });
 }
 
-// 🧮 1️⃣ Button: Fetch Last 20 Purchases
-function purchaseHistory() {
-  fetchPurchaseSummary();
+// 🧮 1️⃣ Button: Fetch Last 20 Sales
+function saleHistory() {
+  fetchSaleSummary();
 }
 
-// 📅 2️⃣ Button: Fetch Purchases by Date Range
-function purchaseDateWise() {
+// 📅 2️⃣ Button: Fetch Sales by Date Range
+function saleDateWise() {
   const today = new Date().toISOString().split("T")[0];
     Swal.fire({
         title: "📅 Select Date Range",
@@ -802,7 +795,7 @@ function purchaseDateWise() {
         `,
         focusConfirm: false,
         showCancelButton: true,
-        confirmButtonText: "Fetch Payments",
+        confirmButtonText: "Fetch Sales",
         preConfirm: () => {
             const fromDate = document.getElementById("fromDate").value;
             const toDate = document.getElementById("toDate").value;
@@ -816,15 +809,15 @@ function purchaseDateWise() {
         if (result.isConfirmed) {
             const { fromDate, toDate } = result.value;
 
-            fetchPurchaseSummary(fromDate, toDate);
+            fetchSaleSummary(fromDate, toDate);
         }
     });
 }
 
 // 🔹 New function to handle click on a purchase row
-function viewPurchaseDetails(purchaseId) {
-  document.getElementById("current_purchase_id").value = purchaseId;
-  navigatePurchase("current")
+function viewSaleDetails(saleID) {
+  document.getElementById("current_sale_id").value = saleID;
+  navigateSale("current")
   Swal.close();
 }
 
