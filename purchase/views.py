@@ -270,9 +270,27 @@ def get_purchase(request):
             except:
                 return JsonResponse({"success": False, "message": "Data base Connection Error While getting Next Purchase!"})
             
+        elif action == "current": # If no action is provided means we have to fetch current purchase ID
+            print("Entered in current----")
+            # Validating Current purchase ID
+            try:
+                current_id = int(current_id)
+            except (ValueError, TypeError):
+                return JsonResponse({"success": False, "message": "No Purchase Found"})
+            
+            # Fetching Next purchase data from DB
+            try:
+
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT get_current_purchase(%s)",[current_id])
+                    result_data = cursor.fetchone()
+
+                if not result_data or not result_data[0]:
+                    return JsonResponse({"success": False, "message": "No Purchase Found"})
+            except:
+                return JsonResponse({"success": False, "message": "Data base Connection Error While getting Next Purchase!"})
         else:
             pass
-
     except:
         return JsonResponse({"success": False, "message": "Data base Error!"})
     

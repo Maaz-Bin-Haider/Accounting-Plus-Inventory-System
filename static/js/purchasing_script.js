@@ -708,6 +708,78 @@ function confirmDelete(event) {
 deleteButton.addEventListener("click", confirmDelete);
 
 
+// // Generic fetch function for purchase summaries
+// async function fetchPurchaseSummary(from = null, to = null) {
+//   try {
+//     let url = "/purchase/get-purchase-summary/";
+//     if (from && to) {
+//       url += `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+//     }
+
+//     const response = await fetch(url);
+//     const data = await response.json();
+
+//     if (!data.success && !Array.isArray(data)) {
+//       Swal.fire({
+//         icon: "error",
+//         title: "Error",
+//         text: data.message || "Failed to fetch purchase summary.",
+//       });
+//       return;
+//     }
+
+//     // ✅ If API returns valid list of purchases
+//     let rows = "";
+//     if (Array.isArray(data)) {
+//       data.forEach((purchase, idx) => {
+//         rows += `
+//           <tr>
+//             <td>${idx + 1}</td>
+//             <td>${purchase.purchase_invoice_id}</td>
+//             <td>${purchase.invoice_date}</td>
+//             <td>${purchase.vendor}</td>
+//             <td>${purchase.total_amount.toFixed(2)}</td>
+//           </tr>`;
+//       });
+//     } else {
+//       rows = `<tr><td colspan="5">No data found</td></tr>`;
+//     }
+
+//     // 🧾 Build a styled HTML table
+//     const htmlTable = `
+//       <div style="max-height:400px; overflow-y:auto;">
+//         <table style="width:100%; border-collapse:collapse; font-size:14px;">
+//           <thead>
+//             <tr style="background:#f4f4f4; text-align:left;">
+//               <th>#</th>
+//               <th>Invoice ID</th>
+//               <th>Date</th>
+//               <th>Vendor</th>
+//               <th>Total Amount</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             ${rows}
+//           </tbody>
+//         </table>
+//       </div>`;
+
+//     // 🎉 Show SweetAlert popup with table
+//     Swal.fire({
+//       title: "📜 Purchase Summary",
+//       html: htmlTable,
+//       width: "700px",
+//       confirmButtonText: "Close",
+//     });
+//   } catch (error) {
+//     Swal.fire({
+//       icon: "error",
+//       title: "Network Error",
+//       text: error.message || "Unable to fetch purchase summary. Please try again!",
+//     });
+//   }
+// }
+// ------------------ Purchase Invoices Summary--------------------------------
 // Generic fetch function for purchase summaries
 async function fetchPurchaseSummary(from = null, to = null) {
   try {
@@ -718,6 +790,7 @@ async function fetchPurchaseSummary(from = null, to = null) {
 
     const response = await fetch(url);
     const data = await response.json();
+    
 
     if (!data.success && !Array.isArray(data)) {
       Swal.fire({
@@ -727,13 +800,20 @@ async function fetchPurchaseSummary(from = null, to = null) {
       });
       return;
     }
+    
 
     // ✅ If API returns valid list of purchases
     let rows = "";
-    if (Array.isArray(data)) {
+    if (Array.isArray(data) && data.length > 0) {
+      
       data.forEach((purchase, idx) => {
         rows += `
-          <tr>
+          <tr 
+            style="cursor:pointer;" 
+            onclick="viewPurchaseDetails(${purchase.purchase_invoice_id})"
+            onmouseover="this.style.background='#f0f8ff';"
+            onmouseout="this.style.background='';"
+          >
             <td>${idx + 1}</td>
             <td>${purchase.purchase_invoice_id}</td>
             <td>${purchase.invoice_date}</td>
@@ -745,7 +825,7 @@ async function fetchPurchaseSummary(from = null, to = null) {
       rows = `<tr><td colspan="5">No data found</td></tr>`;
     }
 
-    // 🧾 Build a styled HTML table
+    // 🧾 Build styled HTML table
     const htmlTable = `
       <div style="max-height:400px; overflow-y:auto;">
         <table style="width:100%; border-collapse:collapse; font-size:14px;">
@@ -817,4 +897,12 @@ function purchaseDateWise() {
         }
     });
 }
+
+// 🔹 New function to handle click on a purchase row
+function viewPurchaseDetails(purchaseId) {
+  document.getElementById("current_purchase_id").value = purchaseId;
+  navigatePurchase("current")
+  Swal.close();
+}
+
 
