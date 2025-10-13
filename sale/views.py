@@ -99,19 +99,30 @@ def sales(request):
                         
 
                         # Validating Serials
-                        if not sale_id: 
-                            try:
-                                for serial in serials:
+                        
+                        try:
+                            for serial in serials:
 
-                                    with connection.cursor() as cursor:
-                                        cursor.execute("SELECT in_stock FROM get_serial_number_details(%s)",[serial])
+                                with connection.cursor() as cursor:
+                                    cursor.execute("SELECT in_stock FROM get_serial_number_details(%s)",[serial])
 
-                                        exists = cursor.fetchone()
+                                    exists = cursor.fetchone()
 
-                                        if not exists:
-                                            return JsonResponse({"success": False, "message": f"The Serial '{serial}' not exists in Stock!"})
-                            except:
-                                return JsonResponse({"success": False, "message": "Invalid Serial Number!"})
+                                    if not exists:
+                                        return JsonResponse({"success": False, "message": f"The Serial '{serial}' not exists in Stock!"})
+                                    
+                                    if exists:
+                                        cursor.execute("SELECT item_name FROM get_serial_number_details(%s)",[serial])
+                                        original_item_name = cursor.fetchone()
+
+                                        try:
+                                            if not original_item_name[0] == item_name:
+                                                return JsonResponse({"success":False,"message":f"The serial '{serial}' does not belong to {item_name}; it belongs to {original_item_name[0]}."})
+                                        except:
+                                            return JsonResponse({"success": False, "message": "Invalid Serial Number!"})
+
+                        except:
+                            return JsonResponse({"success": False, "message": "Invalid Serial Number!"})
                         
                 except:
                     return JsonResponse({"success": False, "message": "Unexpected Error Please try again!"})
