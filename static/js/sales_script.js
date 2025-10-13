@@ -525,7 +525,7 @@ function renderSaleData(data) {
       }
       // update button text
       let submitBtn = document.querySelector("#saleForm button[type=submit]");
-      if (data.purchase_invoice_id) {
+      if (data.sales_invoice_id) {
           submitBtn.textContent = "Update Sale";
       } else {
           submitBtn.textContent = "Save Sale";
