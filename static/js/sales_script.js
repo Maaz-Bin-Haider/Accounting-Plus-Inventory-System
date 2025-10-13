@@ -180,19 +180,55 @@ function buildAndSubmit(event) {
     return res.json();
   })
   .then(data => {
-    if (data.success) {
-      console.log('oooe')
+    if (data.confirm) {
+      // 🔸 Show confirmation SweetAlert
+      Swal.fire({
+        icon: "warning",
+        title: "Confirm Sale",
+        text: data.message || "The selling price is lower than the buying price. Do you want to continue?",
+        showCancelButton: true,
+        confirmButtonText: "Yes, continue",
+        cancelButtonText: "No, cancel"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Re-submit with confirmation flag
+          payload.force = true; // ⚡ tell backend to skip this check
+          fetch("/sale/sales/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": getCSRFToken()
+            },
+            body: JSON.stringify(payload)
+          })
+          .then(res => res.json())
+          .then(finalData => {
+            if (finalData.success) {
+              Swal.fire({
+                icon: "success",
+                title: "Success 🎉",
+                text: finalData.message || "Your sale was submitted successfully!",
+                timer: 1500,
+                showConfirmButton: false
+              }).then(() => window.location.reload());
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: finalData.message || "There was a problem with your submission."
+              });
+            }
+          });
+        }
+      });
+    } else if (data.success) {
       Swal.fire({
         icon: "success",
         title: "Success 🎉",
         text: data.message || "Your sale was submitted successfully!",
         timer: 1500,
         showConfirmButton: false
-      }).then(() => {
-        // After 3 seconds (when the alert closes)
-        window.location.reload();
-      });
-      // window.location.reload();
+      }).then(() => window.location.reload());
     } else {
       Swal.fire({
         icon: "error",
@@ -208,8 +244,7 @@ function buildAndSubmit(event) {
       text: err.message || "An unexpected error occurred. Please try again."
     });
   });
-  // console.log("Submitting JSON:", JSON.stringify(payload, null, 2));
-  // alert("Payload:\n" + JSON.stringify(payload, null, 2));
+
 }
 document.querySelectorAll('button[type="submit"]').forEach(btn => {
   btn.addEventListener('click', function() {

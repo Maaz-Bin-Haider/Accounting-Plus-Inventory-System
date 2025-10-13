@@ -59,6 +59,8 @@ def sales(request):
                 except (ValueError, TypeError):
                     return JsonResponse({"success": False, "message": "Invalid date. Please enter a valid date in YYYY-MM-DD format."})
                 
+                # Flag for confirmation check when price <= to buying price
+                force = data.get("force", False)
                 # validate Items
                 try: 
                     for item in data.get("items"):
@@ -66,6 +68,7 @@ def sales(request):
                         qty = item["qty"]
                         unit_price = item["unit_price"]
                         serials = item["serials"]
+                        
 
 
                         # validating item name
@@ -89,13 +92,7 @@ def sales(request):
                         
                         # TODO: Check the give Quantity if this exits in current stock
 
-                        # validating unit price
-                        try:
-                            unit_price = float(unit_price)
-                            if unit_price <= 0:
-                                return JsonResponse({"success": False, "message": "Invalid Price"})
-                        except:
-                            return JsonResponse({"success": False, "message": "Invalid Price"})
+                        
                         
 
                         # Validating Serials
@@ -115,11 +112,41 @@ def sales(request):
                                         cursor.execute("SELECT item_name FROM get_serial_number_details(%s)",[serial])
                                         original_item_name = cursor.fetchone()
 
+                                        # For handling when provided dosen't belongs to the actual item name
                                         try:
                                             if not original_item_name[0] == item_name:
                                                 return JsonResponse({"success":False,"message":f"The serial '{serial}' does not belong to {item_name}; it belongs to {original_item_name[0]}."})
                                         except:
                                             return JsonResponse({"success": False, "message": "Invalid Serial Number!"})
+                                        
+                                        # validating unit price
+                                        try:
+                                            unit_price = float(unit_price)
+                                            if unit_price <= 0:
+                                                return JsonResponse({"success": False, "message": "Invalid Price"})
+                                            
+                                            cursor.execute("SELECT purchase_price FROM get_serial_number_details(%s)",[serial])
+                                            buying_price = cursor.fetchone()
+
+                                            try:
+                                                if not force:
+                                                    if unit_price == float(buying_price[0]):
+                                                        return JsonResponse({
+                                                            "success": False,
+                                                            "confirm": True,
+                                                            "message": "The selling price is equal to the buying price. Do you want to continue?"
+                                                        })
+                                                    elif unit_price < float(buying_price[0]):
+                                                        return JsonResponse({
+                                                            "success": False,
+                                                            "confirm": True,
+                                                            "message": "The selling price is less than the buying price. Do you want to continue?"
+                                                        })
+                                            except Exception as e:
+                                                return JsonResponse({"success": False, "message": "Invalid price from database."})
+                                            
+                                        except:
+                                            return JsonResponse({"success": False, "message": "Invalid Price"})
 
                         except:
                             return JsonResponse({"success": False, "message": "Invalid Serial Number!"})
