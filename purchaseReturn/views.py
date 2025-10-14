@@ -63,12 +63,24 @@ def createPurchaseReturn(request):
 
                                 # Validating provided party name for serial with actual party name  
                                 vendor_name = cursor.fetchone()
-                                if not vendor_name == data.get("party_name"):
+                                if not vendor_name[0] == data.get("party_name"):
                                     return JsonResponse({"success": False, "message": f"The serial number '{serial}' was purchased from {vendor_name}, not from {data.get('party_name')}."})
                         except Exception as e:
                             return JsonResponse({ "success": False, "message":f"The Serial '{serial}' does not exists in stock!" })
                 except:
                     return JsonResponse({"success": False, "message": "Invalid Serial Data!"}) 
+                
+
+                
+                # Executing Create_purchase_ return function
+                try:
+                    json_data = json.dumps(data.get("serials"))
+                    with connection.cursor() as cursor:
+                        cursor.execute("SELECT create_purchase_return(%s,%s)",[data.get('party_name'),json_data])
+                    return JsonResponse({"success": True, "message": "Purchase Return Sucessfull"}) 
+                except Exception as e:
+                    print(e)
+                    return JsonResponse({"success": False, "message": f"Unable to Purchase Return, Try Again! {e}"}) 
                 
             except:
                 pass
