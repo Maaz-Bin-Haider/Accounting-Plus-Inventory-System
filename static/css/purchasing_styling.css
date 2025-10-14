@@ -115,7 +115,7 @@ input[type=number] {
 }
 
 button[type="submit"] {
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  /* background: linear-gradient(135deg, #2563eb, #3b82f6); */
   border-radius: 12px;
   color: #fff;
   font-size: 1rem;
@@ -236,7 +236,7 @@ button.custom-btn {
 
 /* ======= SAVE & DELETE BUTTONS ======= */
 .save-and-update-btn {
-  background: linear-gradient(135deg, #2566bb, #3b82f6);
+  background: rgb(102, 158, 102);
   color: #fff;
   font-weight: 600;
   padding: 12px 20px;
@@ -254,7 +254,7 @@ button.custom-btn {
 }
 
 .delete-btn {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: linear-gradient(135deg, #ef4444, #b53434)!important;
   color: #fff;
   font-weight: 600;
   padding: 12px 20px;
