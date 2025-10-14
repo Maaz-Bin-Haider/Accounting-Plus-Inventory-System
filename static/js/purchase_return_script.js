@@ -110,6 +110,9 @@ function handleEnterKey(e) {
 // 🧾 Build Payload & Submit
 function submitReturn(event) {
   event.preventDefault();
+  const form = event.target;
+  const action = form.querySelector('button[type="submit"][clicked="true"]')?.value; 
+  console.log("Action:", action);
 
   const partyName = document.getElementById("search_name").value.trim();
   if (!partyName) {
@@ -120,7 +123,7 @@ function submitReturn(event) {
   let returnDate = document.getElementById("return_date").value;
   if (!returnDate) returnDate = new Date().toISOString().slice(0, 10);
 
-  const serials = Array.from(document.querySelectorAll("#serials input"))
+  const serials = Array.from(document.querySelectorAll(".serial-input"))
     .map(i => i.value.trim())
     .filter(v => v);
 
@@ -134,8 +137,9 @@ function submitReturn(event) {
     party_name: partyName,
     return_date: returnDate,
     serials: serials,
+    action: action,
   };
-
+  console.log(payload)
   fetch("/purchaseReturn/create-purchase-return/", {
     method: "POST",
     headers: {
@@ -232,4 +236,13 @@ $(document).ready(function () {
   document.getElementById("return_date").value = today;
 });
 
-
+// Helper function to get action of Purchase Form
+// Track which submit button was clicked
+document.querySelectorAll('button[type="submit"]').forEach(btn => {
+  btn.addEventListener('click', function () {
+    // Remove clicked="true" from all submit buttons first
+    document.querySelectorAll('button[type="submit"]').forEach(b => b.removeAttribute('clicked'));
+    // Add clicked="true" only to this one
+    this.setAttribute('clicked', 'true');
+  });
+});
