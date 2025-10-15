@@ -116,3 +116,94 @@ def purchase_return_lookup(request,serial:str):
     
     return JsonResponse({ "success": True, "item_name": item[0][0], "item_price": item[0][1]})
     
+def get_purchase_return(request):
+    action = request.GET.get("action")
+    current_id = request.GET.get("current_id")
+    try:
+        if action == "previous":
+            
+            if not current_id:
+                
+                # getting and  previous purchase return ID
+                try:
+                    with connection.cursor() as cursor:
+                        cursor.execute("SELECT get_last_purchase_return_id()")
+                        last_purchase_return = cursor.fetchone()
+                        
+                        if not last_purchase_return or not last_purchase_return[0]:
+                            return JsonResponse({"success": False, "message": "No Last Purchase Return!"})
+                        
+                        try:
+                            last_purchase_return = last_purchase_return[0]
+    
+                            current_id = int(last_purchase_return) + 1
+                        except:
+                            return JsonResponse({"success": False, "message": "Invalid Last Purchase-Return data!"})
+                except:
+                    return JsonResponse({"success": False, "message": "Data base Connection Error While getting Previous Purchase-Return!"})
+    
+            # Validating Current purchase-return ID
+            try:
+                current_id = int(current_id)
+            except (ValueError, TypeError):
+                return JsonResponse({"success": False, "message": "Invalid Previous Purchase-Return ID!"})
+            
+            # Fetching Previous purchase-return data from DB
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT get_previous_purchase_return(%s)",[current_id])
+                    result_data = cursor.fetchone()
+                 
+                if not result_data or not result_data[0]:
+                    return JsonResponse({"success": False, "message": "No Previous Purchase-Return Found"})
+            except:
+                return JsonResponse({"success": False, "message": "Data base Connection Error While getting Previous Purchase-Return!"})
+        elif action == "next":
+            # Validating Current purchase-return ID
+            try:
+                current_id = int(current_id)
+            except (ValueError, TypeError):
+                return JsonResponse({"success": False, "message": "No Next Purchase-Return Found"})
+            
+            # Fetching Next purchase-return data from DB
+            try:
+
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT get_next_purchase_return(%s)",[current_id])
+                    result_data = cursor.fetchone()
+
+                if not result_data or not result_data[0]:
+                    return JsonResponse({"success": False, "message": "No Next Purchase-Return Found"})
+            except:
+                return JsonResponse({"success": False, "message": "Data base Connection Error While getting Next Purchase-Return!"})
+            
+        elif action == "current": # If no action is provided means we have to fetch current purchase-return ID
+            print("Entered in current----")
+            # Validating Current purchase-return ID
+            try:
+                current_id = int(current_id)
+            except (ValueError, TypeError):
+                return JsonResponse({"success": False, "message": "No Purchase-Return Found"})
+            
+            # Fetching Next purchase-return data from DB
+            try:
+
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT get_current_purchase_return(%s)",[current_id])
+                    result_data = cursor.fetchone()
+
+                if not result_data or not result_data[0]:
+                    return JsonResponse({"success": False, "message": "No Purchase-Return Found"})
+            except:
+                return JsonResponse({"success": False, "message": "Data base Connection Error While getting Next Purchase-Return!"})
+        else:
+            pass
+    except:
+        return JsonResponse({"success": False, "message": "Data base Error!"})
+    
+    # Sending to frontend
+    try:
+        print(result_data[0])
+        return JsonResponse(result_data[0],safe=False)
+    except Exception:
+        return JsonResponse({"success": False, "message": "Invalid purchase-return data format."})

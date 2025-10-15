@@ -257,3 +257,134 @@ document.querySelectorAll('button[type="submit"]').forEach(btn => {
     this.setAttribute('clicked', 'true');
   });
 });
+
+// navigatePurchaseReturn(action)
+async function navigatePurchaseReturn(action) {
+  try {
+    const currentId = document.getElementById("current_return_id").value || "";
+
+    const response = await fetch(`/purchaseReturn/get-purchase-return/?action=${action}&current_id=${currentId}`, {
+      method: "GET",
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+    });
+
+    let data = await response.json();
+
+    // Handle backend errors
+    if (data.success === false) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: data.message || "An error occurred while navigating purchase return!",
+      });
+      return;
+    }
+
+    // Parse JSON string if backend returns nested JSON
+    if (typeof data === "string") {
+      try { data = JSON.parse(data); } catch {}
+    }
+
+    if (typeof data === "object" && !data.hasOwnProperty("purchase_return_id")) {
+      try {
+        data = JSON.parse(Object.values(data)[0]);
+      } catch {}
+    }
+
+    renderPurchaseReturnData(data);
+  } catch (error) {
+    console.error("Error navigating purchase return:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "An unexpected error occurred while fetching purchase return data.",
+    });
+  }
+}
+
+// 🧱 renderPurchaseReturnData(data)
+function renderPurchaseReturnData(data) {
+  // 🧾 Update header fields
+  document.getElementById("search_name").value = data.Vendor || "";
+  document.getElementById("return_date").value = data.return_date || "";
+  document.getElementById("current_return_id").value = data.purchase_return_id || "";
+
+  // 🧹 Clear existing serial list
+  const serialsDiv = document.getElementById("serials");
+  serialsDiv.innerHTML = "";
+
+  // 🧩 Render each serial-row
+  if (Array.isArray(data.items)) {
+    data.items.forEach(item => {
+      console.log(item)
+      console.log(item.item_name)
+      console.log(item.serial_number);
+      const row = document.createElement("div");
+      row.className = "serial-row";
+
+      // Create Item Name (readonly)
+      const itemInput = document.createElement("input");
+      itemInput.type = "text";
+      itemInput.value = item.item_name || "";
+      itemInput.placeholder = "Item Name";
+      itemInput.className = "item-input";
+      itemInput.readOnly = true;
+
+      // Create Serial Number (readonly)
+      const serialInput = document.createElement("input");
+      serialInput.type = "text";
+      serialInput.value = item.serial_number|| "";
+      serialInput.placeholder = "Serial";
+      serialInput.className = "serial-input";
+      serialInput.readOnly = true;
+
+      // Create item price input (readonly)
+      const itemPrice = document.createElement("input");
+      itemPrice.type = "text";
+      itemPrice.value = item.unit_price|| "";
+      itemPrice.placeholder = "Item Price";
+      itemPrice.className = "item-input";
+      itemPrice.readOnly = true;
+      // // If multiple serials exist for one item, render each
+      // if (Array.isArray(item.serial_number)) {
+      //   // item.serial_number.forEach(serial => {
+      //   //   console.log(serial)
+      //   //   const serialClone = serialInput.cloneNode();
+      //   //   serialClone.value = serial;
+      //   //   const rowClone = row.cloneNode();
+      //   //   const itemClone = itemInput.cloneNode();
+      //   //   itemClone.value = item.item_name;
+      //   //   rowClone.appendChild(itemClone);
+      //   //   rowClone.appendChild(serialClone);
+      //   //   serialsDiv.appendChild(rowClone);
+      //   });
+      // } else {
+        row.appendChild(itemInput);
+        row.appendChild(serialInput);
+        row.appendChild(itemPrice)
+        serialsDiv.appendChild(row);
+      // }
+    });
+  }
+
+  // // 💰 Update total amount
+  // document.getElementById("totalAmount").textContent =
+  //   data.total_amount ? parseFloat(data.total_amount).toFixed(2) : "0.00";
+
+  // 🔄 Update button label
+  const submitBtn = document.querySelector("#purchaseReturnForm button[type=submit]");
+  if (data.purchase_return_id) {
+    submitBtn.textContent = "Update Purchase Return";
+  } else {
+    submitBtn.textContent = "Save Purchase Return";
+  }
+
+  // ✅ Optional success toast
+  // Swal.fire({
+  //   icon: "success",
+  //   title: "Purchase Return Loaded",
+  //   text: `Purchase Return #${data.purchase_return_id} loaded successfully.`,
+  //   timer: 1500,
+  //   showConfirmButton: false
+  // });
+}
