@@ -22,6 +22,14 @@ function addSerial(autoFocus = true) {
   itemInput.className = "item-input";
   itemInput.readOnly = true;
 
+  // Create item price input (readonly)
+  const itemPrice = document.createElement("input");
+  itemPrice.type = "text";
+  itemPrice.placeholder = "Item Price";
+  itemPrice.className = "item-input";
+  itemPrice.readOnly = true;
+
+
   // Create serial input
   const serialInput = document.createElement("input");
   serialInput.type = "text";
@@ -39,6 +47,7 @@ function addSerial(autoFocus = true) {
         .then(data => {
           if (data.success) {
             itemInput.value = data.item_name;
+            itemPrice.value = data.item_price;
           } else {
             itemInput.value = "";
             Swal.fire({
@@ -62,8 +71,10 @@ function addSerial(autoFocus = true) {
   });
 
   // Append both inputs to row
-  row.appendChild(itemInput);
+  
   row.appendChild(serialInput);
+  row.appendChild(itemInput);
+  row.appendChild(itemPrice);
 
   // Append row to main serials container
   serialsDiv.appendChild(row);

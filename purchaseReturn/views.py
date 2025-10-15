@@ -108,10 +108,11 @@ def purchase_return_lookup(request,serial:str):
             if not exists[0]:
                 return JsonResponse({ "success": False, "message":f"The Serial '{serial}' does not exists in stock!" })
             
-            cursor.execute("SELECT item_name FROM get_serial_number_details(%s)",[serial])
-            item_name = cursor.fetchone()
+            cursor.execute("SELECT item_name,purchase_price FROM get_serial_number_details(%s)",[serial])
+            item = cursor.fetchall()
+            print(item)
     except Exception as e:
         return JsonResponse({ "success": False, "message":f"The Serial '{serial}' does not exists in stock!" })
     
-    return JsonResponse({ "success": True, "item_name": item_name[0] })
+    return JsonResponse({ "success": True, "item_name": item[0][0], "item_price": item[0][1]})
     
