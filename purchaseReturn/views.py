@@ -89,13 +89,22 @@ def createPurchaseReturn(request):
                         return JsonResponse({"success": True, "message": "Purchase-Return Updated Sucessfully"}) 
                     except Exception as e:
                         print(e)
-                        return JsonResponse({"success": False, "message": f"Unable to Update Purchase-Return, Try Again!"})
+                        return JsonResponse({"success": False, "message": f"Unable to Update Purchase-Return, Try Again! {e}"})
             except:
                 pass
 
         # Delete Purchase Return
-        else:
-            pass
+        if action == "delete":
+            if not purchase_return_ID:
+                return JsonResponse({ "success": False, "message":"Navigate to Return Invoice first" })
+            
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT delete_purchase_return(%s)",[purchase_return_ID])
+                    return JsonResponse({"success": True, "message": "Deleted Successfully"})
+            except Exception:
+                return JsonResponse({"success": False, "message": "Unable to delete this Purchase-Return! Try Again.."})
+
 
     return render(request,'purchase_return_templates/purchase_return_template.html')
 

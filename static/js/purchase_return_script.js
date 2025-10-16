@@ -38,6 +38,17 @@ function addSerial(autoFocus = true) {
   serialInput.oninput = updateCount;
   serialInput.onkeydown = handleEnterKey;
 
+  // ❌ Create remove button
+  const removeBtn = document.createElement("button");
+  removeBtn.innerHTML = "×";
+  removeBtn.className = "remove-btn";
+  removeBtn.title = "Remove this serial";
+  removeBtn.onclick = function () {
+    row.remove();
+    updateCount();
+  };
+
+
   // Add event to handle serial lookup
   serialInput.addEventListener("change", function () {
     const serialValue = serialInput.value.trim();
@@ -75,6 +86,7 @@ function addSerial(autoFocus = true) {
   row.appendChild(serialInput);
   row.appendChild(itemInput);
   row.appendChild(itemPrice);
+  row.appendChild(removeBtn);
 
   // Append row to main serials container
   serialsDiv.appendChild(row);
@@ -164,7 +176,7 @@ function submitReturn(event) {
     if (data.success) {
       Swal.fire({
         icon: "success",
-        title: "Return Saved ✅",
+        title: "Sucess ✅",
         text: data.message || "Return saved successfully!",
         timer: 1500,
         showConfirmButton: false
@@ -336,7 +348,7 @@ function renderPurchaseReturnData(data) {
       serialInput.value = item.serial_number|| "";
       serialInput.placeholder = "Serial";
       serialInput.className = "serial-input";
-      serialInput.readOnly = true;
+      
 
       // Create item price input (readonly)
       const itemPrice = document.createElement("input");
@@ -346,10 +358,22 @@ function renderPurchaseReturnData(data) {
       itemPrice.className = "item-input";
       itemPrice.readOnly = true;
 
-        row.appendChild(itemInput);
-        row.appendChild(serialInput);
-        row.appendChild(itemPrice)
-        serialsDiv.appendChild(row);
+      // ❌ Create remove button
+      const removeBtn = document.createElement("button");
+      removeBtn.innerHTML = "×";
+      removeBtn.className = "remove-btn";
+      removeBtn.title = "Remove this serial";
+      removeBtn.onclick = function () {
+        row.remove();
+        updateCount();
+      };
+
+      row.appendChild(itemInput);
+      row.appendChild(serialInput);
+      row.appendChild(itemPrice)
+      row.appendChild(removeBtn);
+      serialsDiv.appendChild(row);
+
     });
   }
 
@@ -374,3 +398,36 @@ function renderPurchaseReturnData(data) {
   //   showConfirmButton: false
   // });
 }
+
+
+const deleteButton = document.querySelector(".delete-btn");
+
+function confirmDelete(event) {
+  event.preventDefault(); // stop the form from submitting immediately
+
+  Swal.fire({
+    title: "Are you sure?",
+    text: "This purchase-return will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // ✅ Temporarily remove this listener so the next click doesn’t reopen the alert
+      deleteButton.removeEventListener("click", confirmDelete);
+
+      // ✅ Trigger the real submit (calls your buildAndSubmit normally)
+      deleteButton.click();
+
+      // ✅ Reattach the listener for next time
+      setTimeout(() => {
+        deleteButton.addEventListener("click", confirmDelete);
+      }, 100);
+    }
+  });
+}
+
+deleteButton.addEventListener("click", confirmDelete);

@@ -68,7 +68,7 @@
 
 .serial-row {
   display: grid;
-  grid-template-columns: 2fr 2.5fr 1.3fr;
+  grid-template-columns: 2fr 2.5fr 1.3fr 0.5fr;
   gap: 12px;
 }
 
@@ -92,3 +92,22 @@
   color: #555;
   
 }
+/* ---------- REMOVE BTN FOR ROWS ---------- */
+.remove-btn {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  border: none;
+  background-color: #f87171; /* red-400 */
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.remove-btn:hover {
+  background-color: #da4545; /* red-600 */
+}
+
