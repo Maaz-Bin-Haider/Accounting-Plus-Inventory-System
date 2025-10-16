@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'purchase',
     'sale',
     'purchaseReturn',
+    'home',
 ]
 
 MIDDLEWARE = [

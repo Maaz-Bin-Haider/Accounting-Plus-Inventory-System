@@ -24,6 +24,7 @@ from receipts import urls as receipt_urls
 from purchase import urls as purchase_urls
 from sale import urls as sale_urls
 from purchaseReturn import urls as purchase_return_urls
+from home import urls as home_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -34,4 +35,5 @@ urlpatterns = [
     path('purchase/',include(purchase_urls,namespace='purchase')),
     path('sale/',include(sale_urls,namespace='sale')),
     path('purchaseReturn/',include(purchase_return_urls,namespace='purchaseReturn')),
+    path('home/',include(home_urls,namespace='home')),
 ]

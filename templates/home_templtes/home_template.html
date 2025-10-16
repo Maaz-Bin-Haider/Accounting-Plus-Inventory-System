@@ -1,0 +1,85 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Financee - Home{% endblock title %}
+
+{% block SeperateCssFile %}
+<link rel="stylesheet" href="{% static 'css/home_styling.css' %}">
+{% endblock SeperateCssFile %}
+
+{% block body %}
+<div class="home-container">
+    <h1 class="system-title">Financee</h1>
+
+    <!-- Sales Section -->
+    <div class="section">
+        <h3>Sales</h3>
+        <div class="buttons-grid">
+            <button class="action-btn sales" onclick="">
+                <i class="fas fa-cart-plus"></i> Create Sale
+            </button>
+            <button class="action-btn sales" onclick="">
+                <i class="fas fa-undo"></i> Sale Return
+            </button>
+        </div>
+    </div>
+
+    <!-- Purchases Section -->
+    <div class="section">
+        <h3>Purchases</h3>
+        <div class="buttons-grid">
+            <button class="action-btn purchases" onclick="">
+                <i class="fas fa-file-invoice-dollar"></i> Purchase
+            </button>
+            <button class="action-btn purchases" onclick="">
+                <i class="fas fa-undo-alt"></i> Purchase Return
+            </button>
+        </div>
+    </div>
+
+    <!-- Inventory Section -->
+    <div class="section">
+        <h3>Inventory</h3>
+        <div class="buttons-grid">
+            <button class="action-btn inventory" onclick="">
+                <i class="fas fa-boxes-stacked"></i> Stock
+            </button>
+            <button class="action-btn inventory" onclick=" ">
+                <i class="fas fa-plus-square"></i> Add Items
+            </button>
+        </div>
+    </div>
+
+    <!-- Transactions Section -->
+    <div class="section">
+        <h3>Transactions</h3>
+        <div class="buttons-grid">
+            <button class="action-btn transactions" onclick="">
+                <i class="fas fa-money-bill-wave"></i> Payment
+            </button>
+            <button class="action-btn transactions" onclick="">
+                <i class="fas fa-receipt"></i> Receipt
+            </button>
+            <button class="action-btn transactions" onclick="">
+                <i class="fas fa-hand-holding-usd"></i> Payables
+            </button>
+            <button class="action-btn transactions" onclick="">
+                <i class="fas fa-hand-holding"></i> Receivables
+            </button>
+        </div>
+    </div>
+
+    <!-- Accounts Section -->
+    <div class="section">
+        <h3>Accounts</h3>
+        <div class="buttons-grid">
+            <button class="action-btn accounts" onclick="">
+                <i class="fas fa-book"></i> Accounts & Parties
+            </button>
+            <button class="action-btn accounts" onclick="">
+                <i class="fas fa-user-plus"></i> Add Parties
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock body %}
