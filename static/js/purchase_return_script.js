@@ -144,7 +144,7 @@ function submitReturn(event) {
   }
 
   const payload = {
-    return_id: document.getElementById("current_return_id").value || null,
+    return_id: document.getElementById("current_return_id").value || "",
     party_name: partyName,
     return_date: returnDate,
     serials: serials,
@@ -345,25 +345,11 @@ function renderPurchaseReturnData(data) {
       itemPrice.placeholder = "Item Price";
       itemPrice.className = "item-input";
       itemPrice.readOnly = true;
-      // // If multiple serials exist for one item, render each
-      // if (Array.isArray(item.serial_number)) {
-      //   // item.serial_number.forEach(serial => {
-      //   //   console.log(serial)
-      //   //   const serialClone = serialInput.cloneNode();
-      //   //   serialClone.value = serial;
-      //   //   const rowClone = row.cloneNode();
-      //   //   const itemClone = itemInput.cloneNode();
-      //   //   itemClone.value = item.item_name;
-      //   //   rowClone.appendChild(itemClone);
-      //   //   rowClone.appendChild(serialClone);
-      //   //   serialsDiv.appendChild(rowClone);
-      //   });
-      // } else {
+
         row.appendChild(itemInput);
         row.appendChild(serialInput);
         row.appendChild(itemPrice)
         serialsDiv.appendChild(row);
-      // }
     });
   }
 

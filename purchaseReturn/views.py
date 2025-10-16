@@ -71,17 +71,25 @@ def createPurchaseReturn(request):
                     return JsonResponse({"success": False, "message": "Invalid Serial Data!"}) 
                 
 
-                
-                # Executing Create_purchase_ return function
-                try:
-                    json_data = json.dumps(data.get("serials"))
-                    with connection.cursor() as cursor:
-                        cursor.execute("SELECT create_purchase_return(%s,%s)",[data.get('party_name'),json_data])
-                    return JsonResponse({"success": True, "message": "Purchase Return Sucessfull"}) 
-                except Exception as e:
-                    print(e)
-                    return JsonResponse({"success": False, "message": f"Unable to Purchase Return, Try Again! {e}"}) 
-                
+                if not purchase_return_ID:
+                    # Executing Create_purchase_ return function
+                    try:
+                        json_data = json.dumps(data.get("serials"))
+                        with connection.cursor() as cursor:
+                            cursor.execute("SELECT create_purchase_return(%s,%s)",[data.get('party_name'),json_data])
+                        return JsonResponse({"success": True, "message": "Purchase Return Sucessfull"}) 
+                    except Exception as e:
+                        return JsonResponse({"success": False, "message": f"Unable to Purchase Return, Try Again!"}) 
+                else:
+                    # Executing update_purchase_ return function
+                    try:
+                        json_data = json.dumps(data.get("serials"))
+                        with connection.cursor() as cursor:
+                            cursor.execute("SELECT update_purchase_return(%s,%s)",[purchase_return_ID,json_data])
+                        return JsonResponse({"success": True, "message": "Purchase-Return Updated Sucessfully"}) 
+                    except Exception as e:
+                        print(e)
+                        return JsonResponse({"success": False, "message": f"Unable to Update Purchase-Return, Try Again!"})
             except:
                 pass
 
