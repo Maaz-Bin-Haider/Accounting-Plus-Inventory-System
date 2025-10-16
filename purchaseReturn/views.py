@@ -53,6 +53,15 @@ def createPurchaseReturn(request):
                     for serial in data.get("serials"):
                         # checking in Current Stock
                         try:
+                            # Skipping when updating a purchase return invoice
+                            if purchase_return_ID:
+                                with connection.cursor() as cursor:
+                                    cursor.execute("SELECT serial_exists_in_purchase_return(%s,%s)",[purchase_return_ID,serial])
+                                    exists = cursor.fetchone()
+
+                                    if exists:
+                                        continue
+
                             with connection.cursor() as cursor:
                                 cursor.execute("SELECT in_stock FROM get_serial_number_details(%s)",[serial])
                                 exists = cursor.fetchone()
