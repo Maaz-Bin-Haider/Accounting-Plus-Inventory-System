@@ -233,3 +233,64 @@ def get_purchase_return(request):
         return JsonResponse(result_data[0],safe=False)
     except Exception:
         return JsonResponse({"success": False, "message": "Invalid purchase-return data format."})
+    
+
+
+def get_purchase_return_summary(request):
+    try:
+        from_date_str = request.GET.get("from")
+        to_date_str = request.GET.get("to")
+
+        # if user want purchasing summary in specific dates
+        if from_date_str or to_date_str:
+            # Validating Dates (must be in correct date format)
+            try:
+                # Adjust format according to your input (e.g. "YYYY-MM-DD")
+                from_date = datetime.strptime(from_date_str, "%Y-%m-%d").date()
+                to_date = datetime.strptime(to_date_str, "%Y-%m-%d").date()
+
+                # Future Date Restriction
+                if from_date > date.today() or to_date > date.today():
+                    return JsonResponse({"success": False, "message": "Dates can't be in Future"})
+
+                # Making Date again Str
+                from_date = from_date.strftime("%Y-%m-%d")
+                to_date = to_date.strftime("%Y-%m-%d")
+
+            except (ValueError, TypeError):
+                return JsonResponse({"success": False, "message": "Invalid date. Please enter a valid date in YYYY-MM-DD format."})
+            
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT get_purchase_return_summary(%s, %s)",[from_date,to_date])
+                    result = cursor.fetchone()
+                
+                if not result or not result[0]:
+                    return JsonResponse({"success": False, "message": "No Purchase-Return Invoices found in the given date range!"})
+            except:
+                return JsonResponse({"success": False, "message": "Unable fetch Purchase-Return Invoices, Check your Internet Connection!"})
+        # if no date is specified then fetch last 20 purchase invoice summary
+        else:
+            print("Entered Else BLock----")
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT get_purchase_return_summary()")
+                    result = cursor.fetchone()
+                print(result[0])
+                if not result or not result[0]:
+                    return JsonResponse({"success": False, "message": "No Purchase-Return Invoices found"})
+            except Exception as e:
+                print(e)
+                return JsonResponse({"success": False, "message": "Unable fetch Purchase-Return Invoices, Check your Internet Connection!"})
+        
+        # now sending to frontend
+
+        try:
+            return JsonResponse(result[0], safe=False)
+        except Exception as e:
+            print(e)
+            return JsonResponse({"success": False, "message": "Unexpected Error Occured, Please Try again!"})
+        
+
+    except Exception:
+        return JsonResponse({"success": False, "message": "Invalid purchase-return data format."})

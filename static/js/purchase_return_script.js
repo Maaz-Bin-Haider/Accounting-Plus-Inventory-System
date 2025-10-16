@@ -431,3 +431,209 @@ function confirmDelete(event) {
 }
 
 deleteButton.addEventListener("click", confirmDelete);
+
+
+
+// ------------------ Purchase Return Summary (Enhanced UI) ------------------
+async function fetchPurchaseReturnSummary(from = null, to = null) {
+  try {
+    let url = "/purchaseReturn/get-purchase-return-summary/";
+    if (from && to) {
+      url += `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+    }
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.success && !Array.isArray(data)) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: data.message || "Failed to fetch purchase-return summary.",
+      });
+      return;
+    }
+
+    // ✅ Build the table rows
+    let rows = "";
+    if (Array.isArray(data) && data.length > 0) {
+      data.forEach((purchaseReturn, idx) => {
+        rows += `
+          <tr 
+            class="return-row"
+            data-vendor="${purchaseReturn.vendor.toLowerCase()}"
+            style="cursor:pointer; transition:background 0.2s;"
+            onclick="viewPurchaseReturnDetails(${purchaseReturn.purchase_return_id})"
+            onmouseover="this.style.background='#f3f4f6';"
+            onmouseout="this.style.background='';"
+          >
+            <td>${idx + 1}</td>
+            <td>${purchaseReturn.purchase_return_id}</td>
+            <td>${purchaseReturn.return_date}</td>
+            <td>${purchaseReturn.vendor}</td>
+            <td style="text-align:right;">${purchaseReturn.total_amount.toFixed(2)}</td>
+          </tr>`;
+      });
+    } else {
+      rows = `<tr><td colspan="5" style="text-align:center;">No data found</td></tr>`;
+    }
+
+    // 🧾 Build styled HTML with search bar
+    const htmlContent = `
+      <style>
+        .return-container {
+          font-family: 'Inter', system-ui, sans-serif;
+          max-height: 450px;
+          overflow-y: auto;
+          padding: 5px;
+          border-radius: 8px;
+        }
+        .return-search {
+          width: 100%;
+          padding: 8px 12px;
+          margin-bottom: 10px;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          font-size: 14px;
+          outline: none;
+          transition: all 0.2s;
+        }
+        .return-search:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
+        }
+        table.return-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 14px;
+        }
+        table.return-table th, table.return-table td {
+          padding: 8px 10px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        table.return-table th {
+          background: #f9fafb;
+          font-weight: 600;
+          color: #374151;
+        }
+        table.return-table tbody tr:hover {
+          background: #f3f4f6;
+        }
+      </style>
+
+      <input 
+        type="text" 
+        class="return-search" 
+        placeholder="🔍 Search by Vendor name..." 
+        onkeyup="filterPurchaseReturnTable(this.value)" 
+      />
+
+      <div class="return-container">
+        <table class="return-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Return ID</th>
+              <th>Date</th>
+              <th>Vendor</th>
+              <th style="text-align:right;">Total Amount</th>
+            </tr>
+          </thead>
+          <tbody id="purchaseReturnSummaryBody">
+            ${rows}
+          </tbody>
+        </table>
+      </div>
+    `;
+  
+    // 🎉 SweetAlert popup
+    Swal.fire({
+      title: "📜 Purchase Return Summary",
+      html: htmlContent,
+      width: "750px",
+      confirmButtonText: "Close",
+      showConfirmButton: true,
+      focusConfirm: false,
+      allowOutsideClick: false,
+      allowEnterKey: true,
+      allowEscapeKey: true,
+      didOpen: (popup) => {
+        const input = popup.querySelector(".return-search");
+
+        document.querySelectorAll("input, textarea, select").forEach(el => el.blur());
+        popup.addEventListener("focusin", e => e.stopPropagation());
+
+        // Force focus into search field
+        setTimeout(() => {
+          if (input) {
+            input.focus();
+            input.select();
+            setTimeout(() => input.focus(), 400);
+            setTimeout(() => input.focus(), 800);
+          }
+        }, 100);
+      }
+    });
+
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Network Error",
+      text: error.message || "Unable to fetch purchase-return summary. Please try again!",
+    });
+  }
+}
+
+// 🔍 Search filter
+function filterPurchaseReturnTable(query) {
+  query = query.toLowerCase().trim();
+  const rows = document.querySelectorAll("#purchaseReturnSummaryBody .return-row");
+  rows.forEach(row => {
+    const vendor = row.dataset.vendor;
+    row.style.display = vendor.includes(query) ? "" : "none";
+  });
+}
+
+// 🧮 1️⃣ Button: Fetch Last 20 Purchase Returns
+function purchaseReturnHistory() {
+  fetchPurchaseReturnSummary();
+}
+
+// 📅 2️⃣ Button: Fetch Purchase Returns by Date Range
+function purchaseReturnDateWise() {
+  const today = new Date().toISOString().split("T")[0];
+  Swal.fire({
+    title: "📅 Select Date Range",
+    html: `
+      <label>From Date</label><br>
+      <input type="date" id="fromDate" class="swal2-input" style="width:70%">
+      <br>
+      <label>To Date</label><br>
+      <input type="date" id="toDate" class="swal2-input" style="width:70%" value="${today}">
+    `,
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: "Fetch Purchase Returns",
+    preConfirm: () => {
+      const fromDate = document.getElementById("fromDate").value;
+      const toDate = document.getElementById("toDate").value;
+      if (!fromDate || !toDate) {
+        Swal.showValidationMessage("⚠️ Both dates are required");
+        return false;
+      }
+      return { fromDate, toDate };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const { fromDate, toDate } = result.value;
+      fetchPurchaseReturnSummary(fromDate, toDate);
+    }
+  });
+}
+
+// 🔹 Open specific return in main UI
+function viewPurchaseReturnDetails(returnId) {
+  document.getElementById("current_return_id").value = returnId;
+  navigatePurchaseReturn("current");
+  Swal.close();
+}
