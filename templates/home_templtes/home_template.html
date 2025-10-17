@@ -1,3 +1,5 @@
+
+
 {% extends 'base/base.html' %}
 {% load static %}
 
@@ -8,11 +10,12 @@
 {% endblock SeperateCssFile %}
 
 {% block body %}
+<h1 class="system-title">Financee</h1>
+
 <div class="home-container">
-    <h1 class="system-title">Financee</h1>
 
     <!-- Sales Section -->
-    <div class="section">
+    <div class="section sales-section">
         <h3>Sales</h3>
         <div class="buttons-grid">
             <button class="action-btn sales" onclick="">
@@ -25,7 +28,7 @@
     </div>
 
     <!-- Purchases Section -->
-    <div class="section">
+    <div class="section purchases-section">
         <h3>Purchases</h3>
         <div class="buttons-grid">
             <button class="action-btn purchases" onclick="">
@@ -38,20 +41,20 @@
     </div>
 
     <!-- Inventory Section -->
-    <div class="section">
+    <div class="section inventory-section">
         <h3>Inventory</h3>
         <div class="buttons-grid">
             <button class="action-btn inventory" onclick="">
                 <i class="fas fa-boxes-stacked"></i> Stock
             </button>
-            <button class="action-btn inventory" onclick=" ">
+            <button class="action-btn inventory" onclick="">
                 <i class="fas fa-plus-square"></i> Add Items
             </button>
         </div>
     </div>
 
     <!-- Transactions Section -->
-    <div class="section">
+    <div class="section transactions-section">
         <h3>Transactions</h3>
         <div class="buttons-grid">
             <button class="action-btn transactions" onclick="">
@@ -70,7 +73,7 @@
     </div>
 
     <!-- Accounts Section -->
-    <div class="section">
+    <div class="section accounts-section">
         <h3>Accounts</h3>
         <div class="buttons-grid">
             <button class="action-btn accounts" onclick="">
@@ -81,5 +84,6 @@
             </button>
         </div>
     </div>
+
 </div>
 {% endblock body %}

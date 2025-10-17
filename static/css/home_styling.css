@@ -1,141 +1,106 @@
-/* Home Page Specific Styling */
-    /* .home-container {
-        text-align: center;
-        padding: 2rem 1rem;
-        max-width: 1000px;
-        margin: 0 auto;
-    }
+/* General Container */
+body {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
 
-    .system-title {
-        font-size: 2.8rem;
-        font-weight: 700;
-        color: #1e293b;
-        letter-spacing: 1px;
-        margin-bottom: 2.5rem;
-        text-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
-    }
+.system-title {
+  text-align: center;
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 2rem 0;
+  text-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
 
-    .buttons-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 3fr));
-        gap: 1.2rem;
-        margin-top: 2rem;
-    }
+.home-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
 
-    .action-btn {
-        background: rgba(255, 255, 255, 0.75);
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        border-radius: 15px;
-        padding: 1.2rem 0.8rem;
-        font-size: 1rem;
-        font-weight: 600;
-        color: #334155;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        cursor: pointer;
-    }
+/* SECTION BASE */
+.section {
+  padding: 2.5rem 2rem;
+  border-radius: 18px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  color: #fff;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
 
-    .action-btn:hover {
-        transform: translateY(-5px);
-        background: linear-gradient(135deg, #3b82f6, #60a5fa);
-        color: white;
-        box-shadow: 0 8px 20px rgba(59,130,246,0.25);
-    }
+.section:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.15);
+}
 
-    .action-btn i {
-        display: block;
-        font-size: 1.8rem;
-        margin-bottom: 0.6rem;
-        color: #3b82f6;
-        transition: color 0.3s ease;
-    }
+.section h3 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 1.8rem;
+  color: #fff;
+  letter-spacing: 1px;
+}
 
-    .action-btn:hover i {
-        color: white;
-    }
+/* GRID FOR BUTTONS */
+.buttons-grid {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
 
-    @media (max-width: 480px) {
-        .system-title {
-            font-size: 2rem;
-        }
-    } */
+/* BUTTONS */
+.action-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 16px;
+  padding: 1.2rem 1.5rem;
+  min-width: 160px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
 
-    .home-container {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 2rem;
-        text-align: center;
-    }
+.action-btn i {
+  display: block;
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
 
-    .system-title {
-        font-size: 3rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 2.5rem;
-        text-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-    }
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: translateY(-5px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+}
 
-    /* SECTION STYLING */
-    .section {
-        background: rgba(255,255,255,0.7);
-        border-radius: 20px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-        backdrop-filter: blur(10px);
-        animation: fadeIn 0.6s ease;
-    }
+/* SECTION COLORS */
+.sales-section { background: linear-gradient(135deg, #2563eb, #60a5fa); }
+.purchases-section { background: linear-gradient(135deg, #16a34a, #4ade80); }
+.inventory-section { background: linear-gradient(135deg, #7e22ce, #a78bfa); }
+.transactions-section { background: linear-gradient(135deg, #ea580c, #fb923c); }
+.accounts-section { background: linear-gradient(135deg, #0891b2, #22d3ee); }
 
-    .section h3 {
-        font-size: 1.4rem;
-        font-weight: 600;
-        margin-bottom: 1.5rem;
-        color: #1e293b;
-        text-align: left;
-        padding-left: 0.5rem;
-    }
-
-    /* GRID LAYOUT */
-    .buttons-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 1rem;
-    }
-
-    /* BUTTON CARD STYLE */
-    .action-btn {
-        border: none;
-        border-radius: 14px;
-        padding: 1.2rem 0.8rem;
-        font-size: 1rem;
-        font-weight: 600;
-        color: white;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-
-    .action-btn i {
-        display: block;
-        font-size: 1.8rem;
-        margin-bottom: 0.6rem;
-    }
-
-    .action-btn:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-    }
-
-    /* THEMED COLORS */
-    .sales { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
-    .purchases { background: linear-gradient(135deg, #22c55e, #4ade80); }
-    .inventory { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
-    .transactions { background: linear-gradient(135deg, #f97316, #fb923c); }
-    .accounts { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
-
-    /* RESPONSIVE */
-    @media (max-width: 600px) {
-        .system-title { font-size: 2.2rem; }
-        .section { padding: 1.5rem; }
-    }
+/* RESPONSIVE DESIGN */
+@media (max-width: 768px) {
+  .system-title {
+    font-size: 2.2rem;
+  }
+  .section {
+    padding: 2rem 1rem;
+  }
+  .buttons-grid {
+    flex-direction: column;
+    align-items: center;
+  }
+  .action-btn {
+    width: 90%;
+    max-width: 280px;
+  }
+}
