@@ -1,0 +1,68 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Sale Return{% endblock title %}
+
+{% block SeperateCssFile %}
+<link rel="stylesheet" href="{% static 'css/purchase_return_styling.css' %}">
+<link rel="stylesheet" href="{% static 'css/purchasing_styling.css' %}">
+{% endblock SeperateCssFile %}
+
+{% block body %}
+<div class="button-row-top">
+  <button type="button" class="custom-btn" onclick="saleReturnHistory()">
+    📜 Return Invoices
+  </button>
+
+  <button type="button" class="custom-btn" onclick="saleReturnDateWise()">
+    📅 View Returns by Date
+  </button>
+</div>
+
+<h2>↩️ Sale Return</h2>
+
+<form id="saleReturnForm" onsubmit="submitSaleReturn(event)">
+  <div class="party-name autocomplete-container">
+      <label for="search_name">Customer Name:</label>
+      <input type="text" id="search_name" name="search_name" placeholder="Enter Customer Name"
+             autocomplete="off"
+             data-autocomplete-url="{% url 'parties:autocomplete_party' %}" required>
+      <div id="suggestions"></div>
+  </div>
+
+  <div class="invoice-date">
+      <label for="return_date">Return Date:</label>
+      <input type="date" id="return_date" name="return_date">
+  </div>
+
+  <div class="serials-container">
+      <div id="serials"></div>
+      <button type="button" class="custom-btn add-serial" onclick="addSerial()">+ Add Serial</button>
+  </div>
+
+  <div id="totalBox">Total Return Items: <span id="totalQty">0</span></div>
+
+  <div class="btn-row actions">
+      <button type="submit" name="action" value="submit" class="save-and-update-btn">
+          <i class="fa-solid fa-floppy-disk"></i> Save Return
+      </button>
+      <button type="submit" name="action" value="delete" class="delete-btn">
+          <i class="fa-solid fa-trash"></i> Delete
+      </button>
+  </div>
+</form>
+
+<input type="hidden" id="current_return_id" value="{{return_id}}">
+
+<div class="button-group">
+  <button type="button" onclick="navigateSaleReturn('previous')">
+    <i class="fa-solid fa-arrow-left"></i> Previous
+  </button>
+  <button type="button" onclick="navigateSaleReturn('next')">
+    Next <i class="fa-solid fa-arrow-right"></i>
+  </button>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'js/sale_return_script.js' %}"></script>
+{% endblock body %}
