@@ -1,3 +1,5 @@
+
+// Function to get CSRF token
 function getCSRFToken() {
   const name = "csrftoken";
   const cookies = document.cookie.split(";").map(c => c.trim());
@@ -111,6 +113,7 @@ function updateCount() {
 //   }
 // }
 
+// To handle when user press Enter Key after typing Serial Number
 function handleEnterKey(e) {
   if (e.key === "Enter") {
     e.preventDefault();
@@ -389,14 +392,7 @@ function renderPurchaseReturnData(data) {
     submitBtn.textContent = "Save Purchase Return";
   }
 
-  // ✅ Optional success toast
-  // Swal.fire({
-  //   icon: "success",
-  //   title: "Purchase Return Loaded",
-  //   text: `Purchase Return #${data.purchase_return_id} loaded successfully.`,
-  //   timer: 1500,
-  //   showConfirmButton: false
-  // });
+
 }
 
 
