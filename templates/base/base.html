@@ -26,17 +26,7 @@
   {% block SeperateCssFile %}{% endblock SeperateCssFile %}
 
   <style>
-    /* ===== LAYOUT STRUCTURE ===== */
-    body {
-      font-family: 'Inter', sans-serif;
-      margin: 0;
-      background: #f8fafc;
-      color: #1e293b;
-      display: flex;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
+    
     
   </style>
 </head>
@@ -44,36 +34,66 @@
   <div class="layout">
     <!-- Sidebar -->
     <aside class="sidebar">
-      <div>
-        <h2><i class="fa-solid fa-coins"></i> Fiancee</h2>
-        <nav class="nav-links">
-          <a href="{% url 'home:home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
-            <i class="fa-solid fa-house"></i> Dashboard
-          </a>
-          <a href="{% url 'sale:sales' %}" class="{% if request.resolver_match.url_name == 'sales' %}active{% endif %}">
-            <i class="fa-solid fa-chart-line"></i> Sales
-          </a>
-          <a href="{% url 'purchase:purchasing' %}" class="{% if request.resolver_match.url_name == 'purchasing' %}active{% endif %}">
-            <i class="fa-solid fa-cart-shopping"></i> Purchases
-          </a>
-          <a href="" class="{% if request.resolver_match.url_name == 'inventory' %}active{% endif %}">
-            <i class="fa-solid fa-boxes-stacked"></i> Inventory
-          </a>
-          <a href="" class="{% if request.resolver_match.url_name == 'accounts' %}active{% endif %}">
-            <i class="fa-solid fa-book"></i> Accounts
-          </a>
-          <a href="" class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
-            <i class="fa-solid fa-file-lines"></i> Reports
-          </a>
-        </nav>
-      </div>
-      <div>
-        <hr style="border-color: rgba(255,255,255,0.2);">
-        <a href="" class="nav-links">
-          <i class="fa-solid fa-right-from-bracket"></i> Logout
-        </a>
-      </div>
+        <!-- Fixed Header -->
+        <div class="sidebar-header">
+            <h2><i class="fa-solid fa-coins"></i> Finance</h2>
+            <div class="sidebar-search">
+            <input type="text" id="sidebarSearch" placeholder="Search..." onkeyup="filterNavLinks()" />
+            <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+        </div>
+
+        <!-- Scrollable Nav -->
+        <div class="sidebar-scroll">
+            <nav class="nav-links">
+            <a href="{% url 'home:home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                <i class="fa-solid fa-house"></i> Dashboard
+            </a>
+            <a href="{% url 'sale:sales' %}" class="{% if request.resolver_match.url_name == 'sales' %}active{% endif %}">
+                <i class="fa-solid fa-cart-arrow-down"></i> Sales
+            </a>
+            <a href="{% url 'purchase:purchasing' %}" class="{% if request.resolver_match.url_name == 'purchasing' %}active{% endif %}">
+                <i class="fa-solid fa-bag-shopping"></i> Purchases
+            </a>
+            <a href="{% url 'payments:payment' %}" class="{% if request.resolver_match.url_name == 'payment' %}active{% endif %}">
+                <i class="fa-solid fa-credit-card"></i> Payments
+            </a>
+            <a href="{% url 'receipts:receipt' %}" class="{% if request.resolver_match.url_name == 'receipt' %}active{% endif %}">
+                <i class="fa-solid fa-receipt"></i> Receipts
+            </a>
+            <a href="{% url 'saleReturn:create_sale_return' %}" class="{% if request.resolver_match.url_name == 'sale_return' %}active{% endif %}">
+                <i class="fa-solid fa-rotate-left"></i> Sale Return
+            </a>
+            <a href="{% url 'purchaseReturn:create_purchase_return' %}" class="{% if request.resolver_match.url_name == 'purchase_return' %}active{% endif %}">
+                <i class="fa-solid fa-rotate-right"></i> Purchase Return
+            </a>
+            <a href="{% url 'items:add_new_item' %}" class="{% if request.resolver_match.url_name == 'items' %}active{% endif %}">
+                <i class="fa-solid fa-box"></i> Items
+            </a>
+            <a href="{% url 'parties:add_new_party' %}" class="{% if request.resolver_match.url_name == 'parties' %}active{% endif %}">
+                <i class="fa-solid fa-users"></i> Parties
+            </a>
+            <a href="#" class="{% if request.resolver_match.url_name == 'account_reports' %}active{% endif %}">
+                <i class="fa-solid fa-book-open"></i> Accounts Reports
+            </a>
+            <a href="#" class="{% if request.resolver_match.url_name == 'stock_reports' %}active{% endif %}">
+                <i class="fa-solid fa-warehouse"></i> Stock Reports
+            </a>
+            <a href="#" class="{% if request.resolver_match.url_name == 'profit_reports' %}active{% endif %}">
+                <i class="fa-solid fa-chart-pie"></i> Profit Reports
+            </a>
+            </nav>
+        </div>
+
+        <!-- Footer -->
+        <div class="sidebar-footer">
+            <hr>
+            <a href="#" class="logout-link">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </a>
+        </div>
     </aside>
+
 
     <!-- Main Content -->
     <main class="main-content">
@@ -84,6 +104,15 @@
     </main>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    function filterNavLinks() {
+    const query = document.getElementById("sidebarSearch").value.toLowerCase();
+    document.querySelectorAll(".nav-links a").forEach(link => {
+        const text = link.textContent.toLowerCase();
+        link.classList.toggle("hidden-link", !text.includes(query));
+    });
+    }
+   </script>
   <!-- JS for menu toggle -->
   <script>
     const toggle = document.getElementById("menuToggle");
