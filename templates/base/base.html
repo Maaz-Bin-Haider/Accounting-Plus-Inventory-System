@@ -1,71 +1,96 @@
+
+
+
+
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock title %}</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}{% endblock title %}</title>
 
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'css/base_styling.css' %}">
-    
-    {% block SeperateCssFile %}
-    
-    {% endblock SeperateCssFile %}
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
-    {% comment %} bootstrap cdn {% endcomment %}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Your global CSS -->
+  <link rel="stylesheet" href="{% static 'css/base_styling.css' %}">
+
+  {% block SeperateCssFile %}{% endblock SeperateCssFile %}
+
+  <style>
+    /* ===== LAYOUT STRUCTURE ===== */
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      background: #f8fafc;
+      color: #1e293b;
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    
+  </style>
 </head>
 <body>
-    <div class="top-messages-container">
-        {% if messages %}
-            <div class="alert-container">
-                {% for message in messages %}
-                    <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %}" role="alert">
-                        {% if message.tags == 'success' %}
-                            <i class="fas fa-check-circle"></i> <strong>Success:</strong> {{ message }}
-                        {% elif message.tags == 'error' %}
-                            <i class="fas fa-exclamation-triangle"></i> <strong>Error:</strong> {{ message }}
-                        {% elif message.tags == 'warning' %}
-                            <i class="fas fa-exclamation-circle"></i> <strong>Warning:</strong> {{ message }}
-                        {% elif message.tags == 'info' %}
-                            <i class="fas fa-info-circle"></i> <strong>Info:</strong> {{ message }}
-                        {% else %}
-                            {{ message }}
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div>
+        <h2><i class="fa-solid fa-coins"></i> Fiancee</h2>
+        <nav class="nav-links">
+          <a href="{% url 'home:home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+            <i class="fa-solid fa-house"></i> Dashboard
+          </a>
+          <a href="{% url 'sale:sales' %}" class="{% if request.resolver_match.url_name == 'sales' %}active{% endif %}">
+            <i class="fa-solid fa-chart-line"></i> Sales
+          </a>
+          <a href="{% url 'purchase:purchasing' %}" class="{% if request.resolver_match.url_name == 'purchasing' %}active{% endif %}">
+            <i class="fa-solid fa-cart-shopping"></i> Purchases
+          </a>
+          <a href="" class="{% if request.resolver_match.url_name == 'inventory' %}active{% endif %}">
+            <i class="fa-solid fa-boxes-stacked"></i> Inventory
+          </a>
+          <a href="" class="{% if request.resolver_match.url_name == 'accounts' %}active{% endif %}">
+            <i class="fa-solid fa-book"></i> Accounts
+          </a>
+          <a href="" class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
+            <i class="fa-solid fa-file-lines"></i> Reports
+          </a>
+        </nav>
       </div>
-    <!-- Background circles -->
-    <div class="bg-circle circle1"></div>
-    <div class="bg-circle circle2"></div>
-    <div class="bg-circle circle3"></div>
+      <div>
+        <hr style="border-color: rgba(255,255,255,0.2);">
+        <a href="" class="nav-links">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </a>
+      </div>
+    </aside>
 
-    <div class="general_container">
-        {% block body %}
-        {% endblock body %}
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            document.querySelectorAll(".alert").forEach(alert => {
-                if (alert.classList.contains("alert-success")) {
-                setTimeout(() => {
-                    alert.style.transition = "opacity 0.5s ease";
-                    alert.style.opacity = "0";
-                    setTimeout(() => alert.remove(), 500); // remove after fade
-                }, 5000); // 5 seconds
-                }
-            });
-        });
-    </script>
+    <!-- Main Content -->
+    <main class="main-content">
+      <i class="fa-solid fa-bars menu-toggle" id="menuToggle"></i>
 
+      {% block body %}
+      {% endblock body %}
+    </main>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- JS for menu toggle -->
+  <script>
+    const toggle = document.getElementById("menuToggle");
+    const sidebar = document.querySelector(".sidebar");
+    toggle.addEventListener("click", () => {
+      sidebar.classList.toggle("open");
+    });
+  </script>
 </body>
 </html>
