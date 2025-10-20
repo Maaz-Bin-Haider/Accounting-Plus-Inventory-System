@@ -13,7 +13,7 @@
       overflow-x: hidden;
       position: relative;
     }
-
+   
     
 
     h2 {
@@ -319,3 +319,90 @@
     display: block;
   }
 }
+
+/* for create party UI */
+#create_party_container{
+    width: 40vw;
+    max-width: 500px;
+}
+
+/* === Main Container === */
+    #create_party_container {
+        /* background-color: #ddd9d9;  */
+        padding: 30px;
+        border-radius: 16px;
+        width: 420px;
+        margin: 40px auto;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        font-family: "Segoe UI", sans-serif;
+        align-items: center;
+    }
+
+    h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 25px;
+    }
+
+    /* === Form Labels === */
+    label {
+        display: block;
+        margin-bottom: 6px;
+        color: #444;
+        font-weight: 600;
+    }
+
+    /* === Input & Select Fields === */
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+         /* light grey fields */
+        color: #333;
+        font-size: 14px;
+        box-sizing: border-box;
+        transition: all 0.2s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline: none;
+        border-color: #888;
+        background-color: #f9f9f9;
+    }
+
+    textarea {
+        resize: none;
+    }
+
+    
+    
+
+
+
+    .create_party_btn{
+      background: rgb(102, 158, 102);
+      color: #fff;
+      font-weight: 600;
+      padding: 12px 20px;
+      border-radius: 12px;
+      transition: all 0.25s ease;
+      display: inline-flex;
+      align-items: center;
+      align-self: center;
+      gap: 8px;
+      border: none;
+    }
+    .create_party_btn:hover{
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+      transform: translateY(-2px)
+    }
+    /* === Spacing === */
+    form > * {
+        margin-bottom: 15px;
+    }

@@ -96,7 +96,7 @@ label {
   font-size: 0.9rem;
 }
 
-input[type="text"],
+/* input[type="text"],
 input[type="number"],
 input[type="date"],
 textarea {
@@ -108,7 +108,7 @@ textarea {
   color: #334155;
   transition: all 0.3s ease;
   font-size: 0.9rem;
-}
+} */
 
 input::placeholder,
 textarea::placeholder {
@@ -325,7 +325,8 @@ button[type="submit"]:hover {
 /* ===== Bottom Nav Buttons (Previous / Next) ===== */
 .button-group {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 20px;
   margin-top: 20px;
 }
 

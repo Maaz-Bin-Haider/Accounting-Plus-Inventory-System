@@ -15,13 +15,30 @@ body {
 
 /* --- Form Container --- */
 form {
-    background: #fff;
+    background: none;
     padding: 25px 30px;
     border-radius: 12px;
     box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-    width: 400px; /* standard width */
+    width: 40vw; /* standard width */
     max-width: 90%; /* responsive on small screens */
-    margin-bottom: 30px;
+    margin: auto;
+}
+button{
+      background: rgb(102, 158, 102);
+      color: #fff;
+      font-weight: 600;
+      padding: 12px 20px;
+      border-radius: 12px;
+      transition: all 0.25s ease;
+      display: inline-flex;
+      align-items: center;
+      align-self: center;
+      gap: 8px;
+      border: none;
+    }
+button:hover{
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
 }
 
 /* --- Headings --- */
@@ -57,7 +74,7 @@ form input[type="number"]:focus {
 }
 
 /* --- Button Styling --- */
-button {
+/* button {
     background-color: #3498db;
     color: #fff;
     padding: 12px 20px;
@@ -71,7 +88,7 @@ button {
 
 button:hover {
     background-color: #2980b9;
-}
+} */
 
 /* --- Suggestions Dropdown --- */
 .autocomplete-container {
