@@ -64,15 +64,38 @@ $(document).ready(function() {
 
 
 function navigateReceipt(action) {
-    let currentId = document.getElementById("current_receipt_id").value;
+    let currentId = document.getElementById("current_receipt_id").value || "";
 
     fetch(`/receipts/receipt/get/?action=${action}&current_id=${currentId}`)
         .then(response => response.json())
         .then(data => {
             if (data.error) {
                 // show message when at boundary
-                if (data.info) {
-                    alert(data.info);
+                if (action === "previous") {
+                    Swal.fire({
+                        title: "Notice",
+                        text: "No previous record found.",
+                        icon: "info",
+                        confirmButtonColor: '#3085d6',
+                        confirmButtonText: 'OK'
+                    });
+                } else if (action === "next") {
+                    Swal.fire({
+                        title: "Notice",
+                        text: "No next record found.",
+                        icon: "info",
+                        confirmButtonColor: '#3085d6',
+                        confirmButtonText: 'OK'
+                    });
+                } else if (data.info) {
+                    // fallback for other info messages
+                    Swal.fire({
+                        title: "Notice",
+                        text: data.info,
+                        icon: "info",
+                        confirmButtonColor: '#3085d6',
+                        confirmButtonText: 'OK'
+                    });
                 }
                 return;
             }
@@ -295,3 +318,4 @@ $("#btnCustomerReceipts").on("click", function () {
         }
     });
 });
+

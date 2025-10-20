@@ -17,7 +17,6 @@ def make_receipt(request):
             amount_str = request.POST.get('amount')
             description = request.POST.get('description')
 
-            print(receipt_date_str,'--------')
 
             data = {
                 "party_name":party_name.upper(),
@@ -122,6 +121,7 @@ def get_receipt(request):
         with connection.cursor() as cursor:
             if action == "previous":
                 if not current_id:
+                    print("Enter")
                     cursor.execute("SELECT get_last_receipt()")
                     last_receipt = cursor.fetchone()
                     if not last_receipt or not last_receipt[0]:
