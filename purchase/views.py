@@ -359,3 +359,5 @@ def get_purchase_summary(request):
 
 # TODO:
 # item addition sale price float error handling
+# add update purchase validation function before actually updating a purchase
+# add delete purchase validation function function before deleting a purchase
