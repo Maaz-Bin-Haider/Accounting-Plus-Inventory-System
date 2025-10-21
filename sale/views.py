@@ -191,6 +191,44 @@ def sales(request):
                         return JsonResponse({"success": False, "message": "Failed to make Sale, try again!"})  
                 else: # if sale ID Exists Means we have to update
                     try:
+                        # Prepare your sale items data
+                        items_data = []
+                        for item in data.get("items"):
+                            items_data.append(item)
+
+                
+                        # Convert Python list → JSON string
+                        items_json = json.dumps(items_data)
+
+                        with connection.cursor() as cursor:
+                            cursor.execute("SELECT validate_sales_update(%s,%s)",[sale_id,items_json])
+                            result = cursor.fetchone()[0]
+                            result = json.loads(result)
+                            
+
+
+                            if not result["is_valid"]:
+                                returned_serials = result.get("returned_serials", [])
+
+                                # Build detailed message lines
+                                details = []
+                                if returned_serials:
+                                    details.append(f"• Returned Serials: {', '.join(returned_serials)}")
+
+                                message = (
+                                    "Update blocked: some serial numbers you are trying to remove "
+                                    "have already been returned from Customer.\n\n"
+                                    + "\n".join(details)
+                                )
+
+                                return JsonResponse({
+                                    "success": False,
+                                    "message": message
+                                })
+                    except:
+                        JsonResponse({"success": False, "message": "Unable Update Sale, try again!"})
+
+                    try:
                         with connection.cursor() as cursor:
                             cursor.execute("""
                                 SELECT party_id 
@@ -235,6 +273,33 @@ def sales(request):
             print("DELETE")
             if not sale_id:
                 return JsonResponse({"success": False, "message": "Navigate to Sale Invoice first!"})
+            
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT validate_sales_delete(%s)",[sale_id])
+                    result = cursor.fetchone()[0]
+                    result = json.loads(result)
+                            
+                    if not result["is_valid"]:
+                        returned_serials = result.get("returned_serials", [])
+
+                        # Build detailed message lines
+                        details = []
+                        if returned_serials:
+                            details.append(f"• Returned Serials: {', '.join(returned_serials)}")
+
+                        message = (
+                            "Delete blocked: some serial numbers you are trying to remove "
+                            "have already been returned from the Customer.\n\n"
+                            + "\n".join(details)
+                        )
+
+                        return JsonResponse({
+                            "success": False,
+                            "message": message
+                        })
+            except:
+                return JsonResponse({"success": False, "message": "Failed to Delete Sale, try again!"})
             
             # Executing Delete
             try:
