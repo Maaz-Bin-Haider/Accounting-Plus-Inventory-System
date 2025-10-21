@@ -150,6 +150,50 @@ def purchasing(request):
                     except:
                         return JsonResponse({"success": False, "message": "Failed to make Purchase, try again!"})  
                 else: # if purchase ID Exists Means we have to update
+                    # Validating If any serial number is removed from updated invoice which is already sold or purchases Returned
+                    try:
+                        print("Invalid------------")
+                        # Prepare your purchase items data
+                        items_data = []
+                        for item in data.get("items"):
+                            items_data.append(item)
+
+                
+                        # Convert Python list → JSON string
+                        items_json = json.dumps(items_data)
+                        
+                        # print(type(items_json))
+                        with connection.cursor() as cursor:
+                            cursor.execute("SELECT validate_purchase_update(%s,%s)",[purchase_id,items_json])
+                            result = cursor.fetchone()[0]
+                            result = json.loads(result)
+                            
+
+
+                            if not result["is_valid"]:
+                                
+                                sold_serials = result.get("sold_serials", [])
+                                returned_serials = result.get("returned_serials", [])
+
+                                # Build detailed message lines
+                                details = []
+                                if sold_serials:
+                                    details.append(f"• Sold Serials: {', '.join(sold_serials)}")
+                                if returned_serials:
+                                    details.append(f"• Returned Serials: {', '.join(returned_serials)}")
+
+                                message = (
+                                    "Update blocked: some serial numbers you are trying to remove "
+                                    "have already been sold or returned to the vendor.\n\n"
+                                    + "\n".join(details)
+                                )
+
+                                return JsonResponse({
+                                    "success": False,
+                                    "message": message
+                                })
+                    except:
+                        return JsonResponse({"success": False, "message": "Update Failed Try Again!"})
                     try:
                         with connection.cursor() as cursor:
                             cursor.execute("""
@@ -171,9 +215,7 @@ def purchasing(request):
                     
                             # Convert Python list → JSON string
                             items_json = json.dumps(items_data)
-                            print(items_json)
-                            print(type(items_json))
-
+                            
                             # Postgres function `update_purchase_invoice`
                             cursor.execute("""
                                 SELECT update_purchase_invoice(%s, %s::jsonb, %s, %s);
@@ -195,6 +237,37 @@ def purchasing(request):
             print("DELETE")
             if not purchase_id:
                 return JsonResponse({"success": False, "message": "Navigate to Purchase Invoice first!"})
+            
+            # Validating If any serial number is removed before deleting any invoice which is already sold or purchases Returned
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT validate_purchase_delete(%s)",[purchase_id])
+                    result = cursor.fetchone()[0]
+                    result = json.loads(result)
+                            
+                    if not result["is_valid"]:
+                        sold_serials = result.get("sold_serials", [])
+                        returned_serials = result.get("returned_serials", [])
+
+                        # Build detailed message lines
+                        details = []
+                        if sold_serials:
+                            details.append(f"• Sold Serials: {', '.join(sold_serials)}")
+                        if returned_serials:
+                            details.append(f"• Returned Serials: {', '.join(returned_serials)}")
+
+                        message = (
+                            "Delete blocked: some serial numbers you are trying to remove "
+                            "have already been sold or returned to the vendor.\n\n"
+                            + "\n".join(details)
+                        )
+
+                        return JsonResponse({
+                            "success": False,
+                            "message": message
+                        })
+            except:
+                return JsonResponse({"success": False, "message": "Failed to Delete Purchase, try again!"})  
             
             # Executing Delete
             try:
