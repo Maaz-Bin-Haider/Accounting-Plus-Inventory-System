@@ -169,3 +169,8 @@ def autocomplete_item(request):
     return JsonResponse([], safe=False)
 
 
+# parties added
+# items added
+# purchase done
+# sale remaining
+
