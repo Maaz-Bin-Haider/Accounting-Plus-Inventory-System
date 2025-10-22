@@ -5,6 +5,44 @@ from django.http import JsonResponse
 import json
 # Create your views here.
 
+# def create_new_party(request):
+#     if request.method == 'POST':
+#         party_name = request.POST.get('party_name')
+#         party_type = request.POST.get('party_type')
+#         contact_info = request.POST.get('contact_info')
+#         address = request.POST.get('address')
+#         opening_balance = request.POST.get('opening_balance')
+#         balance_type = request.POST.get('balance_type')
+
+#         with connection.cursor() as cursor:
+#             cursor.execute("SELECT 1 FROM Parties WHERE UPPER(party_name) = %s",[party_name.upper()])
+#             exists = cursor.fetchone()
+
+#             if exists:
+#                 messages.error(request, f"Party with the name '{party_name}' already exists!")
+#                 return render(request, "parties_templates/add_new_party.html")
+            
+#             # insert new party if not exists
+#             party_details = {
+#                 "party_name": party_name.upper(),
+#                 "party_type": party_type,
+#                 "contact_info": contact_info,
+#                 "address": address,
+#                 "opening_balance": int(opening_balance),
+#                 "balance_type": balance_type
+#             }
+
+#             json_data = json.dumps(party_details)
+
+#             try:
+#                 cursor.execute("SELECT add_party_from_json(%s);", [json_data])
+#                 messages.success(request, f"Party '{party_name}' created successfully!")
+#             except IntegrityError:
+#                 messages.error(request, f"Party '{party_name}' already exists!")
+
+#         return render(request, "parties_templates/add_new_party.html")
+
+#     return render(request,"parties_templates/add_new_party.html")
 def create_new_party(request):
     if request.method == 'POST':
         party_name = request.POST.get('party_name')
@@ -15,20 +53,22 @@ def create_new_party(request):
         balance_type = request.POST.get('balance_type')
 
         with connection.cursor() as cursor:
-            cursor.execute("SELECT 1 FROM Parties WHERE UPPER(party_name) = %s",[party_name.upper()])
+            cursor.execute("SELECT 1 FROM Parties WHERE UPPER(party_name) = %s", [party_name.upper()])
             exists = cursor.fetchone()
 
             if exists:
-                messages.error(request, f"Party with the name '{party_name}' already exists!")
-                return render(request, "parties_templates/add_new_party.html")
-            
-            # insert new party if not exists
+                return JsonResponse({
+                    "status": "error",
+                    "message": f"Party with the name '{party_name}' already exists!"
+                })
+
+            # Insert new party
             party_details = {
                 "party_name": party_name.upper(),
                 "party_type": party_type,
                 "contact_info": contact_info,
                 "address": address,
-                "opening_balance": int(opening_balance),
+                "opening_balance": int(opening_balance or 0),
                 "balance_type": balance_type
             }
 
@@ -36,13 +76,17 @@ def create_new_party(request):
 
             try:
                 cursor.execute("SELECT add_party_from_json(%s);", [json_data])
-                messages.success(request, f"Party '{party_name}' created successfully!")
+                return JsonResponse({
+                    "status": "success",
+                    "message": f"Party '{party_name}' created successfully!"
+                })
             except IntegrityError:
-                messages.error(request, f"Party '{party_name}' already exists!")
+                return JsonResponse({
+                    "status": "error",
+                    "message": f"Party '{party_name}' already exists!"
+                })
 
-        return render(request, "parties_templates/add_new_party.html")
-
-    return render(request,"parties_templates/add_new_party.html")
+    return render(request, "parties_templates/add_new_party.html")
 
 def get_party_by_name(party_name:str):
     with connection.cursor() as cursor:
