@@ -26,6 +26,7 @@ from sale import urls as sale_urls
 from purchaseReturn import urls as purchase_return_urls
 from home import urls as home_urls
 from saleReturn import urls as sale_return_urls
+from accountsReports import urls as account_reports_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -38,4 +39,5 @@ urlpatterns = [
     path('purchaseReturn/',include(purchase_return_urls,namespace='purchaseReturn')),
     path('saleReturn/',include(sale_return_urls,namespace='saleReturn')),
     path('home/',include(home_urls,namespace='home')),
+    path('account-reports/',include(account_reports_urls,namespace='accountsReports')),
 ]

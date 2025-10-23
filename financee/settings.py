@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'purchaseReturn',
     'home',
     'saleReturn',
+    'accountsReports',
 ]
 
 MIDDLEWARE = [
