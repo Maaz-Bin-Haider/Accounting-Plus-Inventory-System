@@ -39,5 +39,5 @@ urlpatterns = [
     path('purchaseReturn/',include(purchase_return_urls,namespace='purchaseReturn')),
     path('saleReturn/',include(sale_return_urls,namespace='saleReturn')),
     path('home/',include(home_urls,namespace='home')),
-    path('account-reports/',include(account_reports_urls,namespace='accountsReports')),
+    path('accountsReports/',include(account_reports_urls,namespace='accountsReports')),
 ]
