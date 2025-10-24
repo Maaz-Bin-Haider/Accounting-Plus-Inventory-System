@@ -14,22 +14,21 @@
   <aside class="left-panel">
     <h3 id="accounts-report-heading">📑 Reports</h3>
     <div class="report-buttons">
-      <button class="report-btn active" id="btn-ledger" onclick="selectReport('ledger')">
-        Detailed Ledger
-      </button>
-      <button class="report-btn" id="btn-trial" onclick="selectReport('trial')">
-        Trial Balance
-      </button>
+      <button class="report-btn active" id="btn-ledger" onclick="selectReport('ledger')">Detailed Ledger</button>
+      <button class="report-btn" id="btn-trial" onclick="selectReport('trial')">Trial Balance</button>
     </div>
   </aside>
 
   <!-- Right Content -->
   <section class="right-panel">
     <div id="report-form-container">
-      <!-- Dynamic form for report inputs will be injected here -->
+      <!-- Dynamic form for report inputs -->
     </div>
 
     <div class="table-container">
+      <div class="table-actions">
+        <button id="download_pdf" class="btn-download">📄 Download PDF</button>
+      </div>
       <table id="reportTable">
         <thead id="reportHeader"></thead>
         <tbody id="reportBody">
@@ -43,6 +42,8 @@
 <!-- Dependencies -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <!-- Custom JS -->
 <script src="{% static 'js/accounts_reports.js' %}"></script>
