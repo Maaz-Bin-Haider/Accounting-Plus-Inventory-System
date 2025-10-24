@@ -1,0 +1,137 @@
+.reports-wrapper {
+  display: flex;
+  min-height: 85vh;
+  background: #f8f9fa;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.left-panel {
+  width: 250px;
+  background: linear-gradient(160deg, #1f2937, #111827);
+  color: #f3f4f6;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.left-panel h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #f3f4f6;
+  font-weight: 600;
+}
+
+.report-buttons {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.report-btn {
+  background: #295773;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  width: 100%;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.report-btn:hover,
+.report-btn.active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #f1f6f8;
+  font-weight: 600;
+}
+
+.right-panel {
+  flex: 1;
+  padding: 30px;
+  background: #fff;
+  overflow-x: auto;
+}
+
+#report-form-container {
+  margin-bottom: 20px;
+  background: #f1f5f9;
+  padding: 15px 20px;
+  border-radius: 10px;
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.form-row input {
+  flex: 1;
+  padding: 10px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.generate-btn {
+  background: #1d3557;
+  color: white;
+  border: none;
+  padding: 10px 25px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.generate-btn:hover {
+  background: #457b9d;
+}
+
+.table-container {
+  margin-top: 10px;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+table th,
+table td {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+thead {
+  background: #1d3557;
+  color: white;
+}
+
+.no-data {
+  text-align: center;
+  color: #999;
+  padding: 15px;
+}
+
+@media (max-width: 768px) {
+  .reports-wrapper {
+    flex-direction: column;
+  }
+  .left-panel {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-around;
+  }
+  .report-btn {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
