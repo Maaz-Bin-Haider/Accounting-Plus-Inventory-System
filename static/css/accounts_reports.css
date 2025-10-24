@@ -135,3 +135,39 @@ thead {
     margin-bottom: 0;
   }
 }
+
+
+/* Autocomplete Suggestions */
+.autocomplete-container {
+    position: relative;
+}
+
+#suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#suggestions div {
+    padding: 10px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background 0.2s;
+}
+
+#suggestions div:hover {
+    background: #f1f1f1;
+}
+
+.suggestion-item.highlight {
+  background-color: #007bff;
+  color: white;
+}

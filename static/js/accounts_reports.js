@@ -116,26 +116,33 @@ function selectReport(type) {
 // 🧾 Detailed Ledger Form
 // ==========================
 function renderLedgerForm() {
+  const today = new Date().toISOString().split("T")[0]; 
+  const fromDefault = "2000-01-01"; 
   const formHTML = `
-    <div class="form-row">
-      <input type="text" id="party_name" placeholder="Enter Party Name" required>
+    <div class="form-row autocomplete-container">
+        <input type="text" id="search_name" name="search_name"
+                placeholder="Enter Party Name"
+                autocomplete="off"
+                data-autocomplete-url="/parties/autocomplete-party">
+        <div id="suggestions"></div>
     </div>
     <div class="form-row">
-      <input type="date" id="from_date" required>
-      <input type="date" id="to_date" required>
+      <input type="date" id="from_date" value="${fromDefault}" required>
+      <input type="date" id="to_date" value="${today}" required>
       <button class="generate-btn" onclick="fetchLedgerReport()">Generate</button>
     </div>
   `;
   $("#report-form-container").html(formHTML);
   $("#reportHeader").html("");
   $("#reportBody").html(`<tr><td class="no-data">Enter filters to generate ledger</td></tr>`);
+  initAutocomplete();
 }
 
 // ==========================
 // 📘 Fetch Detailed Ledger
 // ==========================
 function fetchLedgerReport() {
-  const partyName = $("#party_name").val().trim();
+  const partyName = $("#search_name").val().trim();
   const fromDate = $("#from_date").val();
   const toDate = $("#to_date").val();
 
@@ -247,3 +254,158 @@ function getCSRFToken() {
 $(document).ready(() => {
   selectReport("ledger");
 });
+
+
+// function initAutocomplete() {
+//   console.log("Autocomplete initialized ✅");
+//   let autocompleteUrl = $("#search_name").data("autocomplete-url");
+
+//   $("#search_name").on("input", function() {
+//       let query = $(this).val();
+//       let suggestionsBox = $("#suggestions");
+
+//       if (query.length >= 1) {
+//           $.ajax({
+//               url: autocompleteUrl,
+//               data: { 'term': query },
+//               dataType: 'json',
+//               success: function(data) {
+//                   suggestionsBox.empty();
+//                   if (data.length > 0) {
+//                       data.forEach(function(party) {
+//                           $("<div>")
+//                               .text(party)
+//                               .css({
+//                                   padding: "5px",
+//                                   cursor: "pointer",
+//                                   borderBottom: "1px solid #ddd"
+//                               })
+//                               .appendTo(suggestionsBox)
+//                               .on("click", function() {
+//                                   $("#search_name").val(party);
+//                                   suggestionsBox.hide();
+//                               });
+//                       });
+//                       suggestionsBox.show();
+//                   } else {
+//                       suggestionsBox.hide();
+//                   }
+//               },
+//               error: function(xhr, status, error) {
+//                   console.error("AJAX error:", status, error);
+//               }
+//           });
+//       } else {
+//           suggestionsBox.hide();
+//       }
+//   });
+
+//   $(document).on("click", function(e) {
+//       if (!$(e.target).closest("#search_name, #suggestions").length) {
+//           $("#suggestions").hide();
+//       }
+//   });
+// }
+
+
+function initAutocomplete() {
+  console.log("Autocomplete initialized ✅");
+
+  const $input = $("#search_name");
+  const $suggestions = $("#suggestions");
+  const autocompleteUrl = $input.data("autocomplete-url");
+
+  let selectedIndex = -1; // Keeps track of highlighted suggestion
+  let currentSuggestions = [];
+
+  $input.on("input", function() {
+      const query = $(this).val();
+      selectedIndex = -1; // reset selection
+      if (query.length < 1) {
+          $suggestions.hide();
+          return;
+      }
+
+      $.ajax({
+          url: autocompleteUrl,
+          data: { term: query },
+          dataType: "json",
+          success: function(data) {
+              $suggestions.empty();
+              currentSuggestions = data;
+
+              if (data.length > 0) {
+                  data.forEach((party, index) => {
+                      $("<div>")
+                          .addClass("suggestion-item")
+                          .text(party)
+                          .css({
+                              padding: "5px",
+                              cursor: "pointer",
+                              borderBottom: "1px solid #ddd"
+                          })
+                          .on("mouseenter", function() {
+                              $(".suggestion-item").removeClass("highlight");
+                              $(this).addClass("highlight");
+                              selectedIndex = index;
+                          })
+                          .on("click", function() {
+                              $input.val(party);
+                              $suggestions.hide();
+                          })
+                          .appendTo($suggestions);
+                  });
+                  $suggestions.show();
+              } else {
+                  $suggestions.hide();
+              }
+          },
+          error: function(xhr, status, error) {
+              console.error("AJAX error:", status, error);
+          }
+      });
+  });
+
+  // Keyboard navigation
+  $input.on("keydown", function(e) {
+      const items = $suggestions.children(".suggestion-item");
+
+      if (e.key === "ArrowDown") {
+          e.preventDefault();
+          if (items.length > 0) {
+              selectedIndex = (selectedIndex + 1) % items.length;
+              items.removeClass("highlight");
+              $(items[selectedIndex]).addClass("highlight");
+          }
+      } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          if (items.length > 0) {
+              selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+              items.removeClass("highlight");
+              $(items[selectedIndex]).addClass("highlight");
+          }
+      } else if (e.key === "Enter") {
+          if (currentSuggestions.length === 1) {
+              // ✅ If only one suggestion, select it directly
+              e.preventDefault();
+              $input.val(currentSuggestions[0]);
+              $suggestions.hide();
+          } else if (selectedIndex >= 0 && selectedIndex < items.length) {
+              // ✅ Select the highlighted suggestion
+              e.preventDefault();
+              const selectedText = $(items[selectedIndex]).text();
+              $input.val(selectedText);
+              $suggestions.hide();
+          }
+      } else if (e.key === "Escape") {
+          $suggestions.hide();
+      }
+  });
+
+  // Hide suggestions when clicking outside
+  $(document).on("click", function(e) {
+      if (!$(e.target).closest("#search_name, #suggestions").length) {
+          $suggestions.hide();
+      }
+  });
+}
