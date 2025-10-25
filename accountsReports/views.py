@@ -202,8 +202,20 @@ def item_history_view(request):
             data = json.loads(request.body)
             item_name = data.get("item_name", "").strip()
             item_name_cap = item_name.upper()
+
+            from_date = data.get("from_date")
+            to_date = data.get("to_date")
+
+            try:
+                datetime.strptime(from_date, "%Y-%m-%d")
+                datetime.strptime(to_date, "%Y-%m-%d")
+            except ValueError:
+                return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+
+
+
             with connection.cursor() as cursor:
-                cursor.execute("SELECT * FROM item_transaction_history(%s)",[item_name_cap])
+                cursor.execute("SELECT * FROM item_transaction_history(%s,%s, %s)",[item_name_cap,from_date,to_date])
                 columns = [col[0] for col in cursor.description]
                 rows = cursor.fetchall()
 
