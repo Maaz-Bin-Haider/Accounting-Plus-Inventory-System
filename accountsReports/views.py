@@ -149,3 +149,70 @@ def trial_balance_view(request):
             return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+def stock_report_view(request):
+    if request.method == "GET":
+        return render(request, "display_report_templates/stock_reports_template.html")
+
+    elif request.method == "POST":
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM stock_report")
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+
+            result = [dict(zip(columns, row)) for row in rows]
+            return JsonResponse(result, safe=False)
+
+        except IntegrityError as e:
+            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+def stock__worth_report_view(request):
+    if request.method == "GET":
+        return render(request, "display_report_templates/stock_reports_template.html")
+
+    elif request.method == "POST":
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM stock_worth_report")
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+
+            result = [dict(zip(columns, row)) for row in rows]
+            return JsonResponse(result, safe=False)
+
+        except IntegrityError as e:
+            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+def item_history_view(request):
+    if request.method == "GET":
+        return render(request, "display_report_templates/stock_reports_template.html")
+
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            item_name = data.get("item_name", "").strip()
+            item_name_cap = item_name.upper()
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM item_transaction_history(%s)",[item_name_cap])
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+
+            result = [dict(zip(columns, row)) for row in rows]
+            return JsonResponse(result, safe=False)
+
+        except IntegrityError as e:
+            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)

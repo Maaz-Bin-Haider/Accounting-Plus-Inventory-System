@@ -73,7 +73,7 @@
             <a href="{% url 'parties:add_new_party' %}" class="{% if request.resolver_match.url_name == 'add_new_party' %}active{% endif %}">
                 <i class="fa-solid fa-users"></i> Parties
             </a>
-            <a href="#" class="{% if request.resolver_match.url_name == 'account_reports' %}active{% endif %}">
+            <a href="{% url 'accountsReports:detailed_ledger' %}" class="{% if request.resolver_match.url_name == 'detailed_ledger' %}active{% endif %}">
                 <i class="fa-solid fa-book-open"></i> Accounts Reports
             </a>
             <a href="#" class="{% if request.resolver_match.url_name == 'stock_reports' %}active{% endif %}">
