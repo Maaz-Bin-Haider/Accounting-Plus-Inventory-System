@@ -228,3 +228,77 @@ def item_history_view(request):
             return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+def company_valuation_report(request):
+    if request.method == "GET":
+        return render(request, "display_report_templates/profit_reports_template.html")
+
+    elif request.method == "POST":
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM standing_company_worth_view")
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+
+            result = [dict(zip(columns, row)) for row in rows]
+            return JsonResponse(result, safe=False)
+
+        except IntegrityError as e:
+            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+def trial_balance(request):
+    if request.method == "GET":
+        return render(request, "display_report_templates/profit_reports_template.html")
+
+    elif request.method == "POST":
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM vw_trial_balance")
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+
+            result = [dict(zip(columns, row)) for row in rows]
+            return JsonResponse(result, safe=False)
+
+        except IntegrityError as e:
+            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+def sale_wise_report(request):
+    if request.method == "GET":
+        return render(request, "display_report_templates/profit_reports_template.html")
+
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            from_date = data.get("from_date")
+            to_date = data.get("to_date")
+
+            try:
+                datetime.strptime(from_date, "%Y-%m-%d")
+                datetime.strptime(to_date, "%Y-%m-%d")
+            except ValueError:
+                return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+            
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM sale_wise_profit(%s,%s)",[from_date,to_date])
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+
+            result = [dict(zip(columns, row)) for row in rows]
+            return JsonResponse(result, safe=False)
+
+        except IntegrityError as e:
+            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)

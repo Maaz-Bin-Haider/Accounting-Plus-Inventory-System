@@ -12,6 +12,8 @@
   color: #f3f4f6;
   padding: 20px;
   box-sizing: border-box;
+  border-top-left-radius: 18px;
+  border-bottom-left-radius: 18px;
 }
 
 .left-panel h3 {
@@ -50,6 +52,8 @@
 .right-panel {
   flex: 1;
   padding: 26px;
+  border-top-right-radius: 18px;
+  border-bottom-right-radius: 18px;
   background: #f8fafb;
   box-sizing: border-box;
 }
