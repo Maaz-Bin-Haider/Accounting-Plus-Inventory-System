@@ -1,0 +1,51 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Profit Reports{% endblock title %}
+
+{% block SeperateCssFile %}
+<link rel="stylesheet" href="{% static 'css/profit_reports.css' %}">
+{% endblock SeperateCssFile %}
+
+{% block body %}
+<div class="reports-wrapper">
+  <!-- Left Panel -->
+  <aside class="left-panel">
+    <h3 id="accounts-report-heading">💼 Profit Reports</h3>
+    <div class="report-buttons">
+      <button class="report-btn" id="btn-sale" onclick="selectReport('sale')">Sale-wise Profit</button>
+      <button class="report-btn active" id="btn-company" onclick="selectReport('company')">Company Valuation</button>
+    </div>
+  </aside>
+
+  <!-- Right Panel -->
+  <section class="right-panel">
+    <!-- Dynamic Form -->
+    <div id="report-form-container"></div>
+
+    <!-- Table Actions -->
+    <div class="table-actions">
+      <button id="download_pdf" class="btn-download">📄 Download PDF</button>
+    </div>
+
+    <!-- Report Table -->
+    <div class="table-container">
+      <table id="reportTable">
+        <thead id="reportHeader"></thead>
+        <tbody id="reportBody">
+          <tr><td class="no-data">Select a report to view results</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- Dependencies -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+<!-- Custom JS -->
+<script src="{% static 'js/profit_reports.js' %}"></script>
+{% endblock body %}

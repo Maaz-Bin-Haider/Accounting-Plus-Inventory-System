@@ -237,33 +237,15 @@ def company_valuation_report(request):
     elif request.method == "POST":
         try:
             with connection.cursor() as cursor:
-                cursor.execute("SELECT * FROM standing_company_worth_view")
-                columns = [col[0] for col in cursor.description]
-                rows = cursor.fetchall()
+                cursor.execute("SELECT * FROM standing_company_worth_view")  # or your view call
+                row = cursor.fetchone()
 
-            result = [dict(zip(columns, row)) for row in rows]
-            return JsonResponse(result, safe=False)
+            # The function/view returns JSON — parse it if needed
+            result_json = row[0] if row else None
+            if not result_json:
+                return JsonResponse({"error": "No data found."}, status=404)
 
-        except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
-        except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
-
-    return JsonResponse({"error": "Method not allowed"}, status=405)
-
-def trial_balance(request):
-    if request.method == "GET":
-        return render(request, "display_report_templates/profit_reports_template.html")
-
-    elif request.method == "POST":
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT * FROM vw_trial_balance")
-                columns = [col[0] for col in cursor.description]
-                rows = cursor.fetchall()
-
-            result = [dict(zip(columns, row)) for row in rows]
-            return JsonResponse(result, safe=False)
+            return JsonResponse(result_json, safe=False)
 
         except IntegrityError as e:
             return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
@@ -271,6 +253,9 @@ def trial_balance(request):
             return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+
 
 def sale_wise_report(request):
     if request.method == "GET":
