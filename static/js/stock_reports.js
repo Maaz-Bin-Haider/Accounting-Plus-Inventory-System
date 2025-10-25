@@ -230,6 +230,32 @@ function selectReport(type){
 }
 
 // ---------- RENDER ITEM HISTORY FORM ----------
+// function renderHistoryForm(){
+//   const today = new Date().toISOString().split("T")[0];
+//   const html = `
+//     <div class="form-row">
+//       <div class="autocomplete-container">
+//         <label>Item Name</label><br>
+//         <input type="text" id="item_name" placeholder="Enter item name" autocomplete="off"
+//                data-autocomplete-url="${window.ITEM_AUTOCOMPLETE_URL}">
+//         <div id="suggestions"></div>
+//       </div>
+//     </div>
+//     <div class="form-row">
+//       <label>From:</label>
+//       <input type="date" id="from_date" value="2000-01-01">
+//       <label>To:</label>
+//       <input type="date" id="to_date" value="${today}">
+//       <button class="generate-btn" onclick="fetchItemHistory()">Generate</button>
+//     </div>`;
+  
+//   $("#report-form-container").html(html);
+//   $("#reportHeader").empty();
+//   $("#reportBody").html(`<tr><td class="no-data">Enter item name and date range</td></tr>`);
+//   initAutocomplete();
+// }
+
+// ---------- RENDER ITEM HISTORY FORM ----------
 function renderHistoryForm(){
   const today = new Date().toISOString().split("T")[0];
   const html = `
@@ -241,11 +267,15 @@ function renderHistoryForm(){
         <div id="suggestions"></div>
       </div>
     </div>
-    <div class="form-row">
-      <label>From:</label>
-      <input type="date" id="from_date" value="2000-01-01">
-      <label>To:</label>
-      <input type="date" id="to_date" value="${today}">
+    <div class="form-row-inline">
+      <div class="date-group">
+        <label>From:</label>
+        <input type="date" id="from_date" value="2000-01-01">
+      </div>
+      <div class="date-group">
+        <label>To:</label>
+        <input type="date" id="to_date" value="${today}">
+      </div>
       <button class="generate-btn" onclick="fetchItemHistory()">Generate</button>
     </div>`;
   
@@ -254,6 +284,7 @@ function renderHistoryForm(){
   $("#reportBody").html(`<tr><td class="no-data">Enter item name and date range</td></tr>`);
   initAutocomplete();
 }
+
 
 // ---------- FETCH GENERIC REPORT ----------
 function fetchReport(url){

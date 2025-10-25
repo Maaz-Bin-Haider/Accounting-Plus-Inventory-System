@@ -171,3 +171,5 @@ thead {
   background-color: #007bff;
   color: white;
 }
+
+.btn-download { background:#1976d2; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; margin-bottom: 10px;}
