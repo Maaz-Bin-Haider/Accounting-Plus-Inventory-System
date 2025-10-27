@@ -46,7 +46,7 @@
         <!-- Scrollable Nav -->
         <div class="sidebar-scroll">
             <nav class="nav-links">
-            <a href="{% url 'home:home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+            <a href="{% url 'home:home' %}" class="{% if request.resolver_match.url_name == '' %}active{% endif %}">
                 <i class="fa-solid fa-house"></i> Dashboard
             </a>
             <a href="{% url 'sale:sales' %}" class="{% if request.resolver_match.url_name == 'sales' %}active{% endif %}">
