@@ -1,0 +1,61 @@
+
+    body {
+      background: linear-gradient(135deg, #c2d1e6, #cfcdb2);
+      font-family: 'Poppins', sans-serif;
+      color: #111827;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .auth-card {
+      background: linear-gradient(135deg, #bdc7d5, #c7c5aa);
+      border-radius: 18px;
+      box-shadow: 0 6px 22px rgba(0, 0, 0, 0.25);
+      padding: 40px;
+      width: 400px;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .auth-card h3 {
+      color: #0b1e42;
+      font-weight: 600;
+    }
+
+    .form-control {
+      border-radius: 10px;
+      border: 1px solid #cfcfcf;
+    }
+
+    .form-control:focus {
+      border-color: #0b1e42;
+      box-shadow: 0 0 6px rgba(11, 30, 66, 0.4);
+    }
+
+    .btn-primary {
+      background-color: #0b1e42;
+      border: none;
+      border-radius: 10px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: #1a3572;
+    }
+
+    .toggle-btn {
+      border: 1px solid #cfcfcf;
+      background: #fff;
+      border-radius: 10px;
+    }
+
+    .toggle-btn:hover {
+      background-color: #f1f1f1;
+    }

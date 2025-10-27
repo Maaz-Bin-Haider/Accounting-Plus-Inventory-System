@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.shortcuts import redirect
 
 from parties import urls as parties_urls
 from items import urls as items_urls
@@ -29,7 +30,15 @@ from saleReturn import urls as sale_return_urls
 from accountsReports import urls as account_reports_urls
 from authentication import urls as authentication_urls
 
+
+def redirect_to_home(request):
+    if request.user.is_authenticated:
+        return redirect('home:home')
+    else:
+        return redirect('authentication:login')
+
 urlpatterns = [
+    path('', redirect_to_home, name='home_redirect'),
     path('admin/', admin.site.urls),
     path('parties/', include(parties_urls,namespace='parties')),
     path('items/', include(items_urls, namespace='items')),
@@ -39,7 +48,7 @@ urlpatterns = [
     path('sale/',include(sale_urls,namespace='sale')),
     path('purchaseReturn/',include(purchase_return_urls,namespace='purchaseReturn')),
     path('saleReturn/',include(sale_return_urls,namespace='saleReturn')),
-    path('home/',include(home_urls,namespace='home')),
+    path('home/', include(home_urls, namespace='home')),
     path('accountsReports/',include(account_reports_urls,namespace='accountsReports')),
     path('authentication/',include(authentication_urls,namespace='authentication')),
 ]

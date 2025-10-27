@@ -23,7 +23,7 @@ async function loadCash() {
 function renderCash(amount) {
   const cashDisplay = document.getElementById("cash-amount");
   const formatted = amount.toLocaleString(undefined, { minimumFractionDigits: 2 });
-  cashDisplay.textContent = `PKR ${formatted}`;
+  cashDisplay.textContent = `AED ${formatted}`;
 }
 
 // ===== UNIVERSAL FETCHER =====
