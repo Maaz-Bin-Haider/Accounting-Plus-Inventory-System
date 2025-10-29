@@ -340,29 +340,36 @@ $(document).ready(function () {
 
     // Keyboard navigation with auto-scroll
     $("#search_name").on("keydown", function (e) {
-        let items = $("#suggestions .suggestion-item");
+    let items = $("#suggestions .suggestion-item");
 
-        if (items.length === 0) return;
+      if (items.length === 0) return;
 
-        if (e.key === "ArrowDown") {
-            e.preventDefault();
-            selectedIndex = (selectedIndex + 1) % items.length;
-            items.removeClass("highlight");
-            let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
-            selectedItem.scrollIntoView({ block: "nearest" }); // 👈 auto-scroll
-        } else if (e.key === "ArrowUp") {
-            e.preventDefault();
-            selectedIndex = (selectedIndex - 1 + items.length) % items.length;
-            items.removeClass("highlight");
-            let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
-            selectedItem.scrollIntoView({ block: "nearest" }); // 👈 auto-scroll
-        } else if (e.key === "Enter") {
-            e.preventDefault();
-            if (selectedIndex >= 0) {
-                items.eq(selectedIndex).trigger("click");
-            }
-        }
-    });
+      // 👉 Auto-select if only one suggestion and Enter is pressed
+      if (e.key === "Enter" && items.length === 1) {
+          e.preventDefault();
+          items.eq(0).trigger("click");
+          return;
+      }
+
+      if (e.key === "ArrowDown") {
+          e.preventDefault();
+          selectedIndex = (selectedIndex + 1) % items.length;
+          items.removeClass("highlight");
+          let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
+          selectedItem.scrollIntoView({ block: "nearest" });
+      } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+          items.removeClass("highlight");
+          let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
+          selectedItem.scrollIntoView({ block: "nearest" });
+      } else if (e.key === "Enter") {
+          e.preventDefault();
+          if (selectedIndex >= 0) {
+              items.eq(selectedIndex).trigger("click");
+          }
+      }
+  });
 
     $(document).on("click", function (e) {
         if (!$(e.target).closest("#search_name, #suggestions").length) {
@@ -427,18 +434,25 @@ $(document).on("keydown", ".item_search_name", function (e) {
 
     if (items.length === 0) return;
 
+    // 👉 Auto-select if only one suggestion and Enter is pressed
+    if (e.key === "Enter" && items.length === 1) {
+        e.preventDefault();
+        items.eq(0).trigger("click");
+        return;
+    }
+
     if (e.key === "ArrowDown") {
         e.preventDefault();
         selectedIndex = (selectedIndex + 1) % items.length;
         items.removeClass("highlight");
         let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
-        selectedItem.scrollIntoView({ block: "nearest" }); // 👈 auto-scroll
+        selectedItem.scrollIntoView({ block: "nearest" });
     } else if (e.key === "ArrowUp") {
         e.preventDefault();
         selectedIndex = (selectedIndex - 1 + items.length) % items.length;
         items.removeClass("highlight");
         let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
-        selectedItem.scrollIntoView({ block: "nearest" }); // 👈 auto-scroll
+        selectedItem.scrollIntoView({ block: "nearest" });
     } else if (e.key === "Enter") {
         e.preventDefault();
         if (selectedIndex >= 0) {
