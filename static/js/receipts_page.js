@@ -1,21 +1,17 @@
 $(document).ready(function() {
-    // console.log("script started ✅");
-
     // Set default date only if element exists
     let dateInput = document.getElementById("receipt_date");
     if (dateInput) {
         dateInput.valueAsDate = new Date();
-        console.log("date set ✅");
     }
 
     let autocompleteUrl = $("#search_name").data("autocomplete-url");
-    console.log("autocomplete URL:", autocompleteUrl);
+    let selectedIndex = -1; // For keyboard navigation
 
     $("#search_name").on("input", function() {
         let query = $(this).val();
-        console.log("typing:", query);
-
         let suggestionsBox = $("#suggestions");
+        selectedIndex = -1; // reset selection when typing
 
         if (query.length >= 1) {
             $.ajax({
@@ -25,9 +21,11 @@ $(document).ready(function() {
                 success: function(data) {
                     console.log("response:", data);
                     suggestionsBox.empty();
+
                     if (data.length > 0) {
                         data.forEach(function(party) {
                             $("<div>")
+                                .addClass("suggestion-item")
                                 .text(party)
                                 .css({
                                     padding: "5px",
@@ -54,6 +52,40 @@ $(document).ready(function() {
         }
     });
 
+    // ✅ Keyboard navigation and auto-select
+    $("#search_name").on("keydown", function(e) {
+        let items = $("#suggestions .suggestion-item");
+
+        if (items.length === 0) return;
+
+        // 👉 Auto-select if only one suggestion and Enter is pressed
+        if (e.key === "Enter" && items.length === 1) {
+            e.preventDefault();
+            items.eq(0).trigger("click");
+            return;
+        }
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            selectedIndex = (selectedIndex + 1) % items.length;
+            items.removeClass("highlight");
+            let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
+            selectedItem.scrollIntoView({ block: "nearest" });
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+            items.removeClass("highlight");
+            let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
+            selectedItem.scrollIntoView({ block: "nearest" });
+        } else if (e.key === "Enter") {
+            e.preventDefault();
+            if (selectedIndex >= 0) {
+                items.eq(selectedIndex).trigger("click");
+            }
+        }
+    });
+
+    // Hide dropdown when clicking outside
     $(document).on("click", function(e) {
         if (!$(e.target).closest("#search_name, #suggestions").length) {
             $("#suggestions").hide();
@@ -315,6 +347,49 @@ $("#btnCustomerReceipts").on("click", function () {
 
             // Calling fetchPayments functions with dates
             fetchReceipts(`/receipts/get-receipts-date-wise/?from=${fromDate}&to=${toDate}`);
+        }
+    });
+});
+
+
+// ===========================
+// 🔽 Global Keyboard Navigation
+// ===========================
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("receiptForm");
+
+    if (!form) return;
+
+    const focusableElements = form.querySelectorAll(
+        "input:not([type=hidden]):not([readonly]), textarea, select, button"
+    );
+
+    form.addEventListener("keydown", function (e) {
+        const key = e.key;
+        const activeElement = document.activeElement;
+
+        // Skip navigation if suggestions box is open and visible
+        const suggestionsVisible = $("#suggestions:visible").length > 0;
+        if (suggestionsVisible && (key === "ArrowDown" || key === "ArrowUp" || key === "Enter")) {
+            return; // let autocomplete handle it
+        }
+
+        // Find current index in focusable list
+        const index = Array.from(focusableElements).indexOf(activeElement);
+        if (index === -1) return;
+
+        // Enter or ArrowDown → move to next input
+        if (key === "Enter" || key === "ArrowDown") {
+            e.preventDefault();
+            const next = focusableElements[index + 1];
+            if (next) next.focus();
+        }
+
+        // ArrowUp → move to previous input
+        else if (key === "ArrowUp") {
+            e.preventDefault();
+            const prev = focusableElements[index - 1];
+            if (prev) prev.focus();
         }
     });
 });

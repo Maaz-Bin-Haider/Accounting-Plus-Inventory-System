@@ -11,6 +11,8 @@ function updateQty(row) {
   calculateTotal();
 }
 
+
+
 function addSerial(row, autoFocus = true) {
   const serialsDiv = row.querySelector(".serials");
   const input = document.createElement("input");
@@ -107,7 +109,6 @@ function buildAndSubmit(event) {
   event.preventDefault();
   const form = event.target;
   const action = form.querySelector('button[type="submit"][clicked="true"]')?.value; // ⭐ NEW
-  console.log("Action:", action);
 
 
   const partyName = document.getElementById("search_name").value.trim();
@@ -181,7 +182,6 @@ function buildAndSubmit(event) {
   })
   .then(data => {
     if (data.success) {
-      console.log('oooe')
       Swal.fire({
         icon: "success",
         title: "Success 🎉",
@@ -208,9 +208,9 @@ function buildAndSubmit(event) {
       text: err.message || "An unexpected error occurred. Please try again."
     });
   });
-  // console.log("Submitting JSON:", JSON.stringify(payload, null, 2));
-  // alert("Payload:\n" + JSON.stringify(payload, null, 2));
+
 }
+
 document.querySelectorAll('button[type="submit"]').forEach(btn => {
   btn.addEventListener('click', function() {
     // Remove 'clicked' from all buttons
@@ -225,13 +225,6 @@ window.onload = function() {
   enforceSequentialValidation();
   const today = new Date().toISOString().slice(0, 10);
   document.getElementById("purchase_date").value = today;
-  // document.getElementById("search_name").focus();
-  // ✅ Only focus "search_name" when no popup is open
-  // setTimeout(() => {
-  //   if (!document.querySelector(".swal2-container")) {
-  //     document.getElementById("search_name").focus();
-  //   }
-  // }, 500);
 };
 
 function handleEnterKey(e, input) {
@@ -554,13 +547,7 @@ function renderPurchaseData(data) {
   document.getElementById("totalAmount").textContent =
     data.total_amount ? parseFloat(data.total_amount).toFixed(2) : "0.00";
 
-  // Swal.fire({
-  //   icon: "success",
-  //   title: "Purchase Loaded",
-  //   text: `Purchase #${data.purchase_invoice_id} loaded successfully.`,
-  //   timer: 2000,
-  //   showConfirmButton: false,
-  // });
+
 }
 
 

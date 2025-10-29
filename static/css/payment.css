@@ -350,3 +350,8 @@ button[type="submit"]:hover {
 .button-group button:active {
   transform: scale(0.97);
 }
+
+
+.suggestion-item.highlight {
+  background-color: #99a4ba;
+}

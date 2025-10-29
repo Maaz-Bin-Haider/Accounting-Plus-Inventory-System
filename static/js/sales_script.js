@@ -107,7 +107,6 @@ function buildAndSubmit(event) {
   event.preventDefault();
   const form = event.target;
   const action = form.querySelector('button[type="submit"][clicked="true"]')?.value; // ⭐ NEW
-  console.log("Action:", action);
 
 
   const partyName = document.getElementById("search_name").value.trim();
