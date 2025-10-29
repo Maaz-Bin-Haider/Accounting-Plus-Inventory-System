@@ -19,7 +19,7 @@ $(document).ready(function() {
                 data: { 'term': query },
                 dataType: 'json',
                 success: function(data) {
-                    console.log("response:", data);
+                    
                     suggestionsBox.empty();
 
                     if (data.length > 0) {
@@ -97,7 +97,7 @@ $(document).ready(function() {
 
 function navigatePayment(action) {
     let currentId = document.getElementById("current_payment_id").value || '';
-    console.log(currentId);
+
 
     fetch(`/payments/payment/get/?action=${action}&current_id=${currentId}`)
         .then(response => response.json())

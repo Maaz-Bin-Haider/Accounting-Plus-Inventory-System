@@ -19,7 +19,7 @@ $(document).ready(function() {
                 data: { 'term': query },
                 dataType: 'json',
                 success: function(data) {
-                    console.log("response:", data);
+
                     suggestionsBox.empty();
 
                     if (data.length > 0) {

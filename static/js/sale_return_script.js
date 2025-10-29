@@ -168,17 +168,36 @@ $(document).ready(function() {
     } else suggestionsBox.hide();
   });
 
-  $("#search_name").on("keydown", function(e) {
-    const items = $("#suggestions .suggestion-item");
-    if (items.length === 0) return;
-    if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter") {
-      e.preventDefault();
-      if (e.key === "ArrowDown") selectedIndex = (selectedIndex + 1) % items.length;
-      if (e.key === "ArrowUp") selectedIndex = (selectedIndex - 1 + items.length) % items.length;
-      items.removeClass("highlight");
-      if (selectedIndex >= 0) items.eq(selectedIndex).addClass("highlight")[0].scrollIntoView({ block: "nearest" });
-      if (e.key === "Enter" && selectedIndex >= 0) items.eq(selectedIndex).trigger("click");
-    }
+  $("#search_name").on("keydown", function (e) {
+    let items = $("#suggestions .suggestion-item");
+
+      if (items.length === 0) return;
+
+      // 👉 Auto-select if only one suggestion and Enter is pressed
+      if (e.key === "Enter" && items.length === 1) {
+          e.preventDefault();
+          items.eq(0).trigger("click");
+          return;
+      }
+
+      if (e.key === "ArrowDown") {
+          e.preventDefault();
+          selectedIndex = (selectedIndex + 1) % items.length;
+          items.removeClass("highlight");
+          let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
+          selectedItem.scrollIntoView({ block: "nearest" });
+      } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+          items.removeClass("highlight");
+          let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
+          selectedItem.scrollIntoView({ block: "nearest" });
+      } else if (e.key === "Enter") {
+          e.preventDefault();
+          if (selectedIndex >= 0) {
+              items.eq(selectedIndex).trigger("click");
+          }
+      }
   });
 
   $(document).on("click", e => {
@@ -284,41 +303,6 @@ function confirmDelete(e) {
 }
 deleteButton.addEventListener("click", confirmDelete);
 
-// Summary & Datewise
-// async function fetchSaleReturnSummary(from = null, to = null) {
-//   try {
-//     let url = "/saleReturn/get-sale-return-summary/";
-//     if (from && to) url += `?from=${from}&to=${to}`;
-//     const res = await fetch(url);
-//     const data = await res.json();
-
-//     if (!data || (!Array.isArray(data) && !data.success))
-//       return Swal.fire({ icon: "error", title: "Error", text: data.message || "No data found!" });
-
-//     let rows = "";
-//     if (Array.isArray(data) && data.length)
-//       data.forEach((r, i) => rows += `
-//         <tr onclick="viewSaleReturnDetails(${r.sales_return_id})" style="cursor:pointer;">
-//           <td>${i + 1}</td><td>${r.sale_return_id}</td><td>${r.return_date}</td>
-//           <td>${r.customer}</td><td style="text-align:right;">${r.total_amount.toFixed(2)}</td>
-//         </tr>`);
-//     else rows = `<tr><td colspan="5" style="text-align:center;">No data found</td></tr>`;
-
-//     Swal.fire({
-//       title: "📜 Sale Return Summary",
-//       html: `
-//         <input type="text" class="return-search" placeholder="🔍 Search by Customer..." onkeyup="filterSaleReturnTable(this.value)">
-//         <div class="return-container"><table class="return-table">
-//           <thead><tr><th>#</th><th>ID</th><th>Date</th><th>Customer</th><th>Total</th></tr></thead>
-//           <tbody id="saleReturnSummaryBody">${rows}</tbody></table></div>
-//       `,
-//       width: "750px",
-//       confirmButtonText: "Close"
-//     });
-//   } catch (err) {
-//     Swal.fire({ icon: "error", title: "Network Error", text: err.message });
-//   }
-// }
 
 async function fetchSaleReturnSummary(from = null, to = null) {
   try {
@@ -482,23 +466,7 @@ viewSaleReturnDetails
 
 function saleReturnHistory() { fetchSaleReturnSummary(); }
 
-// function saleReturnDateWise() {
-//   const today = new Date().toISOString().split("T")[0];
-//   Swal.fire({
-//     title: "📅 Select Date Range",
-//     html: `<label>From:</label><input type="date" id="fromDate" class="swal2-input">
-//            <label>To:</label><input type="date" id="toDate" class="swal2-input" value="${today}">`,
-//     showCancelButton: true,
-//     confirmButtonText: "Fetch"
-//   }).then(result => {
-//     if (result.isConfirmed) {
-//       const f = document.getElementById("fromDate").value;
-//       const t = document.getElementById("toDate").value;
-//       if (!f || !t) return Swal.fire("⚠️ Both dates are required");
-//       fetchSaleReturnSummary(f, t);
-//     }
-//   });
-// }
+
 
 // 📅 2️⃣ Button: Fetch Purchase Returns by Date Range
 function saleReturnDateWise() {

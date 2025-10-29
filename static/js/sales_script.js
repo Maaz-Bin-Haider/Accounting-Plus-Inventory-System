@@ -259,13 +259,7 @@ window.onload = function() {
   enforceSequentialValidation();
   const today = new Date().toISOString().slice(0, 10);
   document.getElementById("sale_date").value = today;
-  // document.getElementById("search_name").focus();
-  // ✅ Only focus "search_name" when no popup is open
-  // setTimeout(() => {
-  //   if (!document.querySelector(".swal2-container")) {
-  //     document.getElementById("search_name").focus();
-  //   }
-  // }, 500);
+
 };
 
 function handleEnterKey(e, input) {

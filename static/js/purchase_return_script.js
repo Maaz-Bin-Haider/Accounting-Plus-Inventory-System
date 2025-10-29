@@ -105,13 +105,7 @@ function updateCount() {
   document.getElementById("totalQty").textContent = serials.length;
 }
 
-// 🧭 Handle Enter Key
-// function handleEnterKey(e) {
-//   if (e.key === "Enter") {
-//     e.preventDefault();
-//     if (e.target.value.trim()) addSerial();
-//   }
-// }
+
 
 // To handle when user press Enter Key after typing Serial Number
 function handleEnterKey(e) {
@@ -138,7 +132,7 @@ function submitReturn(event) {
   event.preventDefault();
   const form = event.target;
   const action = form.querySelector('button[type="submit"][clicked="true"]')?.value; 
-  console.log("Action:", action);
+
 
   const partyName = document.getElementById("search_name").value.trim();
   if (!partyName) {
@@ -165,7 +159,7 @@ function submitReturn(event) {
     serials: serials,
     action: action,
   };
-  console.log(payload)
+  
   fetch("/purchaseReturn/create-purchase-return/", {
     method: "POST",
     headers: {
@@ -235,21 +229,34 @@ $(document).ready(function () {
   // Keyboard Navigation for Autocomplete
   $("#search_name").on("keydown", function (e) {
     let items = $("#suggestions .suggestion-item");
-    if (items.length === 0) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      selectedIndex = (selectedIndex + 1) % items.length;
-      items.removeClass("highlight");
-      items.eq(selectedIndex).addClass("highlight")[0].scrollIntoView({ block: "nearest" });
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      selectedIndex = (selectedIndex - 1 + items.length) % items.length;
-      items.removeClass("highlight");
-      items.eq(selectedIndex).addClass("highlight")[0].scrollIntoView({ block: "nearest" });
-    } else if (e.key === "Enter" && selectedIndex >= 0) {
-      e.preventDefault();
-      items.eq(selectedIndex).trigger("click");
-    }
+
+      if (items.length === 0) return;
+
+      // 👉 Auto-select if only one suggestion and Enter is pressed
+      if (e.key === "Enter" && items.length === 1) {
+          e.preventDefault();
+          items.eq(0).trigger("click");
+          return;
+      }
+
+      if (e.key === "ArrowDown") {
+          e.preventDefault();
+          selectedIndex = (selectedIndex + 1) % items.length;
+          items.removeClass("highlight");
+          let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
+          selectedItem.scrollIntoView({ block: "nearest" });
+      } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+          items.removeClass("highlight");
+          let selectedItem = items.eq(selectedIndex).addClass("highlight")[0];
+          selectedItem.scrollIntoView({ block: "nearest" });
+      } else if (e.key === "Enter") {
+          e.preventDefault();
+          if (selectedIndex >= 0) {
+              items.eq(selectedIndex).trigger("click");
+          }
+      }
   });
 
   $(document).on("click", function (e) {
@@ -331,9 +338,7 @@ function renderPurchaseReturnData(data) {
   // 🧩 Render each serial-row
   if (Array.isArray(data.items)) {
     data.items.forEach(item => {
-      console.log(item)
-      console.log(item.item_name)
-      console.log(item.serial_number);
+
       const row = document.createElement("div");
       row.className = "serial-row";
 
@@ -380,9 +385,7 @@ function renderPurchaseReturnData(data) {
     });
   }
 
-  // // 💰 Update total amount
-  // document.getElementById("totalAmount").textContent =
-  //   data.total_amount ? parseFloat(data.total_amount).toFixed(2) : "0.00";
+
 
   // 🔄 Update button label
   const submitBtn = document.querySelector("#purchaseReturnForm button[type=submit]");

@@ -73,22 +73,7 @@ form input[type="number"]:focus {
     outline: none;
 }
 
-/* --- Button Styling --- */
-/* button {
-    background-color: #3498db;
-    color: #fff;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    width: 100%;
-    transition: background 0.3s;
-}
 
-button:hover {
-    background-color: #2980b9;
-} */
 
 /* --- Suggestions Dropdown --- */
 .autocomplete-container {
