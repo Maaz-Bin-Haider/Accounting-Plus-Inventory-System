@@ -71,10 +71,10 @@
 
 /* table */
 .table-container { overflow-x:auto; background:#fff; padding:12px; border-radius:10px; box-shadow: 0 4px 12px rgba(16,24,40,0.04); }
-#reportTable { width:100%; border-collapse:collapse; font-size:13px; }
-#reportTable th, #reportTable td { padding:10px 12px; border:1px solid #e6e9ee; text-align:left; vertical-align:top; }
+#reportTable { width:100%; border-collapse:collapse; font-size:11px; }
+#reportTable th, #reportTable td { padding:8px 8px; border:1px solid #e6e9ee; text-align:left; vertical-align:top; }
 #reportTable thead { background:#1d3557; color:#fff; }
-.no-data { text-align:center; padding:18px; color:#666; }
+.no-data { text-align:center; padding:16px; color:#666; }
 
 /* Autocomplete */
 .autocomplete-container { position: relative; width:100%; max-width:520px; }
@@ -124,6 +124,7 @@
   cursor: pointer;
   font-weight: 500;
   transition: 0.2s;
+  margin-top: 50px;
 }
 
 .generate-btn:hover {

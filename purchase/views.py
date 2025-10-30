@@ -149,8 +149,8 @@ def purchasing(request):
                             # Fetch the returned invoice ID
                             invoice_id = cursor.fetchone()[0]
                             return JsonResponse({"success": True, "message": "Purchase Successfull"})
-                    except:
-                        return JsonResponse({"success": False, "message": "Failed to make Purchase, try again!"})  
+                    except Exception as e:
+                        return JsonResponse({"success": False, "message": f"Failed to make Purchase, try again! {e}"})  
                 else: # if purchase ID Exists Means we have to update
                     # Validating If any serial number is removed from updated invoice which is already sold or purchases Returned
                     try:

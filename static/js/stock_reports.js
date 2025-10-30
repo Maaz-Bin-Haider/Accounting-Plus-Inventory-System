@@ -9,6 +9,27 @@ function getCSRFToken(){
 }
 
 // ---------- SELECT REPORT ----------
+// function selectReport(type){
+//   $(".report-btn").removeClass("active");
+//   $(`#btn-${type}`).addClass("active");
+
+//   $("#reportHeader").empty();
+//   $("#reportBody").html(`<tr><td class="no-data">Loading...</td></tr>`);
+
+//   // Hide or show form section
+//   const $formSection = $("#report-form-container");
+//   if (type === "history") {
+//     renderHistoryForm();
+//   } else {
+//     $formSection.empty();  // hide input fields for stock/worth
+//     fetchReport(
+//       type === "stock" 
+//         ? "/accountsReports/stock-report/"
+//         : "/accountsReports/stock-worth-report/"
+//     );
+//   }
+// }
+
 function selectReport(type){
   $(".report-btn").removeClass("active");
   $(`#btn-${type}`).addClass("active");
@@ -16,17 +37,21 @@ function selectReport(type){
   $("#reportHeader").empty();
   $("#reportBody").html(`<tr><td class="no-data">Loading...</td></tr>`);
 
-  // Hide or show form section
   const $formSection = $("#report-form-container");
+
   if (type === "history") {
-    renderHistoryForm();
-  } else {
-    $formSection.empty();  // hide input fields for stock/worth
-    fetchReport(
-      type === "stock" 
+      renderHistoryForm();
+  } 
+  else if (type === "serial") {   // ✅ add this
+      renderSerialForm();
+  }
+  else {
+      $formSection.empty();
+      fetchReport(
+        type === "stock"
         ? "/accountsReports/stock-report/"
         : "/accountsReports/stock-worth-report/"
-    );
+      );
   }
 }
 
@@ -60,6 +85,23 @@ function renderHistoryForm(){
   $("#reportHeader").empty();
   $("#reportBody").html(`<tr><td class="no-data">Enter item name and date range</td></tr>`);
   initAutocomplete();
+}
+
+
+function renderSerialForm() {
+  const html = `
+    <div class="form-row">
+      <div>
+        <label>Serial No</label><br>
+        <input type="text" id="serial_input" placeholder="Enter Serial e.g. IP15-001">
+      </div>
+      <button class="generate-btn" onclick="fetchSerialLedger()">Generate</button>
+    </div>
+  `;
+
+  $("#report-form-container").html(html);
+  $("#reportHeader").empty();
+  $("#reportBody").html(`<tr><td class="no-data">Enter serial and click generate</td></tr>`);
 }
 
 
@@ -101,6 +143,28 @@ function fetchItemHistory(){
   })
   .catch(()=> Swal.fire("Error", "Unable to fetch item history", "error"));
 }
+
+
+function fetchSerialLedger(){
+  const serial = $("#serial_input").val().trim();
+  if (!serial) return Swal.fire("Missing Serial", "Please enter a serial", "warning");
+
+  Swal.fire({title:"Loading serial ledger...", didOpen:()=>Swal.showLoading(), allowOutsideClick:false});
+
+  fetch("/accountsReports/serial-ledger/", {
+    method: "POST",
+    headers: { "Content-Type":"application/json", "X-CSRFToken": getCSRFToken() },
+    body: JSON.stringify({ serial })
+  })
+  .then(r => r.json())
+  .then(data => {
+    Swal.close();
+    if (data.error) return Swal.fire("Error", data.error, "error");
+    renderTable(data);
+  })
+  .catch(() => Swal.fire("Error", "Unable to fetch serial ledger", "error"));
+}
+
 
 // ---------- RENDER TABLE ----------
 function renderTable(data){
