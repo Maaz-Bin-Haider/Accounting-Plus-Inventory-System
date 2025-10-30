@@ -3,48 +3,9 @@ from django.db import connection,IntegrityError
 from django.contrib import messages
 from django.http import JsonResponse
 import json
+from django.contrib.auth.decorators import login_required
 
-# Create your views here.
-
-# def create_new_item(request):
-#     if request.method == 'POST':
-#         item_name = request.POST.get('item_name')
-#         sale_price = request.POST.get('sale_price')
-#         storage = request.POST.get('storage')
-#         item_code = request.POST.get('item_code')
-#         category = request.POST.get('category')
-#         brand = request.POST.get('brand')
-
-#         with connection.cursor() as cursor:
-#             cursor.execute("SELECT 1 FROM Items WHERE item_name = UPPER(%s)",[item_name.upper()])
-#             exists = cursor.fetchone()
-
-#             if exists:
-#                 messages.error(request, f"Item with the name '{item_name}' already exists!")
-#                 return render(request, "items_templates/add_new_item.html")
-            
-#             # Adding new Item
-#             items_data = {
-#                 "item_name": item_name.upper(),
-#                 "storage": storage,
-#                 "sale_price": float(sale_price),
-#                 "item_code": item_code,
-#                 "category": category,
-#                 "brand": brand
-#             }
-
-#             json_data = json.dumps(items_data)
-
-#             try:
-#                 cursor.execute("SELECT add_item_from_json(%s)",[json_data])
-#                 messages.success(request, f"Item '{item_name}' Added successfully!")
-#             except IntegrityError:
-#                 messages.error(request, f"Item '{item_name}' already exists!")
-
-#         return render(request, "items_templates/add_new_item.html")
-
-#     return render(request, "items_templates/add_new_item.html")
-
+@login_required
 def create_new_item(request):
     if request.method == 'POST':
         item_name = request.POST.get('item_name')
@@ -93,7 +54,7 @@ def create_new_item(request):
 
 
 
-
+@login_required
 def get_item_by_name(item_name):
 
     with connection.cursor() as cursor:
@@ -106,6 +67,8 @@ def get_item_by_name(item_name):
 
     return None
 
+
+@login_required
 def update_item_view(request):
     context = {}
 
@@ -118,7 +81,7 @@ def update_item_view(request):
         else:
             context["not_found"] = True
         
-        print(context)
+
 
     if request.method == 'POST':
         item_id = request.POST.get("item_id")
@@ -131,7 +94,6 @@ def update_item_view(request):
             "brand": request.POST.get("brand"),
         }
 
-        print('-----------',data)
         if item_id:
             data["item_id"] = int(item_id) 
 
@@ -139,14 +101,14 @@ def update_item_view(request):
 
         with connection.cursor() as cursor:
             if item_id:
-                print('-----------',item_id)
+
                 try:
                     cursor.execute("SELECT update_item_from_json(%s)",[json_data])
                     messages.success(request, f"Item '{data['item_name']}' Updated successfully!")
                 except Exception as e:
                     messages.error(request, f"An Unexpected Error Occured! {e}")
             else: # means adding new item
-                print('-----------',item_id)
+
                 try:
                     cursor.execute("SELECT add_item_from_json(%s)",[json_data])
                     messages.success(request, f"Item '{data['item_name']}' Added successfully!")
@@ -157,7 +119,7 @@ def update_item_view(request):
     return render(request, "items_templates/update_item.html",context)
 
 
-
+@login_required
 def autocomplete_item(request):
     if 'term' in request.GET:
         term = request.GET.get('term').upper()
@@ -167,10 +129,4 @@ def autocomplete_item(request):
         suggestions = [row[0] for row in rows]
         return JsonResponse(suggestions, safe=False)
     return JsonResponse([], safe=False)
-
-
-# parties added
-# items added
-# purchase done
-# sale remaining
 

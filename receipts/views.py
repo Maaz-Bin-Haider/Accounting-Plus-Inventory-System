@@ -5,8 +5,11 @@ from datetime import datetime, date
 from django.http import JsonResponse
 import json
 from psycopg2.extras import Json
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
+
+@login_required
 def make_receipt(request):
     if request.method == 'POST':
         action = request.POST.get("action")
@@ -114,6 +117,7 @@ def make_receipt(request):
 
 # if action is previous it call previous function from DB,
 #  if next then same and if no action is provided it call receipt_details() which fetches current receipt using ID.
+@login_required
 def get_receipt(request):
     action = request.GET.get("action")
     current_id = request.GET.get("current_id")
@@ -189,7 +193,7 @@ def get_receipt(request):
         return JsonResponse({"error": "Invalid receipt data format."}, status=500)
 
 
-
+@login_required
 def get_old_receipts(request):
     try:
         with connection.cursor() as cursor:
@@ -222,7 +226,8 @@ def get_old_receipts(request):
             {"error": "An unexpected error occurred.", "details": str(e)}, 
             status=500
         )
-    
+
+@login_required 
 def get_receipts_date_wise(request):
     try:
         from_date_str = request.GET.get("from")

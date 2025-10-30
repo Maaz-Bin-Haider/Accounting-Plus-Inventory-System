@@ -4,9 +4,11 @@ from django.contrib import messages
 from django.db import connection
 from datetime import datetime, date
 import json
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
+@login_required
 def sales(request):
     if request.method == 'POST':
         try:
@@ -310,7 +312,7 @@ def sales(request):
                 return JsonResponse({"success": False, "message": "Unable to delete this Sale! Try Again.."})
     return render(request, "sale_templates/sale_template.html")
 
-
+@login_required
 def get_sale(request):
     action = request.GET.get("action")
     current_id = request.GET.get("current_id")
@@ -401,7 +403,7 @@ def get_sale(request):
     except Exception:
         return JsonResponse({"success": False, "message": "Invalid sale data format."})
     
-
+@login_required
 def get_sale_summary(request):
     try:
         from_date_str = request.GET.get("from")

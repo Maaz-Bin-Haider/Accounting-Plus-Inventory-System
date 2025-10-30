@@ -4,9 +4,11 @@ from django.contrib import messages
 from django.db import connection
 from datetime import datetime, date
 import json
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
+@login_required
 def purchasing(request):
     if request.method == 'POST':
         try:
@@ -278,6 +280,8 @@ def purchasing(request):
                 return JsonResponse({"success": False, "message": "Unable to delete this Purchase! Try Again.."})
     return render(request, "purchase_templates/purchasing_template.html")
 
+
+@login_required
 def get_purchase(request):
     action = request.GET.get("action")
     current_id = request.GET.get("current_id")
@@ -371,6 +375,7 @@ def get_purchase(request):
         return JsonResponse({"success": False, "message": "Invalid purchase data format."})
 
 
+@login_required
 def get_purchase_summary(request):
     try:
         from_date_str = request.GET.get("from")
@@ -430,7 +435,3 @@ def get_purchase_summary(request):
     except Exception:
         return JsonResponse({"success": False, "message": "Invalid purchase data format."})
 
-# TODO:
-# item addition sale price float error handling
-# add update purchase validation function before actually updating a purchase
-# add delete purchase validation function function before deleting a purchase

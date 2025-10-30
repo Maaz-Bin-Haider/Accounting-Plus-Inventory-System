@@ -3,9 +3,11 @@ from django.db import connection
 from django.http import JsonResponse
 import json
 from datetime import datetime, date
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
+@login_required
 def createSaleReturn(request):
     if request.method == "POST":
         try:
@@ -116,7 +118,7 @@ def createSaleReturn(request):
 
     return render(request,'sale_return_templates/sale_return_template.html')
 
-
+@login_required
 def sale_return_lookup(request,serial:str):
 
     #validating Serial Number
@@ -139,7 +141,8 @@ def sale_return_lookup(request,serial:str):
         return JsonResponse({ "success": False, "message":f"The Serial '{serial}' is Invalid!" })
     
     return JsonResponse({ "success": True, "item_name": item[0][0], "item_price": item[0][1]})
-    
+
+@login_required  
 def get_sale_return(request):
     action = request.GET.get("action")
     current_id = request.GET.get("current_id")
@@ -233,7 +236,7 @@ def get_sale_return(request):
         return JsonResponse({"success": False, "message": "Invalid sale-return data format."})
     
 
-
+@login_required
 def get_sale_return_summary(request):
     try:
         from_date_str = request.GET.get("from")

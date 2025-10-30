@@ -5,8 +5,11 @@ from datetime import datetime, date
 from django.http import JsonResponse
 import json
 from psycopg2.extras import Json
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
+
+@login_required
 def make_payment(request):
     if request.method == 'POST':
         action = request.POST.get("action")
@@ -113,6 +116,7 @@ def make_payment(request):
 
 # if action is previous it call previous function from DB,
 #  if next then same and if no action is provided it call get_payment_details() which fetches current payment using ID.
+@login_required
 def get_payment(request):
     action = request.GET.get("action")
     current_id = request.GET.get("current_id")
@@ -187,7 +191,7 @@ def get_payment(request):
         return JsonResponse({"error": "Invalid payment data format."}, status=500)
 
 
-
+@login_required
 def get_old_payments(request):
     try:
         with connection.cursor() as cursor:
@@ -221,6 +225,7 @@ def get_old_payments(request):
             status=500
         )
     
+@login_required
 def get_payments_date_wise(request):
     try:
         from_date_str = request.GET.get("from")
@@ -275,4 +280,3 @@ def get_payments_date_wise(request):
         return JsonResponse({"error": str(e)}, status=500)
     
 
-# TODO: GIve proper styling to payments page and move on to receipts section
