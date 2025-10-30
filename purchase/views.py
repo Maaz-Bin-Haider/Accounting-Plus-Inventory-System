@@ -21,7 +21,7 @@ def purchasing(request):
             return JsonResponse({"success": False, "message": "Invalid JSON"})
         
         if action == "submit":
-            print('Entererd')
+            
             try:
                 data = json.loads(request.body)
                 # validation example
@@ -154,7 +154,7 @@ def purchasing(request):
                 else: # if purchase ID Exists Means we have to update
                     # Validating If any serial number is removed from updated invoice which is already sold or purchases Returned
                     try:
-                        print("Invalid------------")
+                        
                         # Prepare your purchase items data
                         items_data = []
                         for item in data.get("items"):
@@ -164,7 +164,7 @@ def purchasing(request):
                         # Convert Python list → JSON string
                         items_json = json.dumps(items_data)
                         
-                        # print(type(items_json))
+                        
                         with connection.cursor() as cursor:
                             cursor.execute("SELECT validate_purchase_update(%s,%s)",[purchase_id,items_json])
                             result = cursor.fetchone()[0]
@@ -236,7 +236,7 @@ def purchasing(request):
                 return JsonResponse({"success": False, "message": "Invalid request data!"})
 
         if action == "delete":
-            print("DELETE")
+            
             if not purchase_id:
                 return JsonResponse({"success": False, "message": "Navigate to Purchase Invoice first!"})
             
@@ -344,7 +344,7 @@ def get_purchase(request):
                 return JsonResponse({"success": False, "message": "Data base Connection Error While getting Next Purchase!"})
             
         elif action == "current": # If no action is provided means we have to fetch current purchase ID
-            print("Entered in current----")
+            
             # Validating Current purchase ID
             try:
                 current_id = int(current_id)
@@ -369,7 +369,7 @@ def get_purchase(request):
     
     # Sending to frontend
     try:
-        print(result_data[0])
+        
         return JsonResponse(result_data[0])
     except Exception:
         return JsonResponse({"success": False, "message": "Invalid purchase data format."})
@@ -411,16 +411,16 @@ def get_purchase_summary(request):
                 return JsonResponse({"success": False, "message": "Unable fetch Purchase Invoices, Check your Internet Connection!"})
         # if no date is specified then fetch last 20 purchase invoice summary
         else:
-            print("Entered Else BLock----")
+            
             try:
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT get_purchase_summary()")
                     result = cursor.fetchone()
-                print(result[0])
+                
                 if not result or not result[0]:
                     return JsonResponse({"success": False, "message": "No Purchase Invoices found"})
             except Exception as e:
-                print(e)
+                
                 return JsonResponse({"success": False, "message": "Unable fetch Purchase Invoices, Check your Internet Connection!"})
         
         # now sending to frontend
@@ -428,7 +428,7 @@ def get_purchase_summary(request):
         try:
             return JsonResponse(result[0], safe=False)
         except Exception as e:
-            print(e)
+            
             return JsonResponse({"success": False, "message": "Unexpected Error Occured, Please Try again!"})
         
 

@@ -21,7 +21,7 @@ def createSaleReturn(request):
         
         # New or Update Sale Return
         if action == "submit":
-            print("enter")
+            
             # Validating provided data
             try:
                 # Validating Party name
@@ -205,7 +205,7 @@ def get_sale_return(request):
                 return JsonResponse({"success": False, "message": "Data base Connection Error While getting Next Sale-Return!"})
             
         elif action == "current": # If no action is provided means we have to fetch current sale-return ID
-            print("Entered in current----")
+            
             # Validating Current sale-return ID
             try:
                 current_id = int(current_id)
@@ -230,7 +230,7 @@ def get_sale_return(request):
     
     # Sending to frontend
     try:
-        print(result_data[0])
+        
         return JsonResponse(result_data[0],safe=False)
     except Exception:
         return JsonResponse({"success": False, "message": "Invalid sale-return data format."})
@@ -281,7 +281,7 @@ def get_sale_return_summary(request):
                 if not result or not result[0]:
                     return JsonResponse({"success": False, "message": "No Sale-Return Invoices found"})
             except Exception as e:
-                print(e)
+                
                 return JsonResponse({"success": False, "message": "Unable fetch Sale-Return Invoices, Check your Internet Connection!"})
         
         # now sending to frontend
@@ -289,7 +289,7 @@ def get_sale_return_summary(request):
         try:
             return JsonResponse(result[0], safe=False)
         except Exception as e:
-            print(e)
+            
             return JsonResponse({"success": False, "message": "Unexpected Error Occured, Please Try again!"})
         
 

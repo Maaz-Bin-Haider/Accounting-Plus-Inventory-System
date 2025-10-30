@@ -75,7 +75,7 @@ def make_receipt(request):
                             "receipt_date": receipt_date
                         }
                     json_data = json.dumps(data)
-                    # print(json_data)
+                    
                     if not receipt_id: # Means new receipt
                         try:
                             cursor.execute("SELECT make_receipt(%s)",[json_data])
@@ -94,7 +94,7 @@ def make_receipt(request):
                     messages.error(request,f"No such Party exists with name '{party_name}'!")
                     return render(request,"receipts_templates/receipt.html",data)
         if action == "delete":
-            # print("Delete is Clicked")
+            
             if not receipt_id:
                 messages.error(request,"Navigate to Receipt first which you want to delete")
                 return render(request,"receipts_templates/receipt.html")
@@ -125,7 +125,7 @@ def get_receipt(request):
         with connection.cursor() as cursor:
             if action == "previous":
                 if not current_id:
-                    print("Enter")
+                    
                     cursor.execute("SELECT get_last_receipt()")
                     last_receipt = cursor.fetchone()
                     if not last_receipt or not last_receipt[0]:
@@ -147,7 +147,7 @@ def get_receipt(request):
                 result = cursor.fetchone()
 
                 if not result or not result[0]:
-                    # print('-----',result)
+                    
                     return JsonResponse({
                         "error": "No previous receipt found.",
                         "info": "You are already at the first Receipt."
@@ -163,7 +163,7 @@ def get_receipt(request):
                 result = cursor.fetchone()
 
                 if not result or not result[0]:
-                    # print('-----',result)
+                    
                     return JsonResponse({
                         "error": "No next receipt found.",
                         "info": "You are already at the latest receipt."
@@ -178,7 +178,7 @@ def get_receipt(request):
                 result = cursor.fetchone()
 
                 if not result or not result[0]:
-                    # print('-----',result)
+                    
                     return JsonResponse({
                         "error": "No receipt found.",
                         "info": "Can't Find this receipt may be some Internet issue!."
@@ -279,7 +279,7 @@ def get_receipts_date_wise(request):
         return JsonResponse(data, safe=False)
 
     except Exception as e:
-        print(e)
+        
         return JsonResponse({"error": str(e)}, status=500)
     
 

@@ -56,7 +56,7 @@ def get_party_by_name(party_name:str):
     with connection.cursor() as cursor:
         cursor.execute("SELECT get_party_by_name(%s)",[party_name.upper()])
         row = cursor.fetchone()
-    # print(row)
+    
     if row and row[0]:
         data = json.loads(row[0])
         return data
@@ -88,7 +88,7 @@ def update_party(request):
         else:
             context["not_found"] = True
 
-        print(context)
+        
 
     if request.method == 'POST':
         party_id = request.POST.get('party_id')
@@ -108,7 +108,7 @@ def update_party(request):
 
         with connection.cursor() as cursor:
             if party_id:
-                print(party_id)
+                
                 try:
                     cursor.execute("SELECT update_party_from_json(%s,%s)",[int(party_id),json_data])
                     messages.success(request,f"Updated '{data['party_name']}' Sucessfully!")

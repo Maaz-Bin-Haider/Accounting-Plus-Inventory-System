@@ -21,7 +21,7 @@ def createPurchaseReturn(request):
         
         # New or Update Purchase Return
         if action == "submit":
-            print("enter")
+            
             # Validating provided data
             try:
                 # Validating Party name
@@ -99,7 +99,7 @@ def createPurchaseReturn(request):
                             cursor.execute("SELECT update_purchase_return(%s,%s)",[purchase_return_ID,json_data])
                         return JsonResponse({"success": True, "message": "Purchase-Return Updated Sucessfully"}) 
                     except Exception as e:
-                        print(e)
+                        
                         return JsonResponse({"success": False, "message": f"Unable to Update Purchase-Return, Try Again! {e}"})
             except:
                 pass
@@ -138,7 +138,7 @@ def purchase_return_lookup(request,serial:str):
             
             cursor.execute("SELECT item_name,purchase_price FROM get_serial_number_details(%s)",[serial])
             item = cursor.fetchall()
-            print(item)
+            
     except Exception as e:
         return JsonResponse({ "success": False, "message":f"The Serial '{serial}' does not exists in stock!" })
     
@@ -207,7 +207,7 @@ def get_purchase_return(request):
                 return JsonResponse({"success": False, "message": "Data base Connection Error While getting Next Purchase-Return!"})
             
         elif action == "current": # If no action is provided means we have to fetch current purchase-return ID
-            print("Entered in current----")
+            
             # Validating Current purchase-return ID
             try:
                 current_id = int(current_id)
@@ -232,7 +232,7 @@ def get_purchase_return(request):
     
     # Sending to frontend
     try:
-        print(result_data[0])
+        
         return JsonResponse(result_data[0],safe=False)
     except Exception:
         return JsonResponse({"success": False, "message": "Invalid purchase-return data format."})
@@ -274,16 +274,16 @@ def get_purchase_return_summary(request):
                 return JsonResponse({"success": False, "message": "Unable fetch Purchase-Return Invoices, Check your Internet Connection!"})
         # if no date is specified then fetch last 20 purchase invoice summary
         else:
-            print("Entered Else BLock----")
+            
             try:
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT get_purchase_return_summary()")
                     result = cursor.fetchone()
-                print(result[0])
+                
                 if not result or not result[0]:
                     return JsonResponse({"success": False, "message": "No Purchase-Return Invoices found"})
             except Exception as e:
-                print(e)
+                
                 return JsonResponse({"success": False, "message": "Unable fetch Purchase-Return Invoices, Check your Internet Connection!"})
         
         # now sending to frontend
@@ -291,7 +291,7 @@ def get_purchase_return_summary(request):
         try:
             return JsonResponse(result[0], safe=False)
         except Exception as e:
-            print(e)
+            
             return JsonResponse({"success": False, "message": "Unexpected Error Occured, Please Try again!"})
         
 

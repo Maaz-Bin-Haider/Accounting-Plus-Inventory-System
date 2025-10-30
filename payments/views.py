@@ -74,7 +74,7 @@ def make_payment(request):
                             "payment_date": payment_date
                         }
                     json_data = json.dumps(data)
-                    print(json_data)
+                    
                     if not payment_id: # Means new payment
                         try:
                             cursor.execute("SELECT make_payment(%s)",[json_data])
@@ -93,7 +93,7 @@ def make_payment(request):
                     messages.error(request,f"No such Party exists with name '{party_name}'!")
                     return render(request,"payments_templates/payment.html",data)
         if action == "delete":
-            print("Delete is Clicked")
+            
             if not payment_id:
                 messages.error(request,"Navigate to Payment first which you want to delete")
                 return render(request,"payments_templates/payment.html")
@@ -145,7 +145,7 @@ def get_payment(request):
                 result = cursor.fetchone()
 
                 if not result or not result[0]:
-                    print('-----',result)
+                    
                     return JsonResponse({
                         "error": "No previous payment found.",
                         "info": "You are already at the first payment."
@@ -161,7 +161,7 @@ def get_payment(request):
                 result = cursor.fetchone()
 
                 if not result or not result[0]:
-                    print('-----',result)
+                    
                     return JsonResponse({
                         "error": "No next payment found.",
                         "info": "You are already at the latest payment."
@@ -176,7 +176,7 @@ def get_payment(request):
                 result = cursor.fetchone()
 
                 if not result or not result[0]:
-                    print('-----',result)
+                    
                     return JsonResponse({
                         "error": "No payment found.",
                         "info": "Can't Find this payment may be some Internet issue!."

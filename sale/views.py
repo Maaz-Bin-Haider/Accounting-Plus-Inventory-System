@@ -21,7 +21,7 @@ def sales(request):
             return JsonResponse({"success": False, "message": "Invalid JSON"})
         
         if action == "submit":
-            print('Entererd')
+            
             try:
                 data = json.loads(request.body)
                 # validation example
@@ -251,8 +251,7 @@ def sales(request):
                     
                             # Convert Python list → JSON string
                             items_json = json.dumps(items_data)
-                            # print(items_json)
-                            # print(type(items_json))
+                            
 
                             # Postgres function `update_purchase_invoice`
                             cursor.execute("""
@@ -272,7 +271,7 @@ def sales(request):
                 return JsonResponse({"success": False, "message": "Invalid request data!"})
 
         if action == "delete":
-            print("DELETE")
+            
             if not sale_id:
                 return JsonResponse({"success": False, "message": "Navigate to Sale Invoice first!"})
             
@@ -373,7 +372,7 @@ def get_sale(request):
                 return JsonResponse({"success": False, "message": "Data base Connection Error While getting Next Sale!"})
             
         elif action == "current": # If no action is provided means we have to fetch current Sale ID
-            print("Entered in current----")
+            
             # Validating Current sale ID
             try:
                 current_id = int(current_id)
@@ -398,7 +397,7 @@ def get_sale(request):
     
     # Sending to frontend
     try:
-        print(result_data[0])
+        
         return JsonResponse(result_data[0])
     except Exception:
         return JsonResponse({"success": False, "message": "Invalid sale data format."})
@@ -439,16 +438,16 @@ def get_sale_summary(request):
                 return JsonResponse({"success": False, "message": "Unable fetch Sale Invoices, Check your Internet Connection!"})
         # if no date is specified then fetch last 20 sale invoice summary
         else:
-            print("Entered Else BLock----")
+            
             try:
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT get_sales_summary()")
                     result = cursor.fetchone()
-                print(result[0])
+                
                 if not result or not result[0]:
                     return JsonResponse({"success": False, "message": "No Sale Invoices found"})
             except Exception as e:
-                print(e)
+                
                 return JsonResponse({"success": False, "message": "Unable fetch Sale Invoices, Check your Internet Connection!"})
         
         # now sending to frontend
@@ -456,7 +455,7 @@ def get_sale_summary(request):
         try:
             return JsonResponse(result[0], safe=False)
         except Exception as e:
-            print(e)
+            
             return JsonResponse({"success": False, "message": "Unexpected Error Occured, Please Try again!"})
         
 
