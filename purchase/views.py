@@ -119,6 +119,11 @@ def purchasing(request):
                 # Execute DB function
                 if not purchase_id: # means new Purchase
                     try:
+                        if request.user.groups.filter(name="view_only_users").exists():
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Purchase"
+                            })
                         # Find the vendor ID
                         with connection.cursor() as cursor:
                             cursor.execute("""
@@ -154,6 +159,7 @@ def purchasing(request):
                 else: # if purchase ID Exists Means we have to update
                     # Validating If any serial number is removed from updated invoice which is already sold or purchases Returned
                     try:
+                        
                         
                         # Prepare your purchase items data
                         items_data = []
@@ -197,6 +203,11 @@ def purchasing(request):
                     except:
                         return JsonResponse({"success": False, "message": "Update Failed Try Again!"})
                     try:
+                        if request.user.groups.filter(name="view_only_users").exists():
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Update Purchase"
+                            })
                         with connection.cursor() as cursor:
                             cursor.execute("""
                                 SELECT party_id 
@@ -273,6 +284,11 @@ def purchasing(request):
             
             # Executing Delete
             try:
+                if request.user.groups.filter(name="view_only_users").exists():
+                    return JsonResponse({
+                        "status": "error",
+                        "message": "You do not have permission to Delete Purchase"
+                    })
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_purchase(%s)",[purchase_id])
                     return JsonResponse({"success": True, "message": "Deleted Successfully"})

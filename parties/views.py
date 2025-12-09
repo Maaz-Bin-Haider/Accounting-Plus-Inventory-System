@@ -38,6 +38,11 @@ def create_new_party(request):
             json_data = json.dumps(party_details)
 
             try:
+                if request.user.groups.filter(name="view_only_users").exists():
+                    return JsonResponse({
+                        "status": "error",
+                        "message": "You do not have permission to Add Parties."
+                    })
                 cursor.execute("SELECT add_party_from_json(%s);", [json_data])
                 return JsonResponse({
                     "status": "success",
@@ -110,12 +115,22 @@ def update_party(request):
             if party_id:
                 
                 try:
+                    if request.user.groups.filter(name="view_only_users").exists():
+                        return JsonResponse({
+                            "status": "error",
+                            "message": "You do not have permission to Update Parties."
+                        })
                     cursor.execute("SELECT update_party_from_json(%s,%s)",[int(party_id),json_data])
                     messages.success(request,f"Updated '{data['party_name']}' Sucessfully!")
                 except Exception as e:
                     messages.error(request, f"An Unexpected Error Occured! {e}")
             else:
                 try:
+                    if request.user.groups.filter(name="view_only_users").exists():
+                        return JsonResponse({
+                            "status": "error",
+                            "message": "You do not have permission to Add Parties."
+                        })
                     cursor.execute("SELECT add_party_from_json(%s);", [json_data])
                     messages.success(request, f"Party '{data['party_name']}' created successfully!")
                 except IntegrityError:

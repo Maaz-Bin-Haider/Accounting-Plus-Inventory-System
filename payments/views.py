@@ -77,6 +77,10 @@ def make_payment(request):
                     
                     if not payment_id: # Means new payment
                         try:
+                            if request.user.groups.filter(name="view_only_users").exists():
+                                messages.error(request,"You do not have permission to Make or Update payments.")
+                                return redirect("payments:payment") 
+
                             cursor.execute("SELECT make_payment(%s)",[json_data])
                             messages.success(request, f"Transaction completed: {amount} paid to {party_name}.")
                             return redirect("payments:payment")
@@ -84,6 +88,10 @@ def make_payment(request):
                             messages.error(request,f"An Unexpected Error occured Please Try Again! {e}")
                     else:   # Means we have to update payment 
                         try:
+                            if request.user.groups.filter(name="view_only_users").exists():
+                                messages.error(request,"You do not have permission to Make or Update payments.")
+                                return redirect("payments:payment") 
+
                             cursor.execute("SELECT update_payment(%s,%s)",[payment_id,json_data])
                             messages.success(request, f"Transaction Updated: {amount} paid to {party_name}.")
                             return redirect("payments:payment")
@@ -93,6 +101,7 @@ def make_payment(request):
                     messages.error(request,f"No such Party exists with name '{party_name}'!")
                     return render(request,"payments_templates/payment.html",data)
         if action == "delete":
+
             
             if not payment_id:
                 messages.error(request,"Navigate to Payment first which you want to delete")
@@ -104,6 +113,10 @@ def make_payment(request):
                 return render(request,"payments_templates/payment.html")
             
             try:
+                if request.user.groups.filter(name="view_only_users").exists():
+                    messages.error(request,"You do not have permission to Delete payments.")
+                    return redirect("payments:payment") 
+
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_payment(%s)",[payment_id])
                     messages.success(request,"Payment delete Sucessfully.")

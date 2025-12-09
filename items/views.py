@@ -113,7 +113,7 @@ def update_item_view(request):
                     if request.user.groups.filter(name="view_only_users").exists():
                         return JsonResponse({
                             "status": "error",
-                            "message": "You do not have permission to create items."
+                            "message": "You do not have permission to update items."
                         })
                     cursor.execute("SELECT update_item_from_json(%s)",[json_data])
                     messages.success(request, f"Item '{data['item_name']}' Updated successfully!")

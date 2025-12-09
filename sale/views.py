@@ -159,6 +159,11 @@ def sales(request):
                 # Execute DB function
                 if not sale_id: # means new Sale
                     try:
+                        if request.user.groups.filter(name="view_only_users").exists():
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Sale"
+                            })
                         # Find the vendor ID
                         with connection.cursor() as cursor:
                             cursor.execute("""
@@ -231,6 +236,11 @@ def sales(request):
                         JsonResponse({"success": False, "message": "Unable Update Sale, try again!"})
 
                     try:
+                        if request.user.groups.filter(name="view_only_users").exists():
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Update Sale"
+                            })
                         with connection.cursor() as cursor:
                             cursor.execute("""
                                 SELECT party_id 
@@ -304,6 +314,11 @@ def sales(request):
             
             # Executing Delete
             try:
+                if request.user.groups.filter(name="view_only_users").exists():
+                    return JsonResponse({
+                        "status": "error",
+                        "message": "You do not have permission to Delete Sale"
+                    })
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_sale(%s)",[sale_id])
                     return JsonResponse({"success": True, "message": "Deleted Successfully"})

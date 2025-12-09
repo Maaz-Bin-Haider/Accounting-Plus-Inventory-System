@@ -78,6 +78,10 @@ def make_receipt(request):
                     
                     if not receipt_id: # Means new receipt
                         try:
+                            if request.user.groups.filter(name="view_only_users").exists():
+                                messages.error(request,"You do not have permission to Make or Update Receipts.")
+                                return redirect("receipts:receipt")
+                            
                             cursor.execute("SELECT make_receipt(%s)",[json_data])
                             messages.success(request, f"Transaction completed: {amount} received from {party_name}.")
                             return redirect("receipts:receipt")
@@ -85,6 +89,10 @@ def make_receipt(request):
                             messages.error(request,f"An Unexpected Error occured Please Try Again! {e}")
                     else:   # Means we have to update receipt 
                         try:
+                            if request.user.groups.filter(name="view_only_users").exists():
+                                messages.error(request,"You do not have permission to Make or Update Receipts.")
+                                return redirect("receipts:receipt")
+                            
                             cursor.execute("SELECT update_receipt(%s,%s)",[receipt_id,json_data])
                             messages.success(request, f"Transaction Updated: {amount} received from {party_name}.")
                             return redirect("receipts:receipt")
@@ -105,6 +113,10 @@ def make_receipt(request):
                 return render(request,"receipts_templates/receipt.html")
             
             try:
+                if request.user.groups.filter(name="view_only_users").exists():
+                    messages.error(request,"You do not have permission to Delete Receipts.")
+                    return redirect("receipts:receipt")
+                
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_receipt(%s)",[receipt_id])
                     messages.success(request,"Receipt delete Sucessfully.")

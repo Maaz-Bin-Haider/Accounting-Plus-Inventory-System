@@ -85,6 +85,11 @@ def createSaleReturn(request):
                 if not sale_return_ID:
                     # Executing Create_sale_ return function
                     try:
+                        if request.user.groups.filter(name="view_only_users").exists():
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Sale Return"
+                            })
                         json_data = json.dumps(data.get("serials"))
                         with connection.cursor() as cursor:
                             cursor.execute("SELECT create_sale_return(%s,%s)",[data.get('party_name'),json_data])
@@ -94,6 +99,11 @@ def createSaleReturn(request):
                 else:
                     # Executing update_sale_ return function
                     try:
+                        if request.user.groups.filter(name="view_only_users").exists():
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Update Sale Return"
+                            })
                         json_data = json.dumps(data.get("serials"))
                         with connection.cursor() as cursor:
                             cursor.execute("SELECT update_sale_return(%s,%s)",[sale_return_ID,json_data])
@@ -109,6 +119,12 @@ def createSaleReturn(request):
                 return JsonResponse({ "success": False, "message":"Navigate to Return Invoice first" })
             
             try:
+                if request.user.groups.filter(name="view_only_users").exists():
+                    return JsonResponse({
+                        "status": "error",
+                        "message": "You do not have permission to Delete Sale Return"
+                    })
+                
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_sale_return(%s)",[sale_return_ID])
                     return JsonResponse({"success": True, "message": "Deleted Successfully"})

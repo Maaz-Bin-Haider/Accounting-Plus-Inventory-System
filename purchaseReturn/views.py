@@ -85,6 +85,12 @@ def createPurchaseReturn(request):
                 if not purchase_return_ID:
                     # Executing Create_purchase_ return function
                     try:
+                        if request.user.groups.filter(name="view_only_users").exists():
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Purchase Return"
+                            })
+                        
                         json_data = json.dumps(data.get("serials"))
                         with connection.cursor() as cursor:
                             cursor.execute("SELECT create_purchase_return(%s,%s)",[data.get('party_name'),json_data])
@@ -94,6 +100,12 @@ def createPurchaseReturn(request):
                 else:
                     # Executing update_purchase_ return function
                     try:
+                        if request.user.groups.filter(name="view_only_users").exists():
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Update Purchase Return"
+                            })
+                        
                         json_data = json.dumps(data.get("serials"))
                         with connection.cursor() as cursor:
                             cursor.execute("SELECT update_purchase_return(%s,%s)",[purchase_return_ID,json_data])
@@ -110,6 +122,11 @@ def createPurchaseReturn(request):
                 return JsonResponse({ "success": False, "message":"Navigate to Return Invoice first" })
             
             try:
+                if request.user.groups.filter(name="view_only_users").exists():
+                    return JsonResponse({
+                        "status": "error",
+                        "message": "You do not have permission to Delete Purchase Return"
+                    })
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_purchase_return(%s)",[purchase_return_ID])
                     return JsonResponse({"success": True, "message": "Deleted Successfully"})
