@@ -7,6 +7,8 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def create_new_item(request):
+    
+    
     if request.method == 'POST':
         item_name = request.POST.get('item_name')
         sale_price = request.POST.get('sale_price')
@@ -38,6 +40,11 @@ def create_new_item(request):
             json_data = json.dumps(item_data)
 
             try:
+                if request.user.groups.filter(name="view_only_users").exists():
+                    return JsonResponse({
+                        "status": "error",
+                        "message": "You do not have permission to create items."
+                    })
                 cursor.execute("SELECT add_item_from_json(%s)", [json_data])
                 return JsonResponse({
                     "status": "success",
@@ -103,6 +110,11 @@ def update_item_view(request):
             if item_id:
 
                 try:
+                    if request.user.groups.filter(name="view_only_users").exists():
+                        return JsonResponse({
+                            "status": "error",
+                            "message": "You do not have permission to create items."
+                        })
                     cursor.execute("SELECT update_item_from_json(%s)",[json_data])
                     messages.success(request, f"Item '{data['item_name']}' Updated successfully!")
                 except Exception as e:
@@ -110,6 +122,11 @@ def update_item_view(request):
             else: # means adding new item
 
                 try:
+                    if request.user.groups.filter(name="view_only_users").exists():
+                        return JsonResponse({
+                            "status": "error",
+                            "message": "You do not have permission to create items."
+                        })
                     cursor.execute("SELECT add_item_from_json(%s)",[json_data])
                     messages.success(request, f"Item '{data['item_name']}' Added successfully!")
                 except IntegrityError:
