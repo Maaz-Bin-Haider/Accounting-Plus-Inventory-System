@@ -45,6 +45,9 @@ function selectReport(type){
   else if (type === "serial") {   // ✅ add this
       renderSerialForm();
   }
+  else if (type === "summary") {
+      renderStockSummary();
+  }
   else {
       $formSection.empty();
       fetchReport(
@@ -55,6 +58,24 @@ function selectReport(type){
   }
 }
 
+
+
+// ---------- FETCH GENERIC REPORT ----------
+function renderStockSummary(){
+  console.log("callesd");
+  Swal.fire({ title: "Loading...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+  fetch("/accountsReports/stock-summary/", {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": getCSRFToken()}
+  })
+  .then(r => r.json())
+  .then(data => {
+    Swal.close();
+    if (data.error) return Swal.fire("Error", data.error, "error");
+    renderTable(data);
+  })
+  .catch(() => Swal.fire("Error", "Unable to fetch data", "error"));
+}
 
 
 // ---------- RENDER ITEM HISTORY FORM ----------
