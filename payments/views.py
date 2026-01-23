@@ -11,6 +11,10 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def make_payment(request):
+    if not request.user.has_perm("auth.view_payment"):
+        messages.error(request, "You do not have permission to view payments.")
+        return redirect("home:home")
+    
     if request.method == 'POST':
         action = request.POST.get("action")
         payment_id = request.POST.get("current_id")
@@ -77,9 +81,15 @@ def make_payment(request):
                     
                     if not payment_id: # Means new payment
                         try:
+                            # Condition Check for view_only_user group
                             if request.user.groups.filter(name="view_only_users").exists():
                                 messages.error(request,"You do not have permission to Make or Update payments.")
                                 return redirect("payments:payment") 
+                            
+                            # Access check for create payment right
+                            if not request.user.has_perm("auth.create_payment"):
+                                messages.error(request, "You do not have permission to Create payments.")
+                                return redirect("payments:payment")
 
                             cursor.execute("SELECT make_payment(%s)",[json_data])
                             messages.success(request, f"Transaction completed: {amount} paid to {party_name}.")
@@ -88,9 +98,15 @@ def make_payment(request):
                             messages.error(request,f"An Unexpected Error occured Please Try Again! {e}")
                     else:   # Means we have to update payment 
                         try:
+                            # Condition Check for view_only_user group
                             if request.user.groups.filter(name="view_only_users").exists():
                                 messages.error(request,"You do not have permission to Make or Update payments.")
                                 return redirect("payments:payment") 
+                            
+                            # Access check for create payment right
+                            if not request.user.has_perm("auth.update_payment"):
+                                messages.error(request, "You do not have permission to Update payments.")
+                                return redirect("payments:payment")
 
                             cursor.execute("SELECT update_payment(%s,%s)",[payment_id,json_data])
                             messages.success(request, f"Transaction Updated: {amount} paid to {party_name}.")
@@ -116,6 +132,11 @@ def make_payment(request):
                 if request.user.groups.filter(name="view_only_users").exists():
                     messages.error(request,"You do not have permission to Delete payments.")
                     return redirect("payments:payment") 
+                
+                # Access check for create payment right
+                if not request.user.has_perm("auth.delete_payment"):
+                    messages.error(request, "You do not have permission to Delete payments.")
+                    return redirect("payments:payment")
 
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_payment(%s)",[payment_id])
