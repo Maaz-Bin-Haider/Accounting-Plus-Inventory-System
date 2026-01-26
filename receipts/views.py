@@ -11,6 +11,11 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def make_receipt(request):
+    # validating if current user have right to view receipt or not
+    if not request.user.has_perm("auth.view_receipt"):
+        messages.error(request, "You do not have permission to view receipts.")
+        return redirect("home:home")
+    
     if request.method == 'POST':
         action = request.POST.get("action")
         receipt_id = request.POST.get("current_id")
@@ -78,8 +83,14 @@ def make_receipt(request):
                     
                     if not receipt_id: # Means new receipt
                         try:
+                            # Condition Check for view_only_user group
                             if request.user.groups.filter(name="view_only_users").exists():
                                 messages.error(request,"You do not have permission to Make or Update Receipts.")
+                                return redirect("receipts:receipt")
+                            
+                            # Access check for create receipt right
+                            if not request.user.has_perm("auth.create_receipt"):
+                                messages.error(request, "You do not have permission to Create receipts.")
                                 return redirect("receipts:receipt")
                             
                             cursor.execute("SELECT make_receipt(%s)",[json_data])
@@ -89,8 +100,14 @@ def make_receipt(request):
                             messages.error(request,f"An Unexpected Error occured Please Try Again! {e}")
                     else:   # Means we have to update receipt 
                         try:
+                            # Condition Check for view_only_user group
                             if request.user.groups.filter(name="view_only_users").exists():
                                 messages.error(request,"You do not have permission to Make or Update Receipts.")
+                                return redirect("receipts:receipt")
+                            
+                            # Access check for update payment right
+                            if not request.user.has_perm("auth.update_receipt"):
+                                messages.error(request, "You do not have permission to Update receipts.")
                                 return redirect("receipts:receipt")
                             
                             cursor.execute("SELECT update_receipt(%s,%s)",[receipt_id,json_data])
@@ -113,8 +130,14 @@ def make_receipt(request):
                 return render(request,"receipts_templates/receipt.html")
             
             try:
+                # Condition Check for view_only_user group
                 if request.user.groups.filter(name="view_only_users").exists():
                     messages.error(request,"You do not have permission to Delete Receipts.")
+                    return redirect("receipts:receipt")
+                
+                # Access check for Delete receipt right
+                if not request.user.has_perm("auth.delete_receipt"):
+                    messages.error(request, "You do not have permission to Delete receipt.")
                     return redirect("receipts:receipt")
                 
                 with connection.cursor() as cursor:

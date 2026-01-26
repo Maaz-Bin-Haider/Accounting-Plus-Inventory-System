@@ -103,7 +103,7 @@ def make_payment(request):
                                 messages.error(request,"You do not have permission to Make or Update payments.")
                                 return redirect("payments:payment") 
                             
-                            # Access check for create payment right
+                            # Access check for update payment right
                             if not request.user.has_perm("auth.update_payment"):
                                 messages.error(request, "You do not have permission to Update payments.")
                                 return redirect("payments:payment")
@@ -129,11 +129,12 @@ def make_payment(request):
                 return render(request,"payments_templates/payment.html")
             
             try:
+                # Condition Check for view_only_user group
                 if request.user.groups.filter(name="view_only_users").exists():
                     messages.error(request,"You do not have permission to Delete payments.")
                     return redirect("payments:payment") 
                 
-                # Access check for create payment right
+                # Access check for delete payment right
                 if not request.user.has_perm("auth.delete_payment"):
                     messages.error(request, "You do not have permission to Delete payments.")
                     return redirect("payments:payment")
