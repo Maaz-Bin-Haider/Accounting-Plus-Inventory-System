@@ -120,15 +120,17 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             {% for message in messages %}
-            Swal.fire({
-                icon: "{% if message.tags == 'error' %}error{% else %}info{% endif %}",
-                title: "Access Denied",
-                text: "{{ message|escapejs }}",
-            });
+                {% if 'error' in message.tags %}
+                Swal.fire({
+                    icon: "error",
+                    title: "Access Denied",
+                    text: "{{ message|escapejs }}",
+                });
+                {% endif %}
             {% endfor %}
         });
     </script>
-    {% endif %}
+  {% endif %}
   
 
 </body>
