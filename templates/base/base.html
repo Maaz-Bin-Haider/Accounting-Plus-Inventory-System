@@ -116,7 +116,7 @@
       sidebar.classList.toggle("open");
     });
   </script>
-  {% if messages %}
+  {% comment %} {% if messages %}
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             {% for message in messages %}
@@ -130,7 +130,7 @@
             {% endfor %}
         });
     </script>
-  {% endif %}
+  {% endif %} {% endcomment %}
   
 
 </body>
