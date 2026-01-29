@@ -803,7 +803,7 @@ function purchaseDateWise() {
         `,
         focusConfirm: false,
         showCancelButton: true,
-        confirmButtonText: "Fetch Payments",
+        confirmButtonText: "Fetch Purchases",
         preConfirm: () => {
             const fromDate = document.getElementById("fromDate").value;
             const toDate = document.getElementById("toDate").value;

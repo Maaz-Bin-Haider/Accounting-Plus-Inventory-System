@@ -10,6 +10,10 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def purchasing(request):
+    if not request.user.has_perm("auth.view_purchase"):
+        messages.error(request, "You do not have permission to View Purchase Invoices.")
+        return redirect("home:home")
+    
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -124,6 +128,13 @@ def purchasing(request):
                                 "status": "error",
                                 "message": "You do not have permission to Purchase"
                             })
+                        
+                        #  Access check for Create Purchase Right
+                        if not request.user.has_perm("auth.create_purchase"):
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Create Purchase"
+                            })
                         # Find the vendor ID
                         with connection.cursor() as cursor:
                             cursor.execute("""
@@ -208,6 +219,14 @@ def purchasing(request):
                                 "status": "error",
                                 "message": "You do not have permission to Update Purchase"
                             })
+                        
+                        #  Access check for Update Purchase Right
+                        if not request.user.has_perm("auth.update_purchase"):
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Update Purchase"
+                            })
+                        
                         with connection.cursor() as cursor:
                             cursor.execute("""
                                 SELECT party_id 
@@ -289,6 +308,14 @@ def purchasing(request):
                         "status": "error",
                         "message": "You do not have permission to Delete Purchase"
                     })
+                
+                #  Access check for Delete Purchase Right
+                if not request.user.has_perm("auth.delete_purchase"):
+                    return JsonResponse({
+                        "status": "error",
+                        "message": "You do not have permission to Delete Purchase"
+                    })
+                
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_purchase(%s)",[purchase_id])
                     return JsonResponse({"success": True, "message": "Deleted Successfully"})

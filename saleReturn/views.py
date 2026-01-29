@@ -1,14 +1,19 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.db import connection
 from django.http import JsonResponse
 import json
 from datetime import datetime, date
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
 @login_required
 def createSaleReturn(request):
+    if not request.user.has_perm("auth.view_sale_return"):
+        messages.error(request, "You do not have permission to View Sale Return")
+        return redirect("home:home")
+    
     if request.method == "POST":
         try:
             data = json.loads(request.body)
@@ -90,6 +95,14 @@ def createSaleReturn(request):
                                 "status": "error",
                                 "message": "You do not have permission to Sale Return"
                             })
+                        
+                        #  Access check for Create Sale Return Right
+                        if not request.user.has_perm("auth.create_sale_return"):
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Create Sale Return"
+                            })
+
                         json_data = json.dumps(data.get("serials"))
                         with connection.cursor() as cursor:
                             cursor.execute("SELECT create_sale_return(%s,%s)",[data.get('party_name'),json_data])
@@ -104,6 +117,14 @@ def createSaleReturn(request):
                                 "status": "error",
                                 "message": "You do not have permission to Update Sale Return"
                             })
+                        
+                        #  Access check for Update Sale Return Right
+                        if not request.user.has_perm("auth.update_sale_return"):
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Update Sale Return"
+                            })
+
                         json_data = json.dumps(data.get("serials"))
                         with connection.cursor() as cursor:
                             cursor.execute("SELECT update_sale_return(%s,%s)",[sale_return_ID,json_data])
@@ -125,6 +146,13 @@ def createSaleReturn(request):
                         "message": "You do not have permission to Delete Sale Return"
                     })
                 
+                 #  Access check for Delete Sale Return Right
+                if not request.user.has_perm("auth.delete_sale_return"):
+                    return JsonResponse({
+                        "status": "error",
+                        "message": "You do not have permission to Delete Sale Return"
+                    })
+
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_sale_return(%s)",[sale_return_ID])
                     return JsonResponse({"success": True, "message": "Deleted Successfully"})

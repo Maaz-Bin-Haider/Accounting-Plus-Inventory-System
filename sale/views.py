@@ -10,6 +10,10 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def sales(request):
+    if not request.user.has_perm("auth.view_sale"):
+        messages.error(request, "You do not have permission to View Sale Invoices.")
+        return redirect("home:home")
+    
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -164,6 +168,14 @@ def sales(request):
                                 "status": "error",
                                 "message": "You do not have permission to Sale"
                             })
+                        
+                        #  Access check for Create Sale Right
+                        if not request.user.has_perm("auth.create_sale"):
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Create Sale"
+                            })
+                        
                         # Find the vendor ID
                         with connection.cursor() as cursor:
                             cursor.execute("""
@@ -241,6 +253,14 @@ def sales(request):
                                 "status": "error",
                                 "message": "You do not have permission to Update Sale"
                             })
+                        
+                        #  Access check for Update Sale Right
+                        if not request.user.has_perm("auth.update_sale"):
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Update Sale"
+                            })
+
                         with connection.cursor() as cursor:
                             cursor.execute("""
                                 SELECT party_id 
@@ -319,6 +339,14 @@ def sales(request):
                         "status": "error",
                         "message": "You do not have permission to Delete Sale"
                     })
+                
+                 #  Access check for Delete Sale Right
+                if not request.user.has_perm("auth.delete_sale"):
+                    return JsonResponse({
+                        "status": "error",
+                        "message": "You do not have permission to Delete Sale"
+                    })
+
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_sale(%s)",[sale_id])
                     return JsonResponse({"success": True, "message": "Deleted Successfully"})

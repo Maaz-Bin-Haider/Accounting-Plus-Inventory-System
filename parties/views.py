@@ -1,12 +1,17 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.db import connection,IntegrityError
 from django.contrib import messages
 from django.http import JsonResponse
 import json
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
 @login_required
 def create_new_party(request):
+    if not request.user.has_perm("auth.view_party"):
+        messages.error(request, "You do not have permission to Add New Parties!")
+        return redirect("home:home")
+    
     if request.method == 'POST':
         party_name = request.POST.get('party_name')
         party_type = request.POST.get('party_type')
@@ -43,6 +48,14 @@ def create_new_party(request):
                         "status": "error",
                         "message": "You do not have permission to Add Parties."
                     })
+                
+                #  Access check for Create parties Right
+                if not request.user.has_perm("auth.create_party"):
+                    return JsonResponse({
+                        "status": "error",
+                        "message": "You do not have permission to Add New Parties!"
+                    })
+
                 cursor.execute("SELECT add_party_from_json(%s);", [json_data])
                 return JsonResponse({
                     "status": "success",

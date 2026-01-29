@@ -1,7 +1,8 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.db import connection
 from django.http import JsonResponse
 import json
+from django.contrib import messages
 from datetime import datetime, date
 from django.contrib.auth.decorators import login_required
 
@@ -9,6 +10,10 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def createPurchaseReturn(request):
+    if not request.user.has_perm("auth.view_purchase_return"):
+        messages.error(request, "You do not have permission to View Purchase Return")
+        return redirect("home:home")
+     
     if request.method == "POST":
         try:
             data = json.loads(request.body)
@@ -91,6 +96,13 @@ def createPurchaseReturn(request):
                                 "message": "You do not have permission to Purchase Return"
                             })
                         
+                        #  Access check for Create Purchase Return Right
+                        if not request.user.has_perm("auth.create_purchase_return"):
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Create Purchase Return"
+                            })
+                        
                         json_data = json.dumps(data.get("serials"))
                         with connection.cursor() as cursor:
                             cursor.execute("SELECT create_purchase_return(%s,%s)",[data.get('party_name'),json_data])
@@ -101,6 +113,13 @@ def createPurchaseReturn(request):
                     # Executing update_purchase_ return function
                     try:
                         if request.user.groups.filter(name="view_only_users").exists():
+                            return JsonResponse({
+                                "status": "error",
+                                "message": "You do not have permission to Update Purchase Return"
+                            })
+                        
+                        #  Access check for Update Sale Right
+                        if not request.user.has_perm("auth.update_purchase_return"):
                             return JsonResponse({
                                 "status": "error",
                                 "message": "You do not have permission to Update Purchase Return"
@@ -127,6 +146,14 @@ def createPurchaseReturn(request):
                         "status": "error",
                         "message": "You do not have permission to Delete Purchase Return"
                     })
+                
+                 #  Access check for Delete Purchase Return Right
+                if not request.user.has_perm("auth.delete_purchase_return"):
+                    return JsonResponse({
+                        "status": "error",
+                        "message": "You do not have permission to Delete Purchase Return"
+                    })
+
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_purchase_return(%s)",[purchase_return_ID])
                     return JsonResponse({"success": True, "message": "Deleted Successfully"})

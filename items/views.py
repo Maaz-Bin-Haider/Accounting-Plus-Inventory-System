@@ -1,13 +1,16 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.db import connection,IntegrityError
 from django.contrib import messages
 from django.http import JsonResponse
+from django.contrib import messages
 import json
 from django.contrib.auth.decorators import login_required
 
 @login_required
 def create_new_item(request):
-    
+    if not request.user.has_perm("auth.view_item"):
+        messages.error(request, "You do not have permission to Add New Items!")
+        return redirect("home:home")
     
     if request.method == 'POST':
         item_name = request.POST.get('item_name')
@@ -45,6 +48,14 @@ def create_new_item(request):
                         "status": "error",
                         "message": "You do not have permission to create items."
                     })
+                
+                #  Access check for Create items Right
+                if not request.user.has_perm("auth.create_item"):
+                    return JsonResponse({
+                        "status": "error",
+                        "message": "You do not have permission to Add New Items!"
+                    })
+
                 cursor.execute("SELECT add_item_from_json(%s)", [json_data])
                 return JsonResponse({
                     "status": "success",

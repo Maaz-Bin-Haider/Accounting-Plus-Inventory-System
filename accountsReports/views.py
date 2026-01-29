@@ -1,12 +1,17 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.db import connection, IntegrityError
 from django.http import JsonResponse
 import json
 from datetime import datetime
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 
 @login_required
 def detailed_ledger_view(request):
+    if not request.user.has_perm("auth.view_accounts_reports_page"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+    
     if request.method == "GET":
         return render(request, "display_report_templates/accounts_reports_template.html")
 
@@ -43,6 +48,10 @@ def detailed_ledger_view(request):
 
 @login_required
 def trial_balance_view(request):
+    if not request.user.has_perm("auth.view_accounts_reports_page"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+    
     if request.method == "GET":
         return render(request, "display_report_templates/accounts_reports_template.html")
 
@@ -65,6 +74,10 @@ def trial_balance_view(request):
 
 @login_required
 def stock_report_view(request):
+    if not request.user.has_perm("auth.view_accounts_reports_page"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+    
     if request.method == "GET":
         return render(request, "display_report_templates/stock_reports_template.html")
 
@@ -88,6 +101,10 @@ def stock_report_view(request):
 
 @login_required
 def stock_summary(request):
+    if not request.user.has_perm("auth.view_accounts_reports_page"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+    
     if request.method == "GET":
         return render(request, "display_report_templates/stock_reports_template.html")
     
@@ -115,6 +132,10 @@ def stock_summary(request):
 
 @login_required
 def stock__worth_report_view(request):
+    if not request.user.has_perm("auth.view_accounts_reports_page"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+    
     if request.method == "GET":
         return render(request, "display_report_templates/stock_reports_template.html")
 
@@ -137,6 +158,10 @@ def stock__worth_report_view(request):
 
 @login_required
 def item_history_view(request):
+    if not request.user.has_perm("auth.view_accounts_reports_page"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+    
     if request.method == "GET":
         return render(request, "display_report_templates/stock_reports_template.html")
 
@@ -174,6 +199,10 @@ def item_history_view(request):
 
 @login_required
 def company_valuation_report(request):
+    if not request.user.has_perm("auth.view_accounts_reports_page"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+    
     if request.method == "GET":
         return render(request, "display_report_templates/profit_reports_template.html")
 
@@ -201,6 +230,10 @@ def company_valuation_report(request):
 
 @login_required
 def sale_wise_report(request):
+    if not request.user.has_perm("auth.view_accounts_reports_page"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+    
     if request.method == "GET":
         return render(request, "display_report_templates/profit_reports_template.html")
 
@@ -233,6 +266,10 @@ def sale_wise_report(request):
 
 @login_required
 def serial_ledger_view(request):
+    if not request.user.has_perm("auth.view_accounts_reports_page"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+    
     if request.method == "GET":
         return render(request, "display_report_templates/stock_reports_template.html")
 
