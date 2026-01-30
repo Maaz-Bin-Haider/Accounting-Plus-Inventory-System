@@ -28,6 +28,7 @@
       font-weight: 600;
       color: #334155;
     }
+    
 
     label {
       font-weight: 500;
@@ -406,3 +407,20 @@
     form > * {
         margin-bottom: 15px;
     }
+
+
+.user_name {
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  margin: 2px auto;
+  align-items: center;
+  font-size: medium;
+  font-weight: 500;
+  color: #616d7e;
+}
+
+.user_name i {
+  margin-right: 5px;
+}

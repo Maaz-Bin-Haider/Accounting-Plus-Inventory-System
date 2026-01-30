@@ -52,4 +52,9 @@ def logout_view(request):
 
 
 
-    
+@login_required
+def current_user(request):
+    data = {
+        "username": request.user.username,
+    }
+    return JsonResponse(data)
