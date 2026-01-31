@@ -130,3 +130,86 @@
 .generate-btn:hover {
   background: #457b9d;
 }
+
+
+
+
+
+
+/* Autocomplete - Updated for better UI */
+.autocomplete-container { 
+  position: relative; 
+  width: 100%; 
+  max-width: 520px; 
+}
+
+#suggestions, #suggestions_detail { 
+  position: absolute; 
+  left: 0; 
+  right: 0; 
+  top: calc(100% + 6px); 
+  background: #fff; 
+  border: 1px solid #ddd; 
+  border-radius: 8px; 
+  max-height: 200px;  /* Fixed max height */
+  overflow-y: auto;   /* Enable vertical scroll */
+  z-index: 9999; 
+  display: none; 
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  margin: 0;  /* Remove any default margin */
+}
+
+/* Custom scrollbar for suggestions */
+#suggestions::-webkit-scrollbar, 
+#suggestions_detail::-webkit-scrollbar {
+  width: 8px;
+}
+
+#suggestions::-webkit-scrollbar-track, 
+#suggestions_detail::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 8px;
+}
+
+#suggestions::-webkit-scrollbar-thumb, 
+#suggestions_detail::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 8px;
+}
+
+#suggestions::-webkit-scrollbar-thumb:hover, 
+#suggestions_detail::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.suggestion-item { 
+  padding: 10px 12px; 
+  cursor: pointer; 
+  border-bottom: 1px solid #f1f1f1;
+  transition: background 0.15s ease;
+  white-space: nowrap;  /* Prevent text wrapping */
+  overflow: hidden;     /* Hide overflow text */
+  text-overflow: ellipsis;  /* Show ... for long text */
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;  /* Remove border from last item */
+}
+
+.suggestion-item:hover {
+  background: #f8f9fa;
+}
+
+.suggestion-item.highlight { 
+  background: #1d3557; 
+  color: #fff; 
+}
+
+/* Ensure form container doesn't shift when suggestions appear */
+.form-section {
+  min-height: 120px;  /* Adjust based on your form height */
+}
+
+.form-row {
+  margin-bottom: 20px;  /* Add space below form row */
+}

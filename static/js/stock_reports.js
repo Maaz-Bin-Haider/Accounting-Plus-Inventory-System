@@ -48,6 +48,9 @@ function selectReport(type){
   else if (type === "summary") {
       renderStockSummary();
   }
+  else if (type === "item-detail") {  // ✅ NEW
+      renderItemDetailForm();
+  }
   else {
       $formSection.empty();
       fetchReport(
@@ -74,7 +77,7 @@ function renderStockSummary(){
     if (data.error) return Swal.fire("Error", data.error, "error");
     renderTable(data);
   })
-  .catch(() => Swal.fire("Error", "Unable to fetch data", "error"));
+  .catch(() => Swal.fire("Error", "Unable to fetch data", "error")); 
 }
 
 
@@ -125,6 +128,92 @@ function renderSerialForm() {
   $("#reportBody").html(`<tr><td class="no-data">Enter serial and click generate</td></tr>`);
 }
 
+
+// ---------- RENDER ITEM DETAIL FORM ---------- ✅ NEW
+function renderItemDetailForm() {
+  const html = `
+    <div class="form-row">
+      <div class="autocomplete-container">
+        <label>Item Name</label><br>
+        <input type="text" id="item_detail_name" placeholder="Enter item name" autocomplete="off"
+               data-autocomplete-url="${window.ITEM_AUTOCOMPLETE_URL}">
+        <div id="suggestions_detail"></div>
+      </div>
+      <button class="generate-btn" onclick="fetchItemDetail()">Generate</button>
+    </div>
+  `;
+
+  $("#report-form-container").html(html);
+  $("#reportHeader").empty();
+  $("#reportBody").html(`<tr><td class="no-data">Enter item name and click generate</td></tr>`);
+  initAutocompleteDetail();
+}
+
+// ---------- FETCH ITEM DETAIL ---------- ✅ NEW
+function fetchItemDetail(){
+  const item = $("#item_detail_name").val().trim();
+  if (!item) return Swal.fire("Missing Item", "Please enter an item name", "warning");
+
+  Swal.fire({ title: "Loading item detail...", didOpen: ()=> Swal.showLoading(), allowOutsideClick:false });
+
+  fetch("/accountsReports/item-detail/", {
+    method: "POST",
+    headers: {"Content-Type":"application/json","X-CSRFToken": getCSRFToken()},
+    body: JSON.stringify({ item_name: item })
+  })
+  .then(r => r.json())
+  .then(data => {
+    Swal.close();
+    if (data.error) return Swal.fire("Error", data.error, "error");
+    renderTable(data);
+  })
+  .catch(()=> Swal.fire("Error", "Unable to fetch item detail", "error"));
+}
+
+
+
+// ---------- AUTOCOMPLETE FOR ITEM DETAIL ---------- ✅ NEW
+function initAutocompleteDetail(){
+  const $input = $("#item_detail_name"), $box = $("#suggestions_detail");
+  const url = $input.data("autocomplete-url");
+  let index = -1, items = [];
+
+  $input.off(".auto").on("input.auto", function(){
+    const q = $(this).val();
+    index = -1; items = []; $box.empty();
+    if (!q) return $box.hide();
+
+    $.getJSON(url, { term: q }, function(data){
+      items = data || [];
+      $box.empty();
+      if (!items.length) return $box.hide();
+      items.forEach((t,i)=>{
+        $("<div>").addClass("suggestion-item").text(t)
+        .on("click", ()=>{ $input.val(t); $box.hide(); })
+        .appendTo($box);
+      });
+      $box.show();
+    });
+  });
+
+  $input.on("keydown.auto", function(e){
+    const $it = $box.children(".suggestion-item");
+    if (e.key === "ArrowDown"){ e.preventDefault(); if ($it.length) index = (index+1)%$it.length; }
+    if (e.key === "ArrowUp"){ e.preventDefault(); if ($it.length) index = (index-1+$it.length)%$it.length; }
+    $it.removeClass("highlight").eq(index).addClass("highlight");
+
+    if (e.key === "Enter"){
+      e.preventDefault();
+      if (items.length === 1) { $input.val(items[0]); $box.hide(); }
+      else if (index >= 0) { $input.val($it.eq(index).text()); $box.hide(); }
+    }
+    if (e.key === "Escape") $box.hide();
+  });
+
+  $(document).on("click.autoDetail", e=>{
+    if(!$(e.target).closest("#item_detail_name,#suggestions_detail").length) $box.hide();
+  });
+}
 
 // ---------- FETCH GENERIC REPORT ----------
 function fetchReport(url){

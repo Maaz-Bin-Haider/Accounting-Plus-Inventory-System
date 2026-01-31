@@ -198,6 +198,41 @@ def item_history_view(request):
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @login_required
+def item_detail_view(request):
+    if not request.user.has_perm("auth.view_accounts_reports_page"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+    
+    if request.method == "GET":
+        return render(request, "display_report_templates/stock_reports_template.html")
+
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            item_name = data.get("item_name", "").strip()
+            
+            if not item_name:
+                return JsonResponse({"error": "Item name is required"}, status=400)
+            
+            item_name_cap = item_name.upper()
+
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM get_item_stock_by_name(%s)", [item_name_cap])
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+
+            result = [dict(zip(columns, row)) for row in rows]
+            return JsonResponse(result, safe=False)
+
+        except IntegrityError as e:
+            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+@login_required
 def company_valuation_report(request):
     if not request.user.has_perm("auth.view_accounts_reports_page"):
         messages.error(request, "Access Denied!")
