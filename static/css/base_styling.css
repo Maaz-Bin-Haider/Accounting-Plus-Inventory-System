@@ -1,8 +1,57 @@
+/* ===== CSS VARIABLES FOR THEMING ===== */
+:root {
+  /* Light Mode Colors */
+  --bg-gradient-1: #c2d1e6;
+  --bg-gradient-2: #cfcdb2;
+  --text-primary: #1e293b;
+  --text-secondary: #334155;
+  --text-tertiary: #475569;
+  --input-bg: #f7f5f5;
+  --input-border: #e2e8f0;
+  --input-text: #334155;
+  --input-placeholder: #94a3b8;
+  --card-bg: #ffffff;
+  --sidebar-bg-1: #1f2937;
+  --sidebar-bg-2: #111827;
+  --sidebar-text: #f3f4f6;
+  --sidebar-link: #e5e7eb;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-search-bg: rgba(255, 255, 255, 0.1);
+  --sidebar-search-text: #e2e8f0;
+  --container-bg: #ddd9d9;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --btn-primary-bg: rgb(102, 158, 102);
+}
+
+/* Dark Mode Colors */
+body.dark-mode {
+  --bg-gradient-1: #0f172a;
+  --bg-gradient-2: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #e2e8f0;
+  --text-tertiary: #cbd5e1;
+  --input-bg: #1e293b;
+  --input-border: #334155;
+  --input-text: #e2e8f0;
+  --input-placeholder: #64748b;
+  --card-bg: #1e293b;
+  --sidebar-bg-1: #0a0e1a;
+  --sidebar-bg-2: #050810;
+  --sidebar-text: #f3f4f6;
+  --sidebar-link: #e5e7eb;
+  --sidebar-border: rgba(255, 255, 255, 0.05);
+  --sidebar-search-bg: rgba(255, 255, 255, 0.05);
+  --sidebar-search-text: #cbd5e1;
+  --container-bg: #1e293b;
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --btn-primary-bg: rgb(52, 211, 153);
+}
+
 * { box-sizing: border-box; }
 
     body {
       font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #c2d1e6, #cfcdb2);
+      background: linear-gradient(135deg, var(--bg-gradient-1), var(--bg-gradient-2));
       min-height: 100vh;
       margin: 0;
       padding: 20px 15px;
@@ -12,6 +61,7 @@
       overflow-y: auto;
       overflow-x: hidden;
       position: relative;
+      transition: background 0.3s ease;
     }
    
     
@@ -20,13 +70,13 @@
       text-align: center;
       margin-bottom: 1.5rem;
       font-weight: 600;
-      color: #1e293b;
+      color: var(--text-primary);
     }
 
     h3 {
       margin-bottom: 0.75rem;
       font-weight: 600;
-      color: #334155;
+      color: var(--text-secondary);
     }
     
 
@@ -34,7 +84,7 @@
       font-weight: 500;
       margin-bottom: 6px;
       display: block;
-      color: #475569;
+      color: var(--text-tertiary);
       font-size: 0.9rem;
     }
 
@@ -50,15 +100,16 @@
       width: 100%;
       padding: 0.55rem 0.75rem;
       border-radius: 10px;
-      border: 1px solid #e2e8f0;
-      /* background: #f3f1e8; */
-      background: #f7f5f5;
-      color: #334155;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--input-text);
       transition: all 0.3s ease;
       font-size: 0.9rem;
     }
 
-    input::placeholder, textarea::placeholder { color: #94a3b8; }
+    input::placeholder, textarea::placeholder { 
+      color: var(--input-placeholder); 
+    }
 
     input:focus, textarea:focus {
       border-color: #3b82f6;
@@ -133,25 +184,26 @@
 /* ===== SIDEBAR ===== */
 .sidebar {
   width: 240px;
-  background: linear-gradient(160deg, #1f2937, #111827);
-  color: #f3f4f6;
+  background: linear-gradient(160deg, var(--sidebar-bg-1), var(--sidebar-bg-2));
+  color: var(--sidebar-text);
   display: flex;
   flex-direction: column;
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
-  box-shadow: 4px 0 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 4px 0 25px var(--shadow-color);
   z-index: 1000;
+  transition: background 0.3s ease;
 }
 
 /* --- Fixed Header --- */
 .sidebar-header {
   padding: 1.2rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--sidebar-border);
   position: sticky;
   top: 0;
-  background: linear-gradient(160deg, #1f2937, #111827);
+  background: linear-gradient(160deg, var(--sidebar-bg-1), var(--sidebar-bg-2));
   z-index: 10;
 }
 
@@ -173,13 +225,13 @@
   padding: 0.45rem 2rem 0.45rem 0.8rem;
   border-radius: 8px;
   border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: #e2e8f0;
+  background: var(--sidebar-search-bg);
+  color: var(--sidebar-search-text);
   font-size: 0.9rem;
 }
 
 .sidebar-search input::placeholder {
-  color: #94a3b8;
+  color: var(--input-placeholder);
 }
 
 .sidebar-search i {
@@ -187,7 +239,7 @@
   right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  color: #94a3b8;
+  color: var(--input-placeholder);
 }
 
 /* --- Scrollable Nav --- */
@@ -216,7 +268,7 @@
 
 .nav-links a {
   text-decoration: none;
-  color: #e5e7eb;
+  color: var(--sidebar-link);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -228,8 +280,6 @@
 .nav-links a:hover,
 .nav-links a.active {
   background: linear-gradient(135deg, #10b981, #059669);
-  /* background: linear-gradient(135deg, #2563eb, #1d4ed8); */
-
   color: #fff;
   transform: translateX(4px);
 }
@@ -243,7 +293,7 @@
 /* --- Footer --- */
 .sidebar-footer {
   padding: 1rem;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid var(--sidebar-border);
 }
 
 .sidebar-footer a {
@@ -253,11 +303,49 @@
   align-items: center;
   gap: 10px;
   font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 .sidebar-footer a:hover {
   color: #ef4444;
   transform: translateX(4px);
+}
+
+/* --- Theme Toggle Button --- */
+.theme-toggle {
+  width: 100%;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  padding: 0.65rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.theme-toggle:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.theme-toggle i {
+  font-size: 1rem;
+}
+
+body.dark-mode .theme-toggle {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+body.dark-mode .theme-toggle:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
 }
 
 /* --- Search Filtering --- */
@@ -289,7 +377,7 @@
   top: 1rem;
   left: 1rem;
   font-size: 1.5rem;
-  color: #1e293b;
+  color: var(--text-primary);
   cursor: pointer;
   z-index: 1100;
 }
@@ -329,19 +417,20 @@
 
 /* === Main Container === */
     #create_party_container {
-        /* background-color: #ddd9d9;  */
+        background-color: var(--container-bg);
         padding: 30px;
         border-radius: 16px;
         width: 420px;
         margin: 40px auto;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 12px var(--shadow-color);
         font-family: "Segoe UI", sans-serif;
         align-items: center;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
     }
 
     h1 {
         text-align: center;
-        color: #333;
+        color: var(--text-secondary);
         margin-bottom: 25px;
     }
 
@@ -349,7 +438,7 @@
     label {
         display: block;
         margin-bottom: 6px;
-        color: #444;
+        color: var(--text-tertiary);
         font-weight: 600;
     }
 
@@ -360,10 +449,10 @@
     textarea {
         width: 100%;
         padding: 10px 12px;
-        border: 1px solid #ccc;
+        border: 1px solid var(--input-border);
         border-radius: 8px;
-         /* light grey fields */
-        color: #333;
+        background: var(--input-bg);
+        color: var(--input-text);
         font-size: 14px;
         box-sizing: border-box;
         transition: all 0.2s ease;
@@ -374,7 +463,7 @@
     textarea:focus {
         outline: none;
         border-color: #888;
-        background-color: #f9f9f9;
+        background-color: var(--input-bg);
     }
 
     textarea {
@@ -387,7 +476,7 @@
 
 
     .create_party_btn{
-      background: rgb(102, 158, 102);
+      background: var(--btn-primary-bg);
       color: #fff;
       font-weight: 600;
       padding: 12px 20px;
@@ -400,7 +489,7 @@
       border: none;
     }
     .create_party_btn:hover{
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 6px 18px var(--shadow-color);
       transform: translateY(-2px)
     }
     /* === Spacing === */

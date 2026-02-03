@@ -18,6 +18,9 @@
   <!-- Your global CSS -->
   <link rel="stylesheet" href="{% static 'css/base_styling.css' %}">
 
+  <!-- Dark Mode Css -->
+  <link rel="stylesheet" href="{% static 'css/dark_mode.css' %}">
+
   {% block SeperateCssFile %}{% endblock SeperateCssFile %}
 
   <style>
@@ -85,6 +88,11 @@
             <div class="user_name"><i class="fa-solid fa-user"></i>  <span id="username">-</span></div>
             <hr>
             
+            <!-- Dark Mode Toggle -->
+            <button class="theme-toggle" id="themeToggle">
+                <i class="fa-solid fa-moon" id="themeIcon"></i>
+                <span id="themeText">Dark Mode</span>
+            </button>
             <a href="{% url 'authentication:logout' %}" class="logout-link">
             <i class="fa-solid fa-right-from-bracket"></i> Logout
             </a>
@@ -162,6 +170,8 @@
         // Call every 3 seconds (live update)
         setInterval(fetchCurrentUser, 3000);
     </script>
+    <!-- Dark Mode Script -->
+    <script src="{% static 'js/dark_mode.js' %}"></script>
 
 </body>
 </html>
