@@ -3,6 +3,7 @@
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon = document.getElementById('themeIcon');
     const themeText = document.getElementById('themeText');
+    const html = document.documentElement;
     const body = document.body;
 
     // Check for saved theme preference or default to 'light'
@@ -10,27 +11,22 @@
 
     // Apply the saved theme on page load
     if (currentTheme === 'dark') {
+        html.classList.add('dark-mode');
         body.classList.add('dark-mode');
         updateThemeButton(true);
     }
 
     // Toggle theme on button click
     themeToggle.addEventListener('click', function() {
+        html.classList.toggle('dark-mode');
         body.classList.toggle('dark-mode');
         
-        const isDark = body.classList.contains('dark-mode');
+        const isDark = html.classList.contains('dark-mode');
         
-        // Save preference to localStorage
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        
-        // Update button appearance
         updateThemeButton(isDark);
-        
-        // Add a smooth transition effect
-        body.style.transition = 'background 0.3s ease, color 0.3s ease';
     });
 
-    // Function to update theme button text and icon
     function updateThemeButton(isDark) {
         if (isDark) {
             themeIcon.classList.remove('fa-moon');

@@ -4,6 +4,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Add this FIRST, before CSS -->
+    <script>
+            // Immediately apply dark mode before any rendering
+            (function() {
+                if (localStorage.getItem('theme') === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                }
+            })();
+    </script>
+    <script>
+            // Also add to body synchronously
+            if (localStorage.getItem('theme') === 'dark') {
+                document.write('<script>document.body?.classList.add("dark-mode");<\/script>');
+            }
+    </script>
   <title>{% block title %}{% endblock title %}</title>
 
   <!-- Google Fonts -->

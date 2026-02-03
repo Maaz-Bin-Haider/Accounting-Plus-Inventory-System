@@ -2,6 +2,15 @@
    DARK MODE STYLES FOR PAGE-SPECIFIC ELEMENTS
    ================================================ */
 
+   /* Prevent flash - apply dark background to html too */
+html.dark-mode {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+}
+
+html.dark-mode body {
+    background: linear-gradient(135deg, #0f172a, #1e293b) !important;
+}
+
 /* Home Page Dark Mode Styles */
 body.dark-mode .container header h1 {
   color: var(--text-primary);
@@ -219,7 +228,7 @@ body.dark-mode h6 {
 }
 
 
-body.dark-mode .payment-date-header,
+/* body.dark-mode .payment-date-header,
 body.dark-mode .receipt-date-header {
   background-color: transparent;
   box-shadow: none;
@@ -227,14 +236,14 @@ body.dark-mode .receipt-date-header {
 }
 
 body.dark-mode .payment-row, body.dark-mode .receipt-row{
-  /* background-color: #36373b; */
+
   background-color: #0f172a;
   box-shadow: none;
   border-bottom: none;
 }
 
 body.dark-mode .right-panel{
-  /* background-color: linear-gradient(160deg, #1f2937, #111827); */
+  
   background: linear-gradient(160deg, #1f2937, #111827) !important;
 }
 
@@ -243,7 +252,7 @@ body.dark-mode .no-data{
 }
 
 body.dark-mode .table-container{
-  /* background-color: #353333; */
+  
   background-color: transparent;
 }
 
@@ -272,9 +281,7 @@ body.dark-mode .suggestion-item{
   background-color: #2e2f31;
 }
 
-/* #report-form-container{
 
-} */ 
 
 body.dark-mode .highlight{
   background-color: #0e508d;
@@ -283,5 +290,81 @@ body.dark-mode .highlight{
 }
 
 body.dark-mode .suggestion-item:hover{
+  background-color: #0e508d;
+} */
+
+
+/* Apply to BOTH html and body dark mode */
+html.dark-mode .payment-date-header,
+html.dark-mode .receipt-date-header,
+body.dark-mode .payment-date-header,
+body.dark-mode .receipt-date-header {
+  background-color: transparent;
+  box-shadow: none;
+  border-bottom: none;
+}
+
+html.dark-mode .payment-row, 
+html.dark-mode .receipt-row,
+body.dark-mode .payment-row, 
+body.dark-mode .receipt-row {
+  background-color: #0f172a;
+  box-shadow: none;
+  border-bottom: none;
+}
+
+html.dark-mode .right-panel,
+body.dark-mode .right-panel {
+  background: linear-gradient(160deg, #1f2937, #111827) !important;
+}
+
+html.dark-mode .no-data,
+body.dark-mode .no-data {
+  border: none;
+}
+
+html.dark-mode .table-container,
+body.dark-mode .table-container {
+  background-color: transparent;
+}
+
+html.dark-mode #report-form-container,
+body.dark-mode #report-form-container {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+} 
+
+html.dark-mode #report-form-container .form-row input,
+body.dark-mode #report-form-container .form-row input {
+  background: transparent;
+  background-color: transparent;
+}
+
+html.dark-mode .valuation-section,
+html.dark-mode .valuation-table td,
+body.dark-mode .valuation-section,
+body.dark-mode .valuation-table td {
+  background: none;
+  color: white; 
+}
+
+html.dark-mode #search_name,
+html.dark-mode .suggestion-item,
+body.dark-mode #search_name,
+body.dark-mode .suggestion-item {
+  color: rgb(252, 248, 248);
+  background-color: #2e2f31;
+}
+
+html.dark-mode .highlight,
+body.dark-mode .highlight {
+  background-color: #0e508d;
+  border-radius: 6px;
+  margin: 2px;
+}
+
+html.dark-mode .suggestion-item:hover,
+body.dark-mode .suggestion-item:hover {
   background-color: #0e508d;
 }
