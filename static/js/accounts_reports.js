@@ -1,20 +1,107 @@
 // ==========================
 // 🧭 Report Selector
 // ==========================
+// function selectReport(type) {
+//   $(".report-btn").removeClass("active");
+//   if (type === "ledger") $("#btn-ledger").addClass("active");
+//   else $("#btn-trial").addClass("active");
+
+//   $("#reportHeader").html("");
+//   $("#reportBody").html(`<tr><td class="no-data">Loading...</td></tr>`);
+
+//   if (type === "ledger") {
+//     renderLedgerForm();
+//   } else {
+//     $("#report-form-container").html("");
+//     fetchTrialBalance();
+//   }
+// }
+
 function selectReport(type) {
   $(".report-btn").removeClass("active");
-  if (type === "ledger") $("#btn-ledger").addClass("active");
-  else $("#btn-trial").addClass("active");
+  
+  if (type === "ledger") {
+    $("#btn-ledger").addClass("active");
+  } else if (type === "cash-ledger") {
+    $("#btn-cash-ledger").addClass("active");
+  } else {
+    $("#btn-trial").addClass("active");
+  }
 
   $("#reportHeader").html("");
   $("#reportBody").html(`<tr><td class="no-data">Loading...</td></tr>`);
 
   if (type === "ledger") {
     renderLedgerForm();
+  } else if (type === "cash-ledger") {
+    renderCashLedgerForm();
   } else {
     $("#report-form-container").html("");
     fetchTrialBalance();
   }
+}
+
+// ==========================
+// 💵 Cash Ledger Form
+// ==========================
+function renderCashLedgerForm() {
+  const today = new Date().toISOString().split("T")[0];
+  const currentYear = new Date().getFullYear();
+  const yearStart = `${currentYear}-01-01`;
+  
+  const formHTML = `
+    <div class="form-row">
+      <label for="cash_from_date">From Date:</label>
+      <input type="date" id="cash_from_date" value="${yearStart}" required>
+      <label for="cash_to_date">To Date:</label>
+      <input type="date" id="cash_to_date" value="${today}" required>
+      <button class="generate-btn" onclick="fetchCashLedger()">Generate</button>
+    </div>
+  `;
+  $("#report-form-container").html(formHTML);
+  $("#reportHeader").html("");
+  $("#reportBody").html(`<tr><td class="no-data">Select date range to generate cash ledger</td></tr>`);
+}
+
+// ==========================
+// 💵 Fetch Cash Ledger
+// ==========================
+function fetchCashLedger() {
+  const fromDate = $("#cash_from_date").val();
+  const toDate = $("#cash_to_date").val();
+
+  if (!fromDate || !toDate) {
+    Swal.fire("Missing Fields", "Please select both dates.", "warning");
+    return;
+  }
+
+  Swal.fire({
+    title: "Fetching Cash Ledger...",
+    text: "Please wait while data loads.",
+    didOpen: () => Swal.showLoading(),
+    allowOutsideClick: false,
+  });
+
+  fetch("/accountsReports/cash-ledger/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCSRFToken(),
+    },
+    body: JSON.stringify({ from_date: fromDate, to_date: toDate }),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      Swal.close();
+      if (data.error) {
+        Swal.fire("Error", data.error, "error");
+      } else {
+        renderTable(data);
+      }
+    })
+    .catch(() => {
+      Swal.fire("Error", "Unable to fetch cash ledger data.", "error");
+    });
 }
 
 // ==========================
@@ -141,6 +228,44 @@ function renderTable(data) {
   );
 }
 
+// // ==========================
+// // 🧾 Download Table as PDF
+// // ==========================
+// $(document).on("click", "#download_pdf", function () {
+//   const { jsPDF } = window.jspdf;
+//   const doc = new jsPDF("p", "pt", "a4");
+
+//   const activeReport = $(".report-btn.active").attr("id") === "btn-ledger" ? "Detailed Ledger" : "Trial Balance";
+//   const party = $("#search_name").val() || "All";
+//   const fromDate = $("#from_date").val() || "N/A";
+//   const toDate = $("#to_date").val() || "N/A";
+
+//   doc.setFontSize(14);
+//   doc.text(`${activeReport} Report`, 40, 40);
+//   doc.setFontSize(10);
+//   if (activeReport === "Detailed Ledger") {
+//     doc.text(`Party: ${party}`, 40, 60);
+//     doc.text(`From: ${fromDate}    To: ${toDate}`, 40, 75);
+//   }
+
+//   doc.autoTable({
+//     html: "#reportTable",
+//     startY: activeReport === "Detailed Ledger" ? 100 : 60,
+//     theme: "grid",
+//     headStyles: { fillColor: [25, 135, 84] },
+//     styles: { fontSize: 9 },
+//   });
+
+//   const totalPages = doc.internal.getNumberOfPages();
+//   for (let i = 1; i <= totalPages; i++) {
+//     doc.setPage(i);
+//     doc.setFontSize(8);
+//     doc.text(`Page ${i} of ${totalPages}`, doc.internal.pageSize.width - 60, doc.internal.pageSize.height - 20);
+//   }
+
+//   const filename = `${activeReport.replace(" ", "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
+//   doc.save(filename);
+// });
 // ==========================
 // 🧾 Download Table as PDF
 // ==========================
@@ -148,27 +273,52 @@ $(document).on("click", "#download_pdf", function () {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF("p", "pt", "a4");
 
-  const activeReport = $(".report-btn.active").attr("id") === "btn-ledger" ? "Detailed Ledger" : "Trial Balance";
-  const party = $("#search_name").val() || "All";
-  const fromDate = $("#from_date").val() || "N/A";
-  const toDate = $("#to_date").val() || "N/A";
+  const activeBtn = $(".report-btn.active");
+  let activeReport = "Report";
+  let party = "";
+  let fromDate = "";
+  let toDate = "";
 
+  // Determine which report is active
+  if (activeBtn.attr("id") === "btn-ledger") {
+    activeReport = "Detailed Ledger";
+    party = $("#search_name").val() || "All";
+    fromDate = $("#from_date").val() || "N/A";
+    toDate = $("#to_date").val() || "N/A";
+  } else if (activeBtn.attr("id") === "btn-cash-ledger") {
+    activeReport = "Cash Ledger";
+    fromDate = $("#cash_from_date").val() || "N/A";
+    toDate = $("#cash_to_date").val() || "N/A";
+  } else if (activeBtn.attr("id") === "btn-trial") {
+    activeReport = "Trial Balance";
+  }
+
+  // Add report title
   doc.setFontSize(14);
   doc.text(`${activeReport} Report`, 40, 40);
   doc.setFontSize(10);
+  
+  // Add metadata based on report type
+  let startY = 60;
   if (activeReport === "Detailed Ledger") {
     doc.text(`Party: ${party}`, 40, 60);
     doc.text(`From: ${fromDate}    To: ${toDate}`, 40, 75);
+    startY = 100;
+  } else if (activeReport === "Cash Ledger") {
+    doc.text(`From: ${fromDate}    To: ${toDate}`, 40, 60);
+    startY = 85;
   }
 
+  // Generate table
   doc.autoTable({
     html: "#reportTable",
-    startY: activeReport === "Detailed Ledger" ? 100 : 60,
+    startY: startY,
     theme: "grid",
     headStyles: { fillColor: [25, 135, 84] },
     styles: { fontSize: 9 },
   });
 
+  // Add page numbers
   const totalPages = doc.internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
@@ -176,9 +326,11 @@ $(document).on("click", "#download_pdf", function () {
     doc.text(`Page ${i} of ${totalPages}`, doc.internal.pageSize.width - 60, doc.internal.pageSize.height - 20);
   }
 
-  const filename = `${activeReport.replace(" ", "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
+  // Save with appropriate filename
+  const filename = `${activeReport.replace(/ /g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
   doc.save(filename);
 });
+
 
 // ==========================
 // 🔐 Utility: CSRF Token
