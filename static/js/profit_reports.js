@@ -212,3 +212,101 @@ function getCSRFToken() {
 $(document).ready(() => {
   selectReport("company");
 });
+
+
+
+// ==========================
+// 📊 Download Table as CSV
+// ==========================
+$(document).on("click", "#download_csv", function () {
+  const activeBtn = $(".report-btn.active");
+  let activeReport = "Report";
+  let party = "";
+  let fromDate = "";
+  let toDate = "";
+
+  // Determine which report is active
+  if (activeBtn.attr("id") === "btn-ledger") {
+    activeReport = "Detailed_Ledger";
+    party = $("#search_name").val() || "All";
+    fromDate = $("#from_date").val() || "N/A";
+    toDate = $("#to_date").val() || "N/A";
+  } else if (activeBtn.attr("id") === "btn-cash-ledger") {
+    activeReport = "Cash_Ledger";
+    fromDate = $("#cash_from_date").val() || "N/A";
+    toDate = $("#cash_to_date").val() || "N/A";
+  } else if (activeBtn.attr("id") === "btn-trial") {
+    activeReport = "Trial_Balance";
+  }
+
+  // Get table data
+  const table = document.getElementById("reportTable");
+  if (!table || table.rows.length === 0) {
+    Swal.fire("No Data", "No data available to download.", "warning");
+    return;
+  }
+
+  let csv = [];
+  
+  // Add metadata header
+  if (activeReport === "Detailed_Ledger") {
+    csv.push([`${activeReport.replace(/_/g, " ")} Report`]);
+    csv.push([`Party: ${party}`]);
+    csv.push([`From: ${fromDate}`, `To: ${toDate}`]);
+    csv.push([]); // Empty row
+  } else if (activeReport === "Cash_Ledger") {
+    csv.push([`${activeReport.replace(/_/g, " ")} Report`]);
+    csv.push([`From: ${fromDate}`, `To: ${toDate}`]);
+    csv.push([]); // Empty row
+  } else {
+    csv.push([`${activeReport.replace(/_/g, " ")} Report`]);
+    csv.push([]); // Empty row
+  }
+
+  // Extract headers
+  const headers = [];
+  const headerRow = table.querySelector("thead tr");
+  if (headerRow) {
+    headerRow.querySelectorAll("th").forEach(th => {
+      headers.push(th.textContent.trim());
+    });
+    csv.push(headers);
+  }
+
+  // Extract data rows
+  const tbody = table.querySelector("tbody");
+  if (tbody) {
+    tbody.querySelectorAll("tr").forEach(tr => {
+      const row = [];
+      tr.querySelectorAll("td").forEach(td => {
+        let cellData = td.textContent.trim();
+        // Escape quotes and wrap in quotes if contains comma
+        if (cellData.includes(",") || cellData.includes('"') || cellData.includes("\n")) {
+          cellData = '"' + cellData.replace(/"/g, '""') + '"';
+        }
+        row.push(cellData);
+      });
+      // Only add row if it's not the "no data" message
+      if (row.length > 0 && !row[0].includes("No records found") && !row[0].includes("Select a report")) {
+        csv.push(row);
+      }
+    });
+  }
+
+  // Convert to CSV string
+  const csvContent = csv.map(row => row.join(",")).join("\n");
+
+  // Create download link
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute("href", url);
+  const filename = `${activeReport}_${new Date().toISOString().split("T")[0]}.csv`;
+  link.setAttribute("download", filename);
+  link.style.visibility = "hidden";
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+});

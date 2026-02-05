@@ -566,3 +566,13 @@ body.dark-mode .theme-toggle:hover {
 .user_name i {
   margin-right: 5px;
 }
+
+
+.btn-csv {
+  background: #059669;
+  margin-left: 10px;
+}
+
+.btn-csv:hover {
+  background: #047857;
+}

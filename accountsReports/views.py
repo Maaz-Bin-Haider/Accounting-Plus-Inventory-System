@@ -233,7 +233,7 @@ def item_detail_view(request):
 
 @login_required
 def company_valuation_report(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page"):
+    if not request.user.has_perm("auth.view_company_valuation"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
