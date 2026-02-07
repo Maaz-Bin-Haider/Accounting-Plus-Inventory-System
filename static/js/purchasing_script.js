@@ -1,7 +1,22 @@
 
 
+// function updateQty(row) {
+//   const serialInputs = row.querySelectorAll(".serials input");
+//   const qtyBox = row.querySelector(".qty-box");
+//   let count = 0;
+//   serialInputs.forEach(input => {
+//     if (input.value.trim() !== "") count++;
+//   });
+//   qtyBox.value = count;
+//   calculateTotal();
+// }
+
+// ============================================================
+// FUNCTION: updateQty (UPDATED)
+// ============================================================
 function updateQty(row) {
-  const serialInputs = row.querySelectorAll(".serials input");
+  // Count only filled serial-number inputs (not comment inputs)
+  const serialInputs = row.querySelectorAll(".serials .serial-number");
   const qtyBox = row.querySelector(".qty-box");
   let count = 0;
   serialInputs.forEach(input => {
@@ -13,32 +28,103 @@ function updateQty(row) {
 
 
 
-function addSerial(row, autoFocus = true) {
+// function addSerial(row, autoFocus = true) {
+//   const serialsDiv = row.querySelector(".serials");
+//   const input = document.createElement("input");
+//   input.type = "text";
+//   input.placeholder = "Serial";
+//   input.oninput = () => updateQty(row);
+//   input.onkeydown = (e) => handleEnterKey(e, input);
+//   serialsDiv.appendChild(input);
+//   updateQty(row);
+
+//   if (autoFocus) {
+//     input.focus();
+//   }
+  
+// }
+
+// ============================================================
+// FUNCTION: addSerial (UPDATED)
+// ============================================================
+function addSerial(row, autoFocus = true, serialData = null) {
   const serialsDiv = row.querySelector(".serials");
-  const input = document.createElement("input");
-  input.type = "text";
-  input.placeholder = "Serial";
-  input.oninput = () => updateQty(row);
-  input.onkeydown = (e) => handleEnterKey(e, input);
-  serialsDiv.appendChild(input);
+  
+  // Create wrapper div for serial + comment
+  const wrapper = document.createElement("div");
+  wrapper.className = "serial-wrapper";
+  
+  // Create serial number input
+  const serialInput = document.createElement("input");
+  serialInput.type = "text";
+  serialInput.className = "serial-number";
+  serialInput.placeholder = "Serial Number";
+  serialInput.oninput = () => updateQty(row);
+  serialInput.onkeydown = (e) => handleEnterKey(e, serialInput, wrapper);
+  
+  // Create comment input
+  const commentInput = document.createElement("input");
+  commentInput.type = "text";
+  commentInput.className = "serial-comment";
+  commentInput.placeholder = "Comment (optional)";
+  commentInput.maxLength = 500; // Frontend restriction (~2 lines)
+  commentInput.onkeydown = (e) => handleEnterKey(e, commentInput, wrapper);
+  
+  // Pre-fill if data provided (for update mode)
+  if (serialData) {
+    if (typeof serialData === 'string') {
+      // Old format: just serial number
+      serialInput.value = serialData;
+    } else if (typeof serialData === 'object' && serialData !== null) {
+      // New format: {serial: "...", comment: "..."}
+      serialInput.value = serialData.serial || '';
+      commentInput.value = serialData.comment || '';
+    }
+  }
+  
+  wrapper.appendChild(serialInput);
+  wrapper.appendChild(commentInput);
+  serialsDiv.appendChild(wrapper);
   updateQty(row);
 
   if (autoFocus) {
-    input.focus();
+    serialInput.focus();
   }
-  
 }
 
+// function removeSerial(row) {
+//   const serialsDiv = row.querySelector(".serials");
+//   if (serialsDiv.lastChild) {
+//     serialsDiv.removeChild(serialsDiv.lastChild);
+//     updateQty(row);
+
+//     // 👇 Focus handling
+//     const remaining = serialsDiv.querySelectorAll("input");
+//     if (remaining.length > 0) {
+//       remaining[remaining.length - 1].focus(); // focus last serial
+//     } else {
+//       row.querySelector(".add-serial").focus(); // fallback
+//     }
+//   }
+// }
+
+// ============================================================
+// FUNCTION: removeSerial (UPDATED)
+// ============================================================
 function removeSerial(row) {
   const serialsDiv = row.querySelector(".serials");
   if (serialsDiv.lastChild) {
-    serialsDiv.removeChild(serialsDiv.lastChild);
+    serialsDiv.removeChild(serialsDiv.lastChild); // Remove wrapper div
     updateQty(row);
 
-    // 👇 Focus handling
-    const remaining = serialsDiv.querySelectorAll("input");
+    // Focus handling - now works with wrappers
+    const remaining = serialsDiv.querySelectorAll(".serial-wrapper");
     if (remaining.length > 0) {
-      remaining[remaining.length - 1].focus(); // focus last serial
+      const lastWrapper = remaining[remaining.length - 1];
+      const lastSerialInput = lastWrapper.querySelector(".serial-number");
+      if (lastSerialInput) {
+        lastSerialInput.focus();
+      }
     } else {
       row.querySelector(".add-serial").focus(); // fallback
     }
@@ -105,17 +191,126 @@ function getCSRFToken() {
   return null;
 }
 
+// function buildAndSubmit(event) {
+//   event.preventDefault();
+//   const form = event.target;
+//   const action = form.querySelector('button[type="submit"][clicked="true"]')?.value; // ⭐ NEW
+
+
+//   const partyName = document.getElementById("search_name").value.trim();
+//   let purchaseDate = document.getElementById("purchase_date").value;
+//   if (!purchaseDate) {
+//     purchaseDate = new Date().toISOString().slice(0,10);
+//   }
+//   if (!partyName) {
+//     Swal.fire({
+//       icon: "warning",
+//       title: "Missing Party Name",
+//       text: "Please enter the party name before submitting.",
+//       confirmButtonText: "OK"
+//     });
+//     document.getElementById("search_name").focus();
+//     return;
+//   }
+//   const items = [];
+//   const rows = document.querySelectorAll(".item-row");
+//   rows.forEach(row => {
+//     const item_name = row.querySelector(".item_name").value.trim();
+//     const unit_price = parseFloat(row.querySelector(".unit_price").value);
+//     const serials = Array.from(row.querySelectorAll(".serials input"))
+//       .map(s => s.value.trim())
+//       .filter(s => s);
+//     const qty = serials.length;
+
+//     if (item_name && qty > 0 && !isNaN(unit_price) && unit_price > 0) {
+//       items.push({ item_name, qty, unit_price, serials });
+//     }
+//   });
+//   if (items.length === 0) {
+//     Swal.fire({
+//       icon: "warning",
+//       title: "Invalid Items",
+//       text: "Please enter at least one valid item with name, unit price, and serial(s).",
+//       confirmButtonText: "OK"
+//     });
+//     return;
+//   }
+//   const currentId = document.getElementById("current_purchase_id").value || null;
+//   const payload = {
+//     purchase_id: currentId,
+//     party_name: partyName,
+//     purchase_date: purchaseDate, 
+//     items: items,
+//     action: action,
+//   };
+//   // Send JSON to backend
+//   fetch("/purchase/purchasing/", {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//       "X-CSRFToken": getCSRFToken()
+//     },
+//     body: JSON.stringify(payload)
+//   })
+//   .then(async res => {
+//     if (!res.ok) {
+//       // Try to extract JSON error if backend sends one
+//       let errMsg = "Something went wrong on the server.";
+//       try {
+//         const errorData = await res.json();
+//         if (errorData.message) errMsg = errorData.message;
+//       } catch {
+//         // fallback to generic error
+//       }
+//       throw new Error(errMsg);
+//     }
+//     return res.json();
+//   })
+//   .then(data => {
+//     if (data.success) {
+//       Swal.fire({
+//         icon: "success",
+//         title: "Success 🎉",
+//         text: data.message || "Your purchase was submitted successfully!",
+//         timer: 1500,
+//         showConfirmButton: false
+//       }).then(() => {
+//         // After 3 seconds (when the alert closes)
+//         window.location.reload();
+//       });
+//       // window.location.reload();
+//     } else {
+//       Swal.fire({
+//         icon: "error",
+//         title: "Error",
+//         text: data.message || "There was a problem with your submission."
+//       });
+//     }
+//   })
+//   .catch(err => {
+//     Swal.fire({
+//       icon: "error",
+//       title: "Submission Failed",
+//       text: err.message || "An unexpected error occurred. Please try again."
+//     });
+//   });
+
+// }
+
+// ============================================================
+// FUNCTION: buildAndSubmit (UPDATED)
+// ============================================================
 function buildAndSubmit(event) {
   event.preventDefault();
   const form = event.target;
-  const action = form.querySelector('button[type="submit"][clicked="true"]')?.value; // ⭐ NEW
-
+  const action = form.querySelector('button[type="submit"][clicked="true"]')?.value;
 
   const partyName = document.getElementById("search_name").value.trim();
   let purchaseDate = document.getElementById("purchase_date").value;
   if (!purchaseDate) {
     purchaseDate = new Date().toISOString().slice(0,10);
   }
+  
   if (!partyName) {
     Swal.fire({
       icon: "warning",
@@ -126,20 +321,39 @@ function buildAndSubmit(event) {
     document.getElementById("search_name").focus();
     return;
   }
+  
   const items = [];
   const rows = document.querySelectorAll(".item-row");
   rows.forEach(row => {
     const item_name = row.querySelector(".item_name").value.trim();
     const unit_price = parseFloat(row.querySelector(".unit_price").value);
-    const serials = Array.from(row.querySelectorAll(".serials input"))
-      .map(s => s.value.trim())
-      .filter(s => s);
+    
+    // Build serials array with serial + comment
+    const serialWrappers = Array.from(row.querySelectorAll(".serials .serial-wrapper"));
+    const serials = serialWrappers
+      .map(wrapper => {
+        const serialInput = wrapper.querySelector(".serial-number");
+        const commentInput = wrapper.querySelector(".serial-comment");
+        const serialValue = serialInput ? serialInput.value.trim() : '';
+        const commentValue = commentInput ? commentInput.value.trim() : '';
+        
+        if (serialValue) {
+          return {
+            serial: serialValue,
+            comment: commentValue || null
+          };
+        }
+        return null;
+      })
+      .filter(s => s !== null);
+    
     const qty = serials.length;
 
     if (item_name && qty > 0 && !isNaN(unit_price) && unit_price > 0) {
       items.push({ item_name, qty, unit_price, serials });
     }
   });
+  
   if (items.length === 0) {
     Swal.fire({
       icon: "warning",
@@ -149,66 +363,63 @@ function buildAndSubmit(event) {
     });
     return;
   }
-  const currentId = document.getElementById("current_purchase_id").value || null;
+
   const payload = {
-    purchase_id: currentId,
     party_name: partyName,
-    purchase_date: purchaseDate, 
+    purchase_date: purchaseDate,
     items: items,
-    action: action,
+    action: action
   };
-  // Send JSON to backend
-  fetch("/purchase/purchasing/", {
+  
+  const current_id = document.getElementById("current_purchase_id")?.value;
+  if (current_id) {
+    payload.purchase_id = current_id;
+  }
+  
+  console.log("Submitting payload:", payload);
+  
+  const csrftoken = getCSRFToken();
+  fetch(window.location.href, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-CSRFToken": getCSRFToken()
+      "X-CSRFToken": csrftoken
     },
     body: JSON.stringify(payload)
   })
-  .then(async res => {
-    if (!res.ok) {
-      // Try to extract JSON error if backend sends one
-      let errMsg = "Something went wrong on the server.";
-      try {
-        const errorData = await res.json();
-        if (errorData.message) errMsg = errorData.message;
-      } catch {
-        // fallback to generic error
-      }
-      throw new Error(errMsg);
-    }
-    return res.json();
-  })
+  .then(response => response.json())
   .then(data => {
     if (data.success) {
       Swal.fire({
         icon: "success",
-        title: "Success 🎉",
-        text: data.message || "Your purchase was submitted successfully!",
-        timer: 1500,
-        showConfirmButton: false
+        title: "Success",
+        text: data.message || "Purchase saved successfully!",
+        confirmButtonText: "OK"
       }).then(() => {
-        // After 3 seconds (when the alert closes)
-        window.location.reload();
+        if (action === "delete") {
+          window.location.href = window.location.href.split('?')[0];
+        } else {
+          location.reload();
+        }
       });
-      // window.location.reload();
     } else {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: data.message || "There was a problem with your submission."
+        text: data.message || "An error occurred.",
+        confirmButtonText: "OK"
       });
     }
   })
-  .catch(err => {
+  .catch(error => {
+    console.error("Error:", error);
     Swal.fire({
       icon: "error",
-      title: "Submission Failed",
-      text: err.message || "An unexpected error occurred. Please try again."
+      title: "Network Error",
+      text: "Could not connect to server.",
+      confirmButtonText: "OK"
     });
   });
-
 }
 
 document.querySelectorAll('button[type="submit"]').forEach(btn => {
@@ -227,26 +438,93 @@ window.onload = function() {
   document.getElementById("purchase_date").value = today;
 };
 
-function handleEnterKey(e, input) {
+// function handleEnterKey(e, input) {
+//   if (e.key === "Enter") {
+//     e.preventDefault();
+//     if (!input.value.trim()) {
+//       input.focus();
+//       return;
+//     }
+//     const formInputs = Array.from(document.querySelectorAll("input, select, textarea")).filter(el => !el.hasAttribute("readonly"));
+//     const index = formInputs.indexOf(input);
+//     if (index > -1 && index < formInputs.length - 1) {
+//       formInputs[index + 1].focus();
+//     }
+//   }
+// }
+// ============================================================
+// FUNCTION: handleEnterKey (UPDATED)
+// ============================================================
+// function handleEnterKey(e, input, wrapper) {
+//   if (e.key === "Enter") {
+//     e.preventDefault();
+    
+//     // If Enter pressed in serial input, move to comment
+//     if (input.classList.contains("serial-number")) {
+//       const commentInput = wrapper.querySelector(".serial-comment");
+//       if (commentInput) {
+//         commentInput.focus();
+//       }
+//     } 
+//     // If Enter pressed in comment input, add new serial
+//     else if (input.classList.contains("serial-comment")) {
+//       const row = input.closest(".item-row");
+//       if (row) {
+//         addSerial(row, true);
+//       }
+//     }
+//   }
+// }
+
+function handleEnterKey(e, input, wrapper) {
   if (e.key === "Enter") {
     e.preventDefault();
-    if (!input.value.trim()) {
-      input.focus();
-      return;
+    
+    // Handle serial/comment navigation (new)
+    if (input.classList.contains("serial-number")) {
+      const commentInput = wrapper.querySelector(".serial-comment");
+      if (commentInput) {
+        commentInput.focus();
+      }
+    } 
+    else if (input.classList.contains("serial-comment")) {
+      const row = input.closest(".item-row");
+      if (row) {
+        addSerial(row, true);
+      }
     }
-    const formInputs = Array.from(document.querySelectorAll("input, select, textarea")).filter(el => !el.hasAttribute("readonly"));
-    const index = formInputs.indexOf(input);
-    if (index > -1 && index < formInputs.length - 1) {
-      formInputs[index + 1].focus();
+    // Handle regular input navigation (restored)
+    else {
+      if (!input.value.trim() && !input.classList.contains("qty-box")) {
+        input.focus();
+        return;
+      }
+      const formInputs = Array.from(document.querySelectorAll("input, select, textarea"))
+        .filter(el => !el.hasAttribute("readonly") && !el.classList.contains("serial-comment"));
+      const index = formInputs.indexOf(input);
+      if (index > -1 && index < formInputs.length - 1) {
+        formInputs[index + 1].focus();
+      }
     }
   }
 }
 
+// function enforceSequentialValidation() {
+//   const inputs = document.querySelectorAll("input, select, textarea");
+//   inputs.forEach(input => {
+//     input.onkeydown = (e) => handleEnterKey(e, input);
+//     input.onblur = () => { if (!input.value.trim()) input.focus(); };
+//   });
+// }
+
 function enforceSequentialValidation() {
-  const inputs = document.querySelectorAll("input, select, textarea");
+  const inputs = document.querySelectorAll("input:not(.serial-number):not(.serial-comment), select, textarea");
   inputs.forEach(input => {
-    input.onkeydown = (e) => handleEnterKey(e, input);
-    input.onblur = () => { if (!input.value.trim()) input.focus(); };
+    input.onkeydown = (e) => {
+      if (e.key === "Enter") {
+        handleEnterKey(e, input);
+      }
+    };
   });
 }
 
@@ -519,15 +797,21 @@ function renderPurchaseData(data) {
 
       // Append serials
       const serialsDiv = row.querySelector(".serials");
+      // if (Array.isArray(item.serials)) {
+      //   item.serials.forEach(serial => {
+      //     const input = document.createElement("input");
+      //     input.type = "text";
+      //     input.placeholder = "Serial";
+      //     input.value = serial;
+      //     input.oninput = () => updateQty(row);
+      //     input.onkeydown = (e) => handleEnterKey(e, input);
+      //     serialsDiv.appendChild(input);
+      //   });
+      // }
+      // NEW CODE (CORRECT)
       if (Array.isArray(item.serials)) {
-        item.serials.forEach(serial => {
-          const input = document.createElement("input");
-          input.type = "text";
-          input.placeholder = "Serial";
-          input.value = serial;
-          input.oninput = () => updateQty(row);
-          input.onkeydown = (e) => handleEnterKey(e, input);
-          serialsDiv.appendChild(input);
+        item.serials.forEach(serialData => {
+          addSerial(row, false, serialData);  // ✅ addSerial handles both formats
         });
       }
       // update button text
@@ -830,3 +1114,66 @@ function viewPurchaseDetails(purchaseId) {
 }
 
 
+// ============================================================
+// FUNCTION: loadPurchaseData (UPDATED)
+// ============================================================
+// This function is called when navigating to existing purchases
+// Update the section where serials are populated
+
+function loadPurchaseData(data) {
+  // Clear existing items
+  const itemsDiv = document.getElementById("items");
+  itemsDiv.innerHTML = "";
+  
+  // Set party name and date
+  document.getElementById("search_name").value = data.Party || "";
+  document.getElementById("purchase_date").value = data.invoice_date || "";
+  document.getElementById("current_purchase_id").value = data.purchase_invoice_id || "";
+  
+  // Load items
+  if (data.items && Array.isArray(data.items)) {
+    data.items.forEach(item => {
+      const itemRow = document.createElement("div");
+      itemRow.className = "item-row";
+      itemRow.innerHTML = `
+        <div class="item_name_field autocomplete-container">
+          <input type="text" class="item_name item_search_name" 
+                 placeholder="Item name" autocomplete="off"
+                 data-autocomplete-url="${autocompleteItemUrl}">
+          <div class="items_suggestions"></div>
+        </div>
+        <input type="number" class="unit_price" placeholder="Unit price">
+        <input type="number" class="qty-box" readonly value="0">
+        <div class="serials"></div>
+        <button type="button" class="custom-btn add-serial">+ Serial</button>
+        <button type="button" class="custom-btn remove-serial">- Serial</button>
+        <button type="button" class="custom-btn remove-item">Remove</button>
+      `;
+      
+      itemRow.querySelector(".add-serial").onclick = () => addSerial(itemRow);
+      itemRow.querySelector(".remove-serial").onclick = () => removeSerial(itemRow);
+      itemRow.querySelector(".remove-item").onclick = () => { 
+        itemRow.remove(); 
+        calculateTotal(); 
+      };
+      itemRow.querySelector(".unit_price").oninput = () => calculateTotal();
+      
+      itemsDiv.appendChild(itemRow);
+      
+      // Set item details
+      itemRow.querySelector(".item_name").value = item.item_name || "";
+      itemRow.querySelector(".unit_price").value = item.unit_price || "";
+      
+      // Load serials with comments
+      if (item.serials && Array.isArray(item.serials)) {
+        item.serials.forEach(serialData => {
+          addSerial(itemRow, false, serialData);
+        });
+      }
+      
+      enforceSequentialValidation();
+    });
+  }
+  
+  calculateTotal();
+}

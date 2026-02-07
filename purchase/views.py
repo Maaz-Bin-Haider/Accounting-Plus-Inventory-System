@@ -102,20 +102,55 @@ def purchasing(request):
                             return JsonResponse({"success": False, "message": "Invalid Price"})
                         
 
+                        # # Validating Serials
+                        # if not purchase_id:
+                        #     try:
+                        #         for serial in serials:
+
+                        #             with connection.cursor() as cursor:
+                        #                 cursor.execute("SELECT in_stock FROM get_serial_number_details(%s)",[serial])
+
+                        #                 exists = cursor.fetchone()
+
+                        #                 if exists:
+                        #                     return JsonResponse({"success": False, "message": f"The Serial '{serial}' already exists in Stock!"})
+                        #     except:
+                        #         return JsonResponse({"success": False, "message": "Invalid Serial Number!"})
+                        
                         # Validating Serials
                         if not purchase_id:
                             try:
-                                for serial in serials:
-
+                                for serial_obj in serials:
+                                    # Handle both old format (string) and new format (object)
+                                    if isinstance(serial_obj, dict):
+                                        serial_number = serial_obj.get('serial', '').strip()
+                                        serial_comment = serial_obj.get('comment', '').strip()
+                                        
+                                        # Validate comment length (optional, frontend also validates)
+                                        if serial_comment and len(serial_comment) > 500:
+                                            return JsonResponse({
+                                                "success": False, 
+                                                "message": f"Comment for serial '{serial_number}' is too long (max 500 characters)."
+                                            })
+                                    else:
+                                        # Backward compatibility: old format was just serial string
+                                        serial_number = serial_obj.strip() if isinstance(serial_obj, str) else str(serial_obj)
+                                    
+                                    # Check if serial already exists in stock
                                     with connection.cursor() as cursor:
-                                        cursor.execute("SELECT in_stock FROM get_serial_number_details(%s)",[serial])
-
+                                        cursor.execute("SELECT in_stock FROM get_serial_number_details(%s)", [serial_number])
                                         exists = cursor.fetchone()
-
+                                        
                                         if exists:
-                                            return JsonResponse({"success": False, "message": f"The Serial '{serial}' already exists in Stock!"})
-                            except:
-                                return JsonResponse({"success": False, "message": "Invalid Serial Number!"})
+                                            return JsonResponse({
+                                                "success": False, 
+                                                "message": f"The Serial '{serial_number}' already exists in Stock!"
+                                            })
+                            except Exception as e:
+                                return JsonResponse({
+                                    "success": False, 
+                                    "message": "Invalid Serial Number!"
+                                })
                         
                 except:
                     return JsonResponse({"success": False, "message": "Unexpected Error Please try again!"})

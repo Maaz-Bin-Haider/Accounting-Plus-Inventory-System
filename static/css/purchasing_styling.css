@@ -24,11 +24,13 @@ input[type=number] {
 .item-row .item_name_field {
   flex: 2;
   min-width: 150px;
+  max-width: 50%;
 }
 
 .item-row input.unit_price {
   flex: 1;
   min-width: 100px;
+  max-width: 200px;
 }
 
 .item-row .qty-box {
@@ -317,3 +319,126 @@ button.custom-btn {
   justify-content: space-between;
 }
 
+
+/* ============================================================
+   FIXED PURCHASING CSS - PROPER SERIAL COMMENT STYLING
+   Date: 2026-02-07
+   Fixes: Proper width balance for serial + comment inputs
+   ============================================================ */
+
+/* ============================================================
+   SERIAL COMMENT STYLING (CORRECTED)
+   ============================================================ */
+
+/* Wrapper for serial number + comment - FLEX ROW */
+.serials .serial-wrapper {
+    display: flex;
+    flex-direction: row;  /* Ensure horizontal layout */
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px;
+    width: 50%;
+}
+
+/* Both inputs base styling */
+.serials .serial-wrapper input[type="text"] {
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+/* Serial number input - fixed width */
+.serials .serial-wrapper input.serial-number {
+    flex: 0 0 200px;  /* Fixed width 200px */
+    min-width: 200px;
+    max-width: 200px;
+    font-weight: 500;
+}
+
+/* Comment input - takes remaining space */
+.serials .serial-wrapper input.serial-comment {
+    flex: 1 1 auto;  /* Take remaining space */
+    min-width: 250px;
+    font-style: italic;
+    color: #555;
+    /* background-color: #fafafa; */
+}
+
+/* Placeholder styling for comment */
+.serials .serial-wrapper input.serial-comment::placeholder {
+    color: #999;
+    font-style: italic;
+}
+
+/* Focus states */
+.serials .serial-wrapper input.serial-number:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 3px rgba(76, 175, 80, 0.3);
+}
+
+.serials .serial-wrapper input.serial-comment:focus {
+    outline: none;
+    border-color: #2196F3;
+    box-shadow: 0 0 3px rgba(33, 150, 243, 0.3);
+    background-color: #ffffff;
+}
+
+/* Make sure serials container doesn't restrict width */
+.serials {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN
+   ============================================================ */
+
+/* Tablet devices - reduce widths slightly */
+@media (max-width: 1024px) {
+    .serials .serial-wrapper input.serial-number {
+        flex: 0 0 180px;
+        min-width: 180px;
+        max-width: 180px;
+    }
+    
+    .serials .serial-wrapper input.serial-comment {
+        min-width: 200px;
+    }
+}
+
+/* Mobile devices - stack vertically */
+@media (max-width: 768px) {
+    .serials .serial-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 5px;
+    }
+    
+    .serials .serial-wrapper input.serial-number,
+    .serials .serial-wrapper input.serial-comment {
+        flex: 1 1 auto;
+        min-width: 100%;
+        max-width: 100%;
+    }
+}
+
+/* ============================================================
+   ENSURE ITEM-ROW DOESN'T CONSTRAIN WIDTH
+   ============================================================ */
+
+.item-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.item-row .serials {
+    flex: 1 1 100%;  /* Take full width of row */
+    min-width: 0;  /* Allow shrinking */
+}
