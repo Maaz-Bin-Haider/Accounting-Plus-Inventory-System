@@ -218,7 +218,7 @@ def purchasing(request):
                         
                         
                         with connection.cursor() as cursor:
-                            cursor.execute("SELECT validate_purchase_update(%s,%s)",[purchase_id,items_json])
+                            cursor.execute("SELECT validate_purchase_update2(%s,%s)",[purchase_id,items_json])
                             result = cursor.fetchone()[0]
                             result = json.loads(result)
                             
