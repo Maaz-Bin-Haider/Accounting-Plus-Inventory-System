@@ -124,7 +124,7 @@ def purchasing(request):
                                     # Handle both old format (string) and new format (object)
                                     if isinstance(serial_obj, dict):
                                         serial_number = serial_obj.get('serial', '').strip()
-                                        serial_comment = serial_obj.get('comment', '').strip()
+                                        serial_comment = (serial_obj.get('comment') or '').strip()
                                         
                                         # Validate comment length (optional, frontend also validates)
                                         if serial_comment and len(serial_comment) > 500:
