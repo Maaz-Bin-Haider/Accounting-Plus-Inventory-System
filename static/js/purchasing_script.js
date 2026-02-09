@@ -145,7 +145,7 @@ function addItemRow(shouldFocus = true) {
               data-autocomplete-url="${autocompleteItemUrl}">
         <div class="items_suggestions"></div>
     </div>
-    <input type="number" class="unit_price" placeholder="Unit price">
+    <input type="number" class="unit_price" step="0.01" placeholder="Unit price">
     <input type="number" class="qty-box" readonly value="0">
     <div class="serials"></div>
     <button type="button" class="custom-btn add-serial">+ Serial</button>
@@ -781,7 +781,7 @@ function renderPurchaseData(data) {
                 data-autocomplete-url="${autocompleteItemUrl}">
             <div class="items_suggestions"></div>
         </div>
-        <input type="number" class="unit_price" placeholder="Unit price" value="${item.unit_price || 0}">
+        <input type="number" class="unit_price" step="0.01" placeholder="Unit price" value="${item.unit_price || 0}">
         <input type="number" class="qty-box" readonly value="${item.qty || 0}">
         <div class="serials"></div>
         <button type="button" class="custom-btn add-serial">+ Serial</button>
