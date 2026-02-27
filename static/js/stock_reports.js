@@ -38,6 +38,7 @@ function selectReport(type){
   $("#reportBody").html(`<tr><td class="no-data">Loading...</td></tr>`);
 
   const $formSection = $("#report-form-container");
+  $formSection.empty()
 
   if (type === "history") {
       renderHistoryForm();
@@ -50,6 +51,9 @@ function selectReport(type){
   }
   else if (type === "item-detail") {  // ✅ NEW
       renderItemDetailForm();
+  }
+  else if (type === "item-last-purchase") {  // ✅ NEW
+      renderItemLastPurchaseForm();
   }
   else {
       $formSection.empty();
@@ -65,7 +69,6 @@ function selectReport(type){
 
 // ---------- FETCH GENERIC REPORT ----------
 function renderStockSummary(){
-  console.log("callesd");
   Swal.fire({ title: "Loading...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
   fetch("/accountsReports/stock-summary/", {
     method: "POST",
@@ -148,6 +151,23 @@ function renderItemDetailForm() {
   $("#reportBody").html(`<tr><td class="no-data">Enter item name and click generate</td></tr>`);
   initAutocompleteDetail();
 }
+
+function renderItemLastPurchaseForm(){
+  Swal.fire({ title: "Loading...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+  fetch("/accountsReports/item-last-purchase/", {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": getCSRFToken()}
+  })
+  .then(r => r.json())
+  .then(data => {
+    Swal.close();
+    if (data.error) return Swal.fire("Error", data.error, "error");
+    renderTable(data);
+  })
+  .catch(() => Swal.fire("Error", "Unable to fetch data", "error")); 
+}
+
+
 
 // ---------- FETCH ITEM DETAIL ---------- ✅ NEW
 function fetchItemDetail(){
