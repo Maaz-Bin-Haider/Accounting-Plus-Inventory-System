@@ -8,7 +8,7 @@ from django.contrib import messages
 
 @login_required
 def detailed_ledger_view(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page"):
+    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_detailed_ledger"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
@@ -48,7 +48,7 @@ def detailed_ledger_view(request):
 
 @login_required
 def trial_balance_view(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page"):
+    if not request.user.has_perm("auth.view_accounts_reports_page")  or not request.user.has_perm("auth.view_trial_balance"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
