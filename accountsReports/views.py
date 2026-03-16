@@ -115,7 +115,7 @@ def stock_summary(request):
                 cursor.execute("SELECT * FROM stock_summary();")
                 columns = [col[0] for col in cursor.description]
                 rows = cursor.fetchall()
-                print(rows)
+                
 
             result = [dict(zip(columns, row)) for row in rows]
             return JsonResponse(result, safe=False)
@@ -131,7 +131,7 @@ def stock_summary(request):
 
 @login_required
 def stock__worth_report_view(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page"):
+    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_serial_wise_stock"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
@@ -157,7 +157,7 @@ def stock__worth_report_view(request):
 
 @login_required
 def item_history_view(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page"):
+    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_item_history"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
@@ -300,7 +300,7 @@ def sale_wise_report(request):
 
 @login_required
 def serial_ledger_view(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page"):
+    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_serial_ledger"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
@@ -410,7 +410,7 @@ def cash_ledger_view(request):
 
 @login_required
 def items_last_purchasing(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page"):
+    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_item_history"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
