@@ -8,6 +8,8 @@ urlpatterns = [
     path('api/cash/', views.get_cash_balance, name='get_cash_balance'),
     path('api/parties/', views.get_parties, name='get_parties'),
     path('api/items/', views.get_items, name='get_items'),
-    path('api/party-balances/', views.get_party_balances, name='get_party_balances'),
+    path('api/party-balances/', views.get_party_balance_ledger_exclusing_mains, name='get_party_balances'),
+    path('api/receivable/',views.get_receivables_exclusing_mains, name='get_receivables'),
+    path('api/payable/',views.get_payables_exclusing_mains, name='get_payables'),
     path('api/expense-party-balances/', views.get_expense_party_balances, name='get_expense_party_balances'),
 ]

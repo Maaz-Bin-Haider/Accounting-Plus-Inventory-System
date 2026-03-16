@@ -28,7 +28,7 @@ def get_cash_balance(request):
     cash_balance = float(row[0]) if row else 0.0
     return JsonResponse({"cash_balance": cash_balance})
 
-
+# Retired Function
 @login_required
 def get_party_balances(request):
     if not request.user.has_perm("auth.view_accounts_reports_page"):
@@ -69,6 +69,32 @@ def get_parties(request):
 def get_items(request):
     with connection.cursor() as cursor:
         cursor.execute("SELECT get_items_json();")
+        data = cursor.fetchone()[0]
+        data = json.loads(data)
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+def get_party_balance_ledger_exclusing_mains(request):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT get_party_balances_json_excluding(%s);",[['ABDUL MAJID BHAI', 'ABDUL REHMAN BHAI','FAISAL BHAI','WAHEED BHAI']])
+        data = cursor.fetchone()[0]
+        data = json.loads(data)
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+def get_receivables_exclusing_mains(request):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT get_accounts_receivable_json_excluding();")
+        data = cursor.fetchone()[0]
+        data = json.loads(data)
+    return JsonResponse(data, safe=False)
+
+@login_required
+def get_payables_exclusing_mains(request):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT get_accounts_payable_json_excluding(%s);",[['ABDUL MAJID BHAI', 'ABDUL REHMAN BHAI','FAISAL BHAI','WAHEED BHAI']])
         data = cursor.fetchone()[0]
         data = json.loads(data)
     return JsonResponse(data, safe=False)

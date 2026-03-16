@@ -32,7 +32,9 @@ async function showData(type) {
     party: "/home/api/party-balances/",
     expense: "/home/api/expense-party-balances/",
     parties: "/home/api/parties/",
-    items: "/home/api/items/"
+    items: "/home/api/items/",
+    receivable: "/home/api/receivable/",
+    payable: "/home/api/payable/",
   };
 
   try {
@@ -65,6 +67,14 @@ function renderPopup(type, data) {
     case "items":
       title = "📦 Items List";
       html = renderTable(data, ["item_name", "brand"]);
+      break;
+    case "receivable":
+      title = "📦 Receivables";
+      html = renderTable(data, ["name", "balance"]);
+      break;
+    case "payable":
+      title = "📦 Payables";
+      html = renderTable(data, ["name", "balance"]);
       break;
   }
 
