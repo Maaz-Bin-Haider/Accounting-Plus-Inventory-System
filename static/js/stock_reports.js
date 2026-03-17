@@ -368,7 +368,7 @@ function initAutocomplete(){
 }
 
 // ---------- INIT ----------
-$(document).ready(()=> selectReport("history"));
+$(document).ready(()=> selectReport("summary"));
 
 
 // ==========================

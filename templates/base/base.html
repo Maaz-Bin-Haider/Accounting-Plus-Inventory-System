@@ -93,7 +93,7 @@
             <a href="{% url 'accountsReports:cash_ledger' %}" class="{% if request.resolver_match.url_name == 'cash_ledger' %}active{% endif %}">
                 <i class="fa-solid fa-book-open"></i> Accounts Reports
             </a>
-            <a href="{% url 'accountsReports:stock_report' %}" class="{% if request.resolver_match.url_name == 'stock_report' %}active{% endif %}">
+            <a href="{% url 'accountsReports:stock_summary' %}" class="{% if request.resolver_match.url_name == 'stock_summary' %}active{% endif %}">
                 <i class="fa-solid fa-warehouse"></i> Stock Reports
             </a>
             <a href="{% url 'accountsReports:company_valuation' %}" class="{% if request.resolver_match.url_name == 'company_valuation' %}active{% endif %}">

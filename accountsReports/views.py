@@ -120,7 +120,7 @@ def trial_balance_view(request):
 # Stock Report Serial Wise
 @login_required
 def stock_report_view(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_serial_wise_stock"):
+    if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_serial_wise_stock"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
@@ -147,7 +147,7 @@ def stock_report_view(request):
 # Stock Report Summary Wise
 @login_required
 def stock_summary(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_stock_summary"):
+    if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_stock_summary"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
@@ -177,7 +177,7 @@ def stock_summary(request):
 
 @login_required
 def stock__worth_report_view(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_serial_wise_stock"):
+    if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_stock_worth_report"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
@@ -203,7 +203,7 @@ def stock__worth_report_view(request):
 
 @login_required
 def item_history_view(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_item_history"):
+    if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_item_history"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
@@ -244,7 +244,7 @@ def item_history_view(request):
 
 @login_required
 def item_detail_view(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page"):
+    if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_item_detail"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
@@ -278,7 +278,7 @@ def item_detail_view(request):
 
 @login_required
 def serial_ledger_view(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_serial_ledger"):
+    if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_serial_ledger"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
@@ -314,7 +314,7 @@ def serial_ledger_view(request):
 
 @login_required
 def items_last_purchasing(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_item_history"):
+    if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_last_purchasing"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
