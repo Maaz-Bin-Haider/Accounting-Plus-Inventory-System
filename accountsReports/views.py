@@ -46,6 +46,48 @@ def detailed_ledger_view(request):
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
+
+@login_required
+def cash_ledger_view(request):
+    if not request.user.has_perm("auth.view_accounts_reports_page"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+    
+    if request.method == "GET":
+        return render(request, "display_report_templates/accounts_reports_template.html")
+
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            from_date = data.get("from_date")
+            to_date = data.get("to_date")
+
+            if not from_date or not to_date:
+                return JsonResponse({"error": "Missing required date parameters."}, status=400)
+
+            try:
+                datetime.strptime(from_date, "%Y-%m-%d")
+                datetime.strptime(to_date, "%Y-%m-%d")
+            except ValueError:
+                return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM get_cash_ledger_with_party(%s, %s)", [from_date, to_date])
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+
+            result = [dict(zip(columns, row)) for row in rows]
+            return JsonResponse(result, safe=False)
+
+        except IntegrityError as e:
+            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+
 @login_required
 def trial_balance_view(request):
     if not request.user.has_perm("auth.view_accounts_reports_page")  or not request.user.has_perm("auth.view_trial_balance"):
@@ -72,9 +114,13 @@ def trial_balance_view(request):
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
+
+
+
+# Stock Report Serial Wise
 @login_required
 def stock_report_view(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page"):
+    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_serial_wise_stock"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
@@ -98,10 +144,10 @@ def stock_report_view(request):
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
-
+# Stock Report Summary Wise
 @login_required
 def stock_summary(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page"):
+    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_stock_summary"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
@@ -230,6 +276,68 @@ def item_detail_view(request):
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
+@login_required
+def serial_ledger_view(request):
+    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_serial_ledger"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+    
+    if request.method == "GET":
+        return render(request, "display_report_templates/stock_reports_template.html")
+
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            serial = data.get("serial", "").strip()
+
+            if not serial:
+                return JsonResponse({"error": "Serial is required"}, status=400)
+            
+
+
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM get_serial_ledger(%s)", [serial])
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+
+
+
+            result = [dict(zip(columns, row)) for row in rows]
+
+
+            return JsonResponse(result, safe=False)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+@login_required
+def items_last_purchasing(request):
+    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_item_history"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+    
+    if request.method == "GET":
+        return render(request, "display_report_templates/stock_reports_template.html")
+
+    elif request.method == "POST":
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM item_last_purchase_view")
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+
+            result = [dict(zip(columns, row)) for row in rows]
+            return JsonResponse(result, safe=False)
+
+        except IntegrityError as e:
+            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
 
 @login_required
 def company_valuation_report(request):
@@ -298,81 +406,8 @@ def sale_wise_report(request):
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
-@login_required
-def serial_ledger_view(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_serial_ledger"):
-        messages.error(request, "Access Denied!")
-        return redirect("home:home")
-    
-    if request.method == "GET":
-        return render(request, "display_report_templates/stock_reports_template.html")
-
-    elif request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            serial = data.get("serial", "").strip()
-
-            if not serial:
-                return JsonResponse({"error": "Serial is required"}, status=400)
-            
 
 
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT * FROM get_serial_ledger(%s)", [serial])
-                columns = [col[0] for col in cursor.description]
-                rows = cursor.fetchall()
-
-
-
-            result = [dict(zip(columns, row)) for row in rows]
-
-
-            return JsonResponse(result, safe=False)
-
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
-
-    return JsonResponse({"error": "Method not allowed"}, status=405)
-
-
-@login_required
-def cash_ledger_view(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page"):
-        messages.error(request, "Access Denied!")
-        return redirect("home:home")
-    
-    if request.method == "GET":
-        return render(request, "display_report_templates/accounts_reports_template.html")
-
-    elif request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            from_date = data.get("from_date")
-            to_date = data.get("to_date")
-
-            if not from_date or not to_date:
-                return JsonResponse({"error": "Missing required date parameters."}, status=400)
-
-            try:
-                datetime.strptime(from_date, "%Y-%m-%d")
-                datetime.strptime(to_date, "%Y-%m-%d")
-            except ValueError:
-                return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
-
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT * FROM get_cash_ledger_with_party(%s, %s)", [from_date, to_date])
-                columns = [col[0] for col in cursor.description]
-                rows = cursor.fetchall()
-
-            result = [dict(zip(columns, row)) for row in rows]
-            return JsonResponse(result, safe=False)
-
-        except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
-        except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
-
-    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 
 
@@ -406,30 +441,3 @@ def cash_ledger_view(request):
 
 #     return JsonResponse({"error": "Method not allowed"}, status=405)
 
-
-
-@login_required
-def items_last_purchasing(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_item_history"):
-        messages.error(request, "Access Denied!")
-        return redirect("home:home")
-    
-    if request.method == "GET":
-        return render(request, "display_report_templates/stock_reports_template.html")
-
-    elif request.method == "POST":
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT * FROM item_last_purchase_view")
-                columns = [col[0] for col in cursor.description]
-                rows = cursor.fetchall()
-
-            result = [dict(zip(columns, row)) for row in rows]
-            return JsonResponse(result, safe=False)
-
-        except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
-        except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
-
-    return JsonResponse({"error": "Method not allowed"}, status=405)

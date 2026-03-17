@@ -447,7 +447,7 @@ function initAutocomplete() {
 // 🚀 Init Default View
 // ==========================
 $(document).ready(() => {
-  selectReport("ledger");
+  selectReport("cash-ledger");
 });
 
 
