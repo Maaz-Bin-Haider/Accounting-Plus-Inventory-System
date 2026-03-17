@@ -45,7 +45,7 @@ def get_party_balances(request):
 
 @login_required
 def get_expense_party_balances(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page"):
+    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_company_valuation"):
         data= {}
         data = json.loads(data)
         return JsonResponse(data, safe=False)
