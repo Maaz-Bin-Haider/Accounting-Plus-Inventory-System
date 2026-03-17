@@ -49,7 +49,7 @@ def detailed_ledger_view(request):
 
 @login_required
 def cash_ledger_view(request):
-    if not request.user.has_perm("auth.view_accounts_reports_page"):
+    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_cash_ledger"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
