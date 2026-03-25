@@ -390,6 +390,79 @@ def serial_ledger_view(request):
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @login_required
+def serial_ledger_purchase_only_view(request):
+    if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_payable"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+    
+    if request.method == "GET":
+        return render(request, "display_report_templates/stock_reports_template.html")
+
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            serial = data.get("serial", "").strip()
+
+            if not serial:
+                return JsonResponse({"error": "Serial is required"}, status=400)
+            
+
+
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM get_serial_ledger_purchase(%s)", [serial])
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+
+
+
+            result = [dict(zip(columns, row)) for row in rows]
+
+
+            return JsonResponse(result, safe=False)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+@login_required
+def serial_ledger_sale_only_view(request):
+    if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_receivable"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+    
+    if request.method == "GET":
+        return render(request, "display_report_templates/stock_reports_template.html")
+
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            serial = data.get("serial", "").strip()
+
+            if not serial:
+                return JsonResponse({"error": "Serial is required"}, status=400)
+            
+
+
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM get_serial_ledger_sales(%s)", [serial])
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+
+
+
+            result = [dict(zip(columns, row)) for row in rows]
+
+
+            return JsonResponse(result, safe=False)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+@login_required
 def items_last_purchasing(request):
     if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_last_purchasing"):
         messages.error(request, "Access Denied!")
