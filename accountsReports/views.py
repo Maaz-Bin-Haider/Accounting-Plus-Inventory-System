@@ -142,12 +142,13 @@ def receivable(request):
             with connection.cursor() as cursor:
                 cursor.execute("SELECT get_accounts_receivable_json_excluding()")
                 data = cursor.fetchone()[0]   # get JSON directly
-
+            print(type(data))
             return JsonResponse(data, safe=False)
 
         except IntegrityError as e:
             return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
         except Exception as e:
+            
             return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
@@ -186,6 +187,7 @@ def payable(request):
         except IntegrityError as e:
             return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
         except Exception as e:
+            
             return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)

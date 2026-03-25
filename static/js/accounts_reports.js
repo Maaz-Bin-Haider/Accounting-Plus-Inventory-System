@@ -1,21 +1,6 @@
 // ==========================
 // 🧭 Report Selector
 // ==========================
-// function selectReport(type) {
-//   $(".report-btn").removeClass("active");
-//   if (type === "ledger") $("#btn-ledger").addClass("active");
-//   else $("#btn-trial").addClass("active");
-
-//   $("#reportHeader").html("");
-//   $("#reportBody").html(`<tr><td class="no-data">Loading...</td></tr>`);
-
-//   if (type === "ledger") {
-//     renderLedgerForm();
-//   } else {
-//     $("#report-form-container").html("");
-//     fetchTrialBalance();
-//   }
-// }
 
 function selectReport(type) {
   $(".report-btn").removeClass("active");
@@ -24,9 +9,16 @@ function selectReport(type) {
     $("#btn-ledger").addClass("active");
   } else if (type === "cash-ledger") {
     $("#btn-cash-ledger").addClass("active");
+  } else if (type === "receivable") {
+    $("#btn-receivable").addClass("active");
+  } else if (type === "payable") {
+    $("#btn-payable").addClass("active");
   } else {
     $("#btn-trial").addClass("active");
   }
+
+  const $formSection = $("#report-form-container");
+  $formSection.empty()
 
   $("#reportHeader").html("");
   $("#reportBody").html(`<tr><td class="no-data">Loading...</td></tr>`);
@@ -35,6 +27,12 @@ function selectReport(type) {
     renderLedgerForm();
   } else if (type === "cash-ledger") {
     renderCashLedgerForm();
+  } else if (type === "receivable") {
+    $formSection.empty()
+    fetchAccountsReceivable();
+  } else if (type === "payable") {
+    $formSection.empty()
+    fetchAccountsPayable();
   } else {
     $("#report-form-container").html("");
     fetchTrialBalance();
@@ -203,6 +201,91 @@ function fetchTrialBalance() {
     });
 }
 
+
+// // ==========================
+// // 📊 Fetch Accounts Receivable
+// // ==========================
+function fetchAccountsReceivable() {
+  Swal.fire({
+    title: "Loading Trial Balance...",
+    didOpen: () => Swal.showLoading(),
+    allowOutsideClick: false,
+  });
+
+  fetch("/accountsReports/accounts-receivable/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCSRFToken(),
+    },
+  })
+    .then(async (res) => {
+      const data = await res.json();
+
+      // 🔥 Fix for string JSON
+      if (typeof data === "string") {
+        return JSON.parse(data);
+      }
+
+      return data;
+    })
+    .then((data) => {
+      Swal.close();
+
+      if (data.error) {
+        Swal.fire("Error", data.error, "error");
+      } else {
+        renderTable(data);
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      Swal.fire("Error", "Unable to fetch Accounts Receivable.", "error");
+    });
+}
+
+// ==========================
+// 📊 Fetch Accounts Payable
+// ==========================
+function fetchAccountsPayable() {
+  Swal.fire({
+    title: "Loading Trial Balance...",
+    didOpen: () => Swal.showLoading(),
+    allowOutsideClick: false,
+  });
+
+  fetch("/accountsReports/accounts-payable/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCSRFToken(),
+    },
+  })
+    .then(async (res) => {
+      const data = await res.json();
+
+      // 🔥 Fix for string JSON
+      if (typeof data === "string") {
+        return JSON.parse(data);
+      }
+
+      return data;
+    })
+    .then((data) => {
+      Swal.close();
+
+      if (data.error) {
+        Swal.fire("Error", data.error, "error");
+      } else {
+        renderTable(data);
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      Swal.fire("Error", "Unable to fetch Accounts Payable.", "error");
+    });
+}
+
 // ==========================
 // 🧱 Render Table
 // ==========================
@@ -228,44 +311,7 @@ function renderTable(data) {
   );
 }
 
-// // ==========================
-// // 🧾 Download Table as PDF
-// // ==========================
-// $(document).on("click", "#download_pdf", function () {
-//   const { jsPDF } = window.jspdf;
-//   const doc = new jsPDF("p", "pt", "a4");
 
-//   const activeReport = $(".report-btn.active").attr("id") === "btn-ledger" ? "Detailed Ledger" : "Trial Balance";
-//   const party = $("#search_name").val() || "All";
-//   const fromDate = $("#from_date").val() || "N/A";
-//   const toDate = $("#to_date").val() || "N/A";
-
-//   doc.setFontSize(14);
-//   doc.text(`${activeReport} Report`, 40, 40);
-//   doc.setFontSize(10);
-//   if (activeReport === "Detailed Ledger") {
-//     doc.text(`Party: ${party}`, 40, 60);
-//     doc.text(`From: ${fromDate}    To: ${toDate}`, 40, 75);
-//   }
-
-//   doc.autoTable({
-//     html: "#reportTable",
-//     startY: activeReport === "Detailed Ledger" ? 100 : 60,
-//     theme: "grid",
-//     headStyles: { fillColor: [25, 135, 84] },
-//     styles: { fontSize: 9 },
-//   });
-
-//   const totalPages = doc.internal.getNumberOfPages();
-//   for (let i = 1; i <= totalPages; i++) {
-//     doc.setPage(i);
-//     doc.setFontSize(8);
-//     doc.text(`Page ${i} of ${totalPages}`, doc.internal.pageSize.width - 60, doc.internal.pageSize.height - 20);
-//   }
-
-//   const filename = `${activeReport.replace(" ", "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
-//   doc.save(filename);
-// });
 // ==========================
 // 🧾 Download Table as PDF
 // ==========================
@@ -291,6 +337,10 @@ $(document).on("click", "#download_pdf", function () {
     toDate = $("#cash_to_date").val() || "N/A";
   } else if (activeBtn.attr("id") === "btn-trial") {
     activeReport = "Trial Balance";
+  } else if (activeBtn.attr("id") === "btn-receivable") {
+    activeReport = "Receivable";
+  } else if (activeBtn.attr("id") === "btn-payable") {
+    activeReport = "Payable";
   }
 
   // Add report title
@@ -307,6 +357,12 @@ $(document).on("click", "#download_pdf", function () {
   } else if (activeReport === "Cash Ledger") {
     doc.text(`From: ${fromDate}    To: ${toDate}`, 40, 60);
     startY = 85;
+  } else if (activeReport === "Receivable") {
+    startY = 85;
+  } else if (activeReport === "Payable") {
+    startY = 85;
+  } else if (activeReport === "Trial Balance") {
+    startY = 75;
   }
 
   // Generate table
