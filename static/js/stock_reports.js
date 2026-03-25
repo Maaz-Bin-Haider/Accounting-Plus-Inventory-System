@@ -46,6 +46,12 @@ function selectReport(type){
   else if (type === "serial") {   // ✅ add this
       renderSerialForm();
   }
+  else if (type === "serial-purchase-only") {   
+      renderSerialFormPurchaseOnly();
+  }
+  else if (type === "serial-sale-only") {  
+      renderSerialFormSaleOnly();
+  }
   else if (type === "summary") {
       renderStockSummary();
   }
@@ -123,6 +129,38 @@ function renderSerialForm() {
         <input type="text" id="serial_input" placeholder="Enter Serial e.g. IP15-001">
       </div>
       <button class="generate-btn" onclick="fetchSerialLedger()">Generate</button>
+    </div>
+  `;
+
+  $("#report-form-container").html(html);
+  $("#reportHeader").empty();
+  $("#reportBody").html(`<tr><td class="no-data">Enter serial and click generate</td></tr>`);
+}
+
+function renderSerialFormPurchaseOnly() {
+  const html = `
+    <div class="form-row">
+      <div>
+        <label>Serial No</label><br>
+        <input type="text" id="serial_input" placeholder="Enter Serial e.g. IP15-001">
+      </div>
+      <button class="generate-btn" onclick="fetchSerialLedgerPurchaseOnly()">Generate</button>
+    </div>
+  `;
+
+  $("#report-form-container").html(html);
+  $("#reportHeader").empty();
+  $("#reportBody").html(`<tr><td class="no-data">Enter serial and click generate</td></tr>`);
+}
+
+function renderSerialFormSaleOnly() {
+  const html = `
+    <div class="form-row">
+      <div>
+        <label>Serial No</label><br>
+        <input type="text" id="serial_input" placeholder="Enter Serial e.g. IP15-001">
+      </div>
+      <button class="generate-btn" onclick="fetchSerialLedgerSaleOnly()">Generate</button>
     </div>
   `;
 
@@ -274,7 +312,7 @@ function fetchItemHistory(){
   .catch(()=> Swal.fire("Error", "Unable to fetch item history", "error"));
 }
 
-
+// for Fetching Serial Ledger
 function fetchSerialLedger(){
   const serial = $("#serial_input").val().trim();
   if (!serial) return Swal.fire("Missing Serial", "Please enter a serial", "warning");
@@ -282,6 +320,48 @@ function fetchSerialLedger(){
   Swal.fire({title:"Loading serial ledger...", didOpen:()=>Swal.showLoading(), allowOutsideClick:false});
 
   fetch("/accountsReports/serial-ledger/", {
+    method: "POST",
+    headers: { "Content-Type":"application/json", "X-CSRFToken": getCSRFToken() },
+    body: JSON.stringify({ serial })
+  })
+  .then(r => r.json())
+  .then(data => {
+    Swal.close();
+    if (data.error) return Swal.fire("Error", data.error, "error");
+    renderTable(data);
+  })
+  .catch(() => Swal.fire("Error", "Unable to fetch serial ledger", "error"));
+}
+
+// For Fetching Serial Ledger Purchase only
+function fetchSerialLedgerPurchaseOnly(){
+  const serial = $("#serial_input").val().trim();
+  if (!serial) return Swal.fire("Missing Serial", "Please enter a serial", "warning");
+
+  Swal.fire({title:"Loading serial ledger...", didOpen:()=>Swal.showLoading(), allowOutsideClick:false});
+
+  fetch("/accountsReports/serial-ledger-purchase-only/", {
+    method: "POST",
+    headers: { "Content-Type":"application/json", "X-CSRFToken": getCSRFToken() },
+    body: JSON.stringify({ serial })
+  })
+  .then(r => r.json())
+  .then(data => {
+    Swal.close();
+    if (data.error) return Swal.fire("Error", data.error, "error");
+    renderTable(data);
+  })
+  .catch(() => Swal.fire("Error", "Unable to fetch serial ledger", "error"));
+}
+
+// For Fetching Serial Ledger Purchase only
+function fetchSerialLedgerSaleOnly(){
+  const serial = $("#serial_input").val().trim();
+  if (!serial) return Swal.fire("Missing Serial", "Please enter a serial", "warning");
+
+  Swal.fire({title:"Loading serial ledger...", didOpen:()=>Swal.showLoading(), allowOutsideClick:false});
+
+  fetch("/accountsReports/serial-ledger-sale-only/", {
     method: "POST",
     headers: { "Content-Type":"application/json", "X-CSRFToken": getCSRFToken() },
     body: JSON.stringify({ serial })

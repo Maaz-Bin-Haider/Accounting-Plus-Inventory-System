@@ -391,7 +391,7 @@ def serial_ledger_view(request):
 
 @login_required
 def serial_ledger_purchase_only_view(request):
-    if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_payable"):
+    if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_serial_ledger_purchase_only"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
@@ -427,7 +427,7 @@ def serial_ledger_purchase_only_view(request):
 
 @login_required
 def serial_ledger_sale_only_view(request):
-    if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_receivable"):
+    if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_serial_ledger_sale_only"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
