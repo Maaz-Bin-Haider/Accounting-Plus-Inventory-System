@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import detailed_ledger_view, trial_balance_view,stock_report_view,stock__worth_report_view,item_history_view, company_valuation_report,sale_wise_report, serial_ledger_view,stock_summary,item_detail_view,cash_ledger_view,items_last_purchasing,receivable,payable,serial_ledger_purchase_only_view,serial_ledger_sale_only_view
+from .views import detailed_ledger_view, trial_balance_view,stock_report_view,stock__worth_report_view,item_history_view, company_valuation_report,sale_wise_report, serial_ledger_view,stock_summary,item_detail_view,cash_ledger_view,items_last_purchasing,receivable,payable,serial_ledger_purchase_only_view,serial_ledger_sale_only_view, items_last_sale
 
 app_name = "accountsReports"
 
@@ -14,6 +14,7 @@ urlpatterns = [
     path('item-history/',item_history_view,name="item_history"),
     path('item-detail/', item_detail_view, name='item_detail'),
     path('item-last-purchase/', items_last_purchasing, name='items_last_purchasing'),
+    path('item-last-sale/', items_last_sale, name='items_last_sale'),
     path('company-valuation/',company_valuation_report,name="company_valuation"),
     path('sale-wise-report/',sale_wise_report,name="sale_wise_report"),
     path("serial-ledger/", serial_ledger_view, name="serial_ledger"),
