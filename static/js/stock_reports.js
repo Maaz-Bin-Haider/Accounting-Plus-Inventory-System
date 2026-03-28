@@ -61,6 +61,9 @@ function selectReport(type){
   else if (type === "item-last-purchase") {  // ✅ NEW
       renderItemLastPurchaseForm();
   }
+  else if (type === "item-last-sale") {  // ✅ NEW
+      renderItemLastSaleForm();
+  }
   else {
       $formSection.empty();
       fetchReport(
@@ -193,6 +196,21 @@ function renderItemDetailForm() {
 function renderItemLastPurchaseForm(){
   Swal.fire({ title: "Loading...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
   fetch("/accountsReports/item-last-purchase/", {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": getCSRFToken()}
+  })
+  .then(r => r.json())
+  .then(data => {
+    Swal.close();
+    if (data.error) return Swal.fire("Error", data.error, "error");
+    renderTable(data);
+  })
+  .catch(() => Swal.fire("Error", "Unable to fetch data", "error")); 
+}
+
+function renderItemLastSaleForm(){
+  Swal.fire({ title: "Loading...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+  fetch("/accountsReports/item-last-sale/", {
     method: "POST",
     headers: {"Content-Type": "application/json", "X-CSRFToken": getCSRFToken()}
   })
