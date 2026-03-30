@@ -6,6 +6,7 @@
 {% block SeperateCssFile %}
 <link rel="stylesheet" href="{% static 'css/accounts_reports.css' %}">
 <link rel="stylesheet" href="{% static 'css/purchasing_styling.css' %}">
+<link rel="stylesheet" href="{% static 'css/detailed_ledger2.css' %}">
 {% endblock SeperateCssFile %}
 
 {% block body %}
@@ -14,7 +15,8 @@
   <aside class="left-panel">
     <h3 id="accounts-report-heading">📑 Reports</h3>
     <div class="report-buttons">
-      <button class="report-btn active" id="btn-ledger" onclick="selectReport('ledger')">Detailed Ledger</button>
+      <button class="report-btn" id="btn-ledger2"      onclick="selectReport('ledger2')">Detailed Ledger</button>
+      <button class="report-btn active" id="btn-ledger" onclick="selectReport('ledger')">Party Ledger</button>
       <button class="report-btn" id="btn-cash-ledger" onclick="selectReport('cash-ledger')">Cash Ledger</button>
       <button class="report-btn" id="btn-trial" onclick="selectReport('trial')">Trial Balance</button>
       <button class="report-btn" id="btn-receivable" onclick="selectReport('receivable')">Receivable</button>
@@ -24,22 +26,41 @@
 
   <!-- Right Content -->
   <section class="right-panel">
-    <div id="report-form-container">
-      <!-- Dynamic form for report inputs -->
+
+    <!-- ════════════════════════════════════════════════════
+         SECTION A — New Detailed Ledger 2 (Party Ledger)
+         ════════════════════════════════════════════════════ -->
+    <div id="ledger2-section" style="display:block;">
+      <!-- Form injected by JS -->
+      <div id="ledger2-form-area"></div>
+      <!-- Results rendered by JS -->
+      <div id="ledger2-container">
+        <div class="ledger2-empty">
+          Select a party and date range, then click <strong>Generate Ledger</strong>.
+        </div>
+      </div>
     </div>
 
-    <div class="table-container">
-      <div class="table-actions">
-        <button id="download_pdf" class="btn-download">📄 Download PDF</button>
-        <button id="download_csv" class="btn-download btn-csv">📊 Download CSV</button>
+    <!-- ════════════════════════════════════════════════════
+         SECTION B — Classic reports (ledger / cash / trial…)
+         ════════════════════════════════════════════════════ -->
+    <div id="classic-section" style="display:none;">
+      <div id="report-form-container"></div>
+
+      <div class="table-container">
+        <div class="table-actions">
+          <button id="download_pdf" class="btn-download">📄 Download PDF</button>
+          <button id="download_csv" class="btn-download btn-csv">📊 Download CSV</button>
+        </div>
+        <table id="reportTable">
+          <thead id="reportHeader"></thead>
+          <tbody id="reportBody">
+            <tr><td class="no-data">Select a report to view results</td></tr>
+          </tbody>
+        </table>
       </div>
-      <table id="reportTable">
-        <thead id="reportHeader"></thead>
-        <tbody id="reportBody">
-          <tr><td class="no-data">Select a report to view results</td></tr>
-        </tbody>
-      </table>
     </div>
+
   </section>
 </div>
 
@@ -49,6 +70,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
-<!-- Custom JS -->
+<!-- Original JS (cash-ledger, trial-balance, receivable, payable helpers still live here) -->
 <script src="{% static 'js/accounts_reports.js' %}"></script>
+
+<!-- New ledger-2 JS — loads AFTER so selectReport() override takes effect -->
+<script src="{% static 'js/detailed_ledger2.js' %}"></script>
 {% endblock body %}

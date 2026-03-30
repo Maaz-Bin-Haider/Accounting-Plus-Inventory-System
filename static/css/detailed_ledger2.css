@@ -1,0 +1,340 @@
+/* ================================================================
+   detailed_ledger2.css  —  Professional Party Ledger  (v2)
+================================================================ */
+
+/* ── Layout sections ──────────────────────────────────────── */
+#ledger2-section { display: block; }
+#classic-section { display: none;  }
+
+/* ── Form bar ─────────────────────────────────────────────── */
+.l2-form-row {
+  display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;
+  padding: 18px 20px; background: #f8f9fc;
+  border: 1px solid #e0e4ef; border-radius: 10px; margin-bottom: 22px;
+}
+.l2-field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 170px; }
+.l2-field-btn { justify-content: flex-end; min-width: 160px; flex: 0; }
+.l2-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #5a6480; }
+.l2-input {
+  height: 40px; padding: 0 12px; border: 1.5px solid #d0d7e8; border-radius: 7px;
+  font-size: 14px; color: #1e2740; background: #fff;
+  transition: border-color .2s; outline: none; width: 100%; box-sizing: border-box;
+}
+.l2-input:focus { border-color: #2d62e8; box-shadow: 0 0 0 3px rgba(45,98,232,.12); }
+.l2-generate-btn {
+  height: 40px; padding: 0 24px;
+  background: linear-gradient(135deg, #1e4fcc, #2d62e8);
+  color: #fff; border: none; border-radius: 7px;
+  font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: opacity .2s, transform .15s;
+}
+.l2-generate-btn:hover { opacity: .9; transform: translateY(-1px); }
+
+/* ── Autocomplete ─────────────────────────────────────────── */
+.suggestions-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: #fff; border: 1.5px solid #d0d7e8; border-top: none;
+  border-radius: 0 0 7px 7px; z-index: 999; max-height: 220px; overflow-y: auto;
+  box-shadow: 0 6px 20px rgba(0,0,0,.10); display: none;
+}
+.suggestions-dropdown .suggestion-item {
+  padding: 9px 14px; font-size: 13px; cursor: pointer; color: #1e2740;
+  border-bottom: 1px solid #f0f2f8; transition: background .15s;
+}
+.suggestions-dropdown .suggestion-item:hover,
+.suggestions-dropdown .suggestion-item.highlight { background: #eef2fd; color: #1e4fcc; }
+
+/* ── Header bar ───────────────────────────────────────────── */
+.ledger2-header-bar {
+  display: flex; flex-wrap: wrap; justify-content: space-between;
+  align-items: flex-start; gap: 16px; margin-bottom: 18px;
+}
+.ledger2-party-info { display: flex; flex-direction: column; gap: 4px; }
+.ledger2-party-name { font-size: 22px; font-weight: 700; color: #1a2140; letter-spacing: -.02em; }
+.ledger2-period { font-size: 13px; color: #7580a0; }
+
+/* ── Summary chips ────────────────────────────────────────── */
+.ledger2-summary-chips { display: flex; gap: 12px; flex-wrap: wrap; }
+.summary-chip {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 18px; border-radius: 10px; min-width: 130px; text-align: center;
+}
+.chip-label  { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; opacity: .75; margin-bottom: 2px; }
+.chip-value  { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.chip-sub    { font-size: 10px; opacity: .65; margin-top: 2px; }
+.chip-debit  { background: #fff2f2; color: #c0392b; }
+.chip-credit { background: #f0fff5; color: #1a7f4b; }
+.chip-balance { border: 2px solid currentColor; }
+.chip-balance.bal-dr   { background: #fff8f0; color: #c0392b; border-color: #c0392b; }
+.chip-balance.bal-cr   { background: #f0fff5; color: #1a7f4b; border-color: #1a7f4b; }
+.chip-balance.bal-zero { background: #f6f8ff; color: #5a6480; border-color: #c0c8e0; }
+
+/* ── Table wrapper ────────────────────────────────────────── */
+.ledger2-table-wrap {
+  overflow-x: auto; border-radius: 10px;
+  box-shadow: 0 1px 8px rgba(0,0,0,.07); border: 1px solid #dde1ef;
+}
+
+/* ── Main table ───────────────────────────────────────────── */
+.ledger2-table { width: 100%; border-collapse: collapse; font-size: 13.5px; background: #fff; }
+.ledger2-table thead tr { background: #1e3a80; color: #fff; }
+.ledger2-table thead th {
+  padding: 11px 14px; font-weight: 600; font-size: 11.5px;
+  text-transform: uppercase; letter-spacing: .07em; white-space: nowrap;
+}
+.ledger2-table tbody tr.ledger2-row {
+  transition: background .15s; border-bottom: 1px solid #edf0f8;
+}
+.ledger2-table tbody tr.ledger2-row:hover { background: #f5f7fd !important; }
+
+/* row tints */
+.txn-sale-row     { background: #fdfeff; }
+.txn-purchase-row { background: #fdfef9; }
+.txn-receipt-row  { background: #f8fff9; }
+.txn-payment-row  { background: #fffaf8; }
+.txn-sret-row     { background: #fffbf8; }
+.txn-pret-row     { background: #f8fbff; }
+
+/* column widths */
+.col-date   { white-space: nowrap; width: 95px; }
+.col-jid    { width: 52px; text-align: center; color: #8090b0; font-size: 12px; }
+.col-type   { width: 118px; }
+.col-desc   { max-width: 300px; }
+.col-debit  { width: 100px; }
+.col-credit { width: 100px; }
+.col-bal    { width: 110px; }
+.col-toggle { width: 40px; text-align: center; }
+.text-right { text-align: right !important; }
+.fw-bold    { font-weight: 700; }
+
+.ledger2-table td { padding: 9px 14px; vertical-align: top; }
+
+/* ── Transaction badge ────────────────────────────────────── */
+.txn-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.txn-icon     { font-size: 13px; }
+.txn-sale     { background: #e8f4ff; color: #1565c0; }
+.txn-purchase { background: #f3f0ff; color: #5b21b6; }
+.txn-receipt  { background: #e8fff2; color: #15803d; }
+.txn-payment  { background: #fff3e8; color: #c2410c; }
+.txn-sret     { background: #fff8e0; color: #b45309; }
+.txn-pret     { background: #e8f0ff; color: #1e40af; }
+.txn-misc     { background: #f0f2f8; color: #5a6480; }
+
+/* ── Balance cell ─────────────────────────────────────────── */
+.bal-amount { font-weight: 700; font-variant-numeric: tabular-nums; }
+.bal-dr     { color: #c0392b; }
+.bal-cr     { color: #1a7f4b; }
+.bal-zero   { color: #8090b0; }
+.bal-dr-cr  {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  margin-left: 4px; padding: 1px 5px; border-radius: 4px;
+  background: rgba(0,0,0,.06); vertical-align: middle;
+}
+
+/* ── Expand button ────────────────────────────────────────── */
+.expand-btn {
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid #c8d0e8; background: #f5f7fd;
+  border-radius: 6px; cursor: pointer; font-size: 11px; color: #4a5580;
+  transition: all .2s; margin: auto;
+}
+.expand-btn:hover, .expand-btn.expanded { background: #1e4fcc; border-color: #1e4fcc; color: #fff; }
+
+/* ── Detail row wrapper ───────────────────────────────────── */
+.detail-row  { background: #f2f4fb !important; }
+.detail-cell { padding: 0 !important; }
+.detail-panel-wrap {
+  padding: 16px 20px;
+  animation: panelSlide .22s ease;
+  border-top: 2px solid #dde3f4;
+}
+
+@keyframes panelSlide {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ================================================================
+   DETAIL PANEL  —  top strip
+================================================================ */
+.dp-top-strip {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 14px; padding: 12px 16px;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid rgba(0,0,0,.08);
+  margin-bottom: 0;
+}
+
+/* tinted strip backgrounds per type */
+.dp-strip-txn-sale     { background: linear-gradient(90deg, #e8f4ff, #f5f9ff); }
+.dp-strip-txn-purchase { background: linear-gradient(90deg, #f3f0ff, #faf8ff); }
+.dp-strip-txn-receipt  { background: linear-gradient(90deg, #e8fff2, #f5fff9); }
+.dp-strip-txn-payment  { background: linear-gradient(90deg, #fff3e8, #fff9f5); }
+.dp-strip-txn-sret     { background: linear-gradient(90deg, #fff8e0, #fffdf5); }
+.dp-strip-txn-pret     { background: linear-gradient(90deg, #e8f0ff, #f5f8ff); }
+.dp-strip-txn-misc     { background: #f4f6fb; }
+
+.dp-strip-left  { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.dp-strip-mid   { display: flex; align-items: center; gap: 20px; flex: 1; }
+.dp-strip-right { flex-shrink: 0; text-align: right; }
+
+.dp-strip-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px; border-radius: 20px;
+  font-size: 11px; font-weight: 800; letter-spacing: .04em; white-space: nowrap;
+}
+/* reuse existing badge colours */
+.dp-strip-badge.txn-sale     { background: #1565c0; color: #fff; }
+.dp-strip-badge.txn-purchase { background: #5b21b6; color: #fff; }
+.dp-strip-badge.txn-receipt  { background: #15803d; color: #fff; }
+.dp-strip-badge.txn-payment  { background: #c2410c; color: #fff; }
+.dp-strip-badge.txn-sret     { background: #b45309; color: #fff; }
+.dp-strip-badge.txn-pret     { background: #1e40af; color: #fff; }
+.dp-strip-badge.txn-misc     { background: #5a6480; color: #fff; }
+
+.dp-strip-ref  { font-size: 14px; font-weight: 700; color: #1e2740; }
+
+.dp-strip-field { display: flex; flex-direction: column; gap: 1px; }
+.dp-sf-label    { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #8090b0; }
+.dp-sf-val      { font-size: 13px; font-weight: 600; color: #1e2740; }
+
+.dp-strip-amount {
+  font-size: 20px; font-weight: 800; color: #1e2740;
+  font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+}
+
+/* ── Detail body ──────────────────────────────────────────── */
+.dp-body {
+  background: #fff;
+  border: 1px solid #dde3f4;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+}
+
+/* ── Items table ──────────────────────────────────────────── */
+.dp-items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+.dp-th {
+  padding: 9px 14px; background: #f0f4fb;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: #4a5580;
+  border-bottom: 1.5px solid #dde3f4;
+}
+.dp-th-num { width: 36px; text-align: center; }
+.dp-th-r   { text-align: right !important; }
+
+.dp-td     { padding: 10px 14px; vertical-align: top; border-bottom: 1px solid #edf0f8; color: #1e2740; }
+.dp-td-num { width: 36px; text-align: center; color: #8090b0; font-size: 12px; }
+.dp-td-r   { text-align: right !important; font-variant-numeric: tabular-nums; }
+.dp-td-total { font-weight: 700; color: #1e2740; }
+
+.dp-row-even { background: #fff; }
+.dp-row-odd  { background: #fafbfd; }
+
+.dp-items-table tbody tr:hover { background: #f0f4fb; }
+
+/* table footer */
+.dp-tfoot-label { font-weight: 700; color: #4a5580; background: #f0f4fb; font-size: 12px; }
+.dp-tfoot-total { font-weight: 800; font-size: 14px; color: #1e2740; background: #f0f4fb; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ── Item name & serials in table ─────────────────────────── */
+.dp-item-name { font-weight: 600; color: #1e2740; margin-bottom: 5px; }
+.dp-none      { color: #a0a8c0; font-style: italic; font-size: 12px; }
+
+/* ── Serial chips ─────────────────────────────────────────── */
+.dp-serial-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+
+.dps-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #eef2fd; border: 1px solid #c8d4f8;
+  padding: 3px 9px; border-radius: 12px;
+  font-family: "Courier New", monospace; font-size: 11.5px; font-weight: 600; color: #1e40af;
+}
+.dps-icon    { font-size: 9px; color: #6080c8; }
+.dps-num     { color: #1e3a80; }
+.dps-price   { color: #15803d; font-weight: 700; margin-left: 4px; }
+.dps-comment { color: #7580a0; font-style: italic; font-weight: 400; margin-left: 3px; font-family: inherit; }
+
+/* ── Payment / Receipt grid ───────────────────────────────── */
+.dp-pay-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0;
+  padding: 4px 0;
+}
+.dp-pay-row {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 12px 16px; border-bottom: 1px solid #edf0f8;
+  border-right: 1px solid #edf0f8;
+}
+.dp-pay-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: #8090b0;
+}
+.dp-pay-val { font-size: 14px; font-weight: 600; color: #1e2740; }
+
+/* ── Empty states ─────────────────────────────────────────── */
+.dp-empty {
+  padding: 20px 16px; color: #8090b0; font-style: italic; font-size: 13px;
+  background: #f8f9fc; border-radius: 8px;
+}
+
+/* ── Month separator ──────────────────────────────────────── */
+.month-sep-row td { padding: 6px 14px !important; background: #eef2fd; }
+.month-sep-label  {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: #3a5090;
+}
+
+/* ── Footer totals ────────────────────────────────────────── */
+.ledger2-foot { background: #1e3a80; color: #fff; }
+.ledger2-foot td { padding: 12px 14px; }
+.foot-label   { font-weight: 700; font-size: 13px; letter-spacing: .04em; }
+.foot-total   { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
+.foot-balance { font-weight: 700; font-size: 14px; }
+.foot-balance .bal-dr-cr { background: rgba(255,255,255,.2); color: #fff; }
+
+/* ── Action buttons ───────────────────────────────────────── */
+.ledger2-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.l2-btn {
+  padding: 9px 20px; border: none; border-radius: 7px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: opacity .2s, transform .15s;
+}
+.l2-btn:hover { opacity: .88; transform: translateY(-1px); }
+.l2-btn-pdf     { background: #c0392b; color: #fff; }
+.l2-btn-pdf-det { background: #7b1d8e; color: #fff; }
+.l2-btn-csv     { background: #1a7f4b; color: #fff; }
+.l2-btn-expand  { background: #1e4fcc; color: #fff; }
+.l2-btn-collapse{ background: #5a6480; color: #fff; }
+
+/* ── Opening balance row ──────────────────────────────────── */
+.opening-bal-row {
+  background: #fefce8 !important;
+  border-bottom: 2px dashed #d4a800 !important;
+}
+.opening-bal-row .ob-date  { font-weight: 600; color: #7a5c00; }
+.opening-bal-row .ob-label { font-weight: 600; color: #7a5c00; font-style: italic; }
+.txn-opening {
+  background: #fef9c3; color: #854d0e;
+  border: 1px solid #fbbf24;
+  font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px;
+  display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+}
+
+/* ── Opening balance summary chip ────────────────────────── */
+.chip-opening { border: 2px solid currentColor; }
+.chip-opening.bal-dr  { background: #fff8f0; color: #c0392b; border-color: #c0392b; }
+.chip-opening.bal-cr  { background: #f0fff5; color: #1a7f4b; border-color: #1a7f4b; }
+
+/* ── Empty state ──────────────────────────────────────────── */
+.ledger2-empty {
+  text-align: center; padding: 48px 20px; color: #7580a0; font-size: 15px;
+  background: #f8f9fc; border-radius: 10px; border: 1.5px dashed #c8d0e8;
+}

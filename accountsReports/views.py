@@ -48,6 +48,61 @@ def detailed_ledger_view(request):
 
 
 @login_required
+def detailed_ledger2_view(request):
+    if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_detailed_ledger"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+
+    if request.method == "GET":
+        return render(request, "display_report_templates/accounts_reports_template.html")
+
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            party_name = data.get("party_name", "").strip()
+            from_date  = data.get("from_date")
+            to_date    = data.get("to_date")
+
+            if not party_name or not from_date or not to_date:
+                return JsonResponse({"error": "Missing required parameters."}, status=400)
+
+            try:
+                datetime.strptime(from_date, "%Y-%m-%d")
+                datetime.strptime(to_date,   "%Y-%m-%d")
+            except ValueError:
+                return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT * FROM detailed_ledger2(%s, %s, %s)",
+                    [party_name, from_date, to_date]
+                )
+                columns = [col[0] for col in cursor.description]
+                rows    = cursor.fetchall()
+
+            result = []
+            for row in rows:
+                record = {}
+                for col, val in zip(columns, row):
+                    # invoice_details comes back as a dict (psycopg2 auto-parses jsonb)
+                    if col == "invoice_details" and val is not None:
+                        record[col] = val  # already a Python dict
+                    elif hasattr(val, "isoformat"):
+                        record[col] = val.isoformat()
+                    else:
+                        record[col] = val
+                result.append(record)
+
+            return JsonResponse(result, safe=False)
+
+        except IntegrityError as e:
+            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+@login_required
 def cash_ledger_view(request):
     if not request.user.has_perm("auth.view_accounts_reports_page") or not request.user.has_perm("auth.view_cash_ledger"):
         messages.error(request, "Access Denied!")
