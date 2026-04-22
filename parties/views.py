@@ -156,3 +156,9 @@ def update_party(request):
     return render(request,"parties_templates/update_party.html",context)
 
 
+@login_required
+def parties_hub(request):
+    if not request.user.has_perm("auth.view_party"):
+        messages.error(request, "You do not have permission to view Parties!")
+        return redirect("home:home")
+    return render(request, "parties_templates/parties.html")

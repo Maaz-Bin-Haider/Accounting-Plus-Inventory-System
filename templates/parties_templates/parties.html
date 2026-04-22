@@ -1,0 +1,172 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Parties{% endblock title %}
+
+{% block SeperateCssFile %}
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/parties_dash_styling_light.css' %}">
+<style>
+
+</style>
+{% endblock SeperateCssFile %}
+
+{% block body %}
+
+<div class="parties-hub">
+
+  <!-- ════════════════════════════════════
+       HERO HEADER
+  ════════════════════════════════════ -->
+  <div class="hub-hero">
+    <div class="hub-hero-left">
+      <div class="hub-kicker">
+        <span class="kicker-line"></span>
+        Financial Management
+        <span class="kicker-line"></span>
+      </div>
+      <h1>
+        Party
+        <span class="h1-accent">Directory</span>
+      </h1>
+      <p class="hub-hero-desc">
+        Manage your customers, suppliers, and expense accounts — all in one place.
+      </p>
+    </div>
+
+    <div class="hub-stats">
+      <div class="stat-chip">
+        <span class="stat-val" id="statTotal">—</span>
+        <span class="stat-lbl">Total Parties</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-val" id="statBoth">—</span>
+        <span class="stat-lbl">Both</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-val" id="statExpense">—</span>
+        <span class="stat-lbl">Expense</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       QUICK SEARCH
+  ════════════════════════════════════ -->
+  <div class="hub-section-label">Quick Find</div>
+  <div class="hub-search-wrap">
+    <div class="hub-search-inner" style="position:relative;">
+      <i class="fa-solid fa-magnifying-glass hub-search-icon"></i>
+      <input
+        type="text"
+        id="hubSearchInput"
+        placeholder="Search party name…"
+        autocomplete="off"
+        data-autocomplete-url="{% url 'parties:autocomplete_party' %}"
+        data-parties-url="{% url 'home:get_parties' %}"
+        data-update-url="{% url 'parties:update_party' %}"
+      >
+      <div id="hubSuggestions"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       QUICK ACTIONS
+  ════════════════════════════════════ -->
+  <div class="hub-section-label">Actions</div>
+  <div class="hub-actions">
+
+    <!-- Add New Party -->
+    <a href="{% url 'parties:add_new_party' %}" class="action-card primary">
+      <div>
+        <div class="card-number">01 / 02</div>
+        <div class="card-icon-wrap">
+          <i class="fa-solid fa-user-plus" style="color:var(--gold);"></i>
+        </div>
+        <div class="card-title">Add New<br>Party</div>
+        <div class="card-desc">
+          Register a new customer, supplier, or expense account with opening balance and contact details.
+        </div>
+      </div>
+      <div class="card-cta">
+        Create Party <span class="cta-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- Update Party -->
+    <a href="{% url 'parties:update_party' %}" class="action-card">
+      <div>
+        <div class="card-number">02 / 02</div>
+        <div class="card-icon-wrap">
+          <i class="fa-solid fa-user-pen" style="color:var(--gold);"></i>
+        </div>
+        <div class="card-title">Update<br>Party</div>
+        <div class="card-desc">
+          Search and edit an existing party's name, contact info, address, type, or opening balance.
+        </div>
+      </div>
+      <div class="card-cta">
+        Edit Party <span class="cta-arrow">→</span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- ════════════════════════════════════
+       PARTY DIRECTORY TABLE
+  ════════════════════════════════════ -->
+  <div class="hub-section-label">All Parties</div>
+  <div class="hub-table-wrap">
+
+    <!-- Loading skeleton -->
+    <div id="tableLoading" class="hub-loading">
+      <div class="hub-spinner"></div>
+      <p style="font-size:13px;">Loading parties…</p>
+    </div>
+
+    <!-- Table -->
+    <div id="tableContainer" style="display:none;">
+      <table class="parties-table">
+        <thead>
+          <tr>
+            <th>Party</th>
+            <th>Type</th>
+            <th>Contact</th>
+            <th>Opening Balance</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="partiesTableBody"></tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="hub-pagination">
+        <span class="pag-info" id="pagInfo"></span>
+        <div class="pag-btns" id="pagBtns"></div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="empty-state" style="display:none;">
+      <i class="fa-solid fa-users-slash"></i>
+      <p>No parties found. Add your first party to get started.</p>
+    </div>
+
+  </div>
+
+</div><!-- /.parties-hub -->
+
+
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Unified JS -->
+<script src="{% static 'js/parties_dash.js' %}"></script>
+
+<script>
+
+</script>
+
+{% endblock body %}

@@ -87,7 +87,7 @@
             <a href="{% url 'items:add_new_item' %}" class="{% if request.resolver_match.url_name == 'add_new_item' %}active{% endif %}">
                 <i class="fa-solid fa-box"></i> Items
             </a>
-            <a href="{% url 'parties:add_new_party' %}" class="{% if request.resolver_match.url_name == 'add_new_party' %}active{% endif %}">
+            <a href="{% url 'parties:partiesDash' %}" class="{% if request.resolver_match.url_name == 'add_new_party' %}active{% endif %}">
                 <i class="fa-solid fa-users"></i> Parties
             </a>
             <a href="{% url 'accountsReports:cash_ledger' %}" class="{% if request.resolver_match.url_name == 'cash_ledger' %}active{% endif %}">
