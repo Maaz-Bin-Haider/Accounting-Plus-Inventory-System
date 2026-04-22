@@ -69,7 +69,7 @@ def create_new_party(request):
 
     return render(request, "parties_templates/add_new_party.html")
 
-@login_required
+
 def get_party_by_name(party_name:str):
     with connection.cursor() as cursor:
         cursor.execute("SELECT get_party_by_name(%s)",[party_name.upper()])
@@ -133,6 +133,9 @@ def update_party(request):
                             "status": "error",
                             "message": "You do not have permission to Update Parties."
                         })
+                    if not request.user.has_perm("auth.update_party"):
+                        messages.error(request, "You do not have permission to Update Parties!")
+                        return redirect("home:home")
                     cursor.execute("SELECT update_party_from_json(%s,%s)",[int(party_id),json_data])
                     messages.success(request,f"Updated '{data['party_name']}' Sucessfully!")
                 except Exception as e:
