@@ -277,7 +277,7 @@ input.item_name.sale-item-name-hidden {
 }
 
 /* Purchase page: item_name stays visible and editable */
-.item-row .item_name_field input.item_name {
+/* .item-row.purchase-row .item_name_field input.item_name {
   display: block !important;
   width: 100%;
   padding: 9px 12px;
@@ -289,11 +289,31 @@ input.item_name.sale-item-name-hidden {
   background: #fff;
   transition: all 0.18s;
 }
-.item-row .item_name_field input.item_name:focus {
+.item-row.purchase-row .item_name_field input.item_name:focus {
   outline: none;
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
   background: #eff6ff;
+} */
+
+.item-row.purchase-row .item_name_field input.item_name {
+  display: block !important;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 9px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.87rem;
+  font-weight: 600;
+  color: #1e40af;
+  background: #eff6ff;
+  transition: all 0.18s;
+}
+.item-row.purchase-row .item_name_field input.item_name:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  background: #dbeafe;
 }
 
 /* Unit price */
@@ -731,6 +751,26 @@ input.item_name.sale-item-name-hidden {
   background: #fff;
   color: #111827;
   transition: all 0.18s;
+}
+
+/* Purchase serial inputs — match sale page serial-valid styling by default */
+.item-row.purchase-row .serials .serial-pair input.sn {
+  background: #f0fdf4;
+  border-color: #10b981;
+  color: #111827;
+}
+
+.item-row.purchase-row .serials .serial-pair input.sn:focus {
+  outline: none;
+  border-color: #059669;
+  box-shadow: 0 0 0 2px rgba(16,185,129,0.15);
+  background: #dcfce7;
+}
+
+/* Empty serial inputs stay white until filled */
+.item-row.purchase-row .serials .serial-pair input.sn:placeholder-shown {
+  background: #fff;
+  border-color: #e5e7eb;
 }
 
 /* Comment input — shorter, fills remaining space up to a cap */
