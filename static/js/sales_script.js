@@ -1868,7 +1868,7 @@ function downloadInvoicePDF() {
   doc.text("SALE INVOICE", PL, 18);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text("Financee Accounting Software", PL, 26);
+  doc.text("Financee Accounting System", PL, 26);
 
   // Invoice meta (top-right)
   doc.setFontSize(9);

@@ -512,4 +512,99 @@ def get_purchase_summary(request):
 
     except Exception:
         return JsonResponse({"success": False, "message": "Invalid purchase data format."})
+    
+
+# ---------------------------------------------------------------------------
+# Serial validation endpoint for Purchase page
+# POST /purchase/check-serials/
+# Body: {"serials": ["S1","S2",...], "purchase_id": null_or_int}
+#
+# For each serial this checks:
+#   1. Does a record exist at all in serial history?  → "ever_existed"
+#   2. Is it currently in_stock?                      → "in_stock"
+# This covers both:
+#   • Serials already purchased & in stock  (in_stock = true)
+#   • Serials that were purchased, sold, or returned (record exists but not in_stock)
+# Only serials with NO record at all are clean for a new purchase.
+# ---------------------------------------------------------------------------
+@login_required
+def purchase_serial_check(request):
+    if not request.user.has_perm("auth.view_purchase"):
+        return JsonResponse({"success": False, "message": "Permission denied."})
+ 
+    if request.method != "POST":
+        return JsonResponse({"success": False, "message": "POST required."})
+ 
+    try:
+        payload = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "message": "Invalid JSON."})
+ 
+    serials   = payload.get("serials", [])
+    purchase_id = payload.get("purchase_id")   # when editing an existing invoice
+ 
+    if not isinstance(serials, list):
+        return JsonResponse({"success": False, "message": "'serials' must be a list."})
+ 
+    results = {}   # serial -> {status, label}
+ 
+    # If we're editing an existing invoice, serials that are ALREADY on that
+    # invoice are allowed (they belong to this purchase), so fetch them first.
+    existing_invoice_serials = set()
+    if purchase_id:
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT get_current_purchase(%s)", [int(purchase_id)]
+                )
+                row = cursor.fetchone()
+            if row and row[0]:
+                inv = row[0]
+                if isinstance(inv, str):
+                    import json as _j
+                    inv = _j.loads(inv)
+                for item in (inv.get("items") or []):
+                    for s in (item.get("serials") or []):
+                        if isinstance(s, dict):
+                            existing_invoice_serials.add(s.get("serial", "").strip().upper())
+                        elif isinstance(s, str):
+                            existing_invoice_serials.add(s.strip().upper())
+        except Exception:
+            pass   # fall back gracefully — just won't whitelist existing serials
+ 
+    for serial in serials:
+        serial = str(serial).strip()
+        if not serial:
+            continue
+ 
+        if serial.upper() in existing_invoice_serials:
+            results[serial] = {"status": "ok", "label": ""}
+            continue
+ 
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT in_stock FROM get_serial_number_details(%s)", [serial]
+                )
+                row = cursor.fetchone()
+ 
+            if row is None:
+                # No record at all — clean serial, fine for purchase
+                results[serial] = {"status": "ok", "label": ""}
+            elif row[0]:
+                # Record exists AND in_stock = true  → already in inventory
+                results[serial] = {
+                    "status": "in_stock",
+                    "label": "Already in stock"
+                }
+            else:
+                # Record exists but not in_stock → was purchased before (sold/returned)
+                results[serial] = {
+                    "status": "ever_existed",
+                    "label": "Previously in system"
+                }
+        except Exception:
+            results[serial] = {"status": "error", "label": "Lookup failed"}
+ 
+    return JsonResponse({"success": True, "results": results})
 

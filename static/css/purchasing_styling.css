@@ -267,9 +267,33 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   font-size: 11px;
 }
 
-/* Actual hidden input for item_name (still submitted in form) */
-input.item_name {
+/* ── item_name visibility rules ──
+   Sale page:     hidden input + visible .item-name-display div
+                  → mark with class .sale-item-name-hidden to hide
+   Purchase page: visible autocomplete input — must NOT be hidden
+   The rule below is scoped to sale page only via the extra class. */
+input.item_name.sale-item-name-hidden {
   display: none !important;
+}
+
+/* Purchase page: item_name stays visible and editable */
+.item-row .item_name_field input.item_name {
+  display: block !important;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 9px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.87rem;
+  color: #111827;
+  background: #fff;
+  transition: all 0.18s;
+}
+.item-row .item_name_field input.item_name:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  background: #eff6ff;
 }
 
 /* Unit price */
@@ -638,4 +662,111 @@ input.item_name {
   .sale-actions { flex-direction: column; }
   .save-and-update-btn, .delete-btn { width: 100%; justify-content: center; }
   .item-row { grid-template-columns: 1fr; }
+}
+
+
+/* ============================================================
+   PURCHASE PAGE — ROW & SERIAL PAIR LAYOUT
+   
+   5-column single-row grid that matches the column headers:
+   Col 1 : Item Name        (minmax 180px, 1.8fr)
+   Col 2 : Unit Price       (120px)
+   Col 3 : Qty              (70px)
+   Col 4 : Serials+Comments (minmax 260px, 2fr)  ← wide
+   Col 5 : Actions          (110px fixed)
+   ============================================================ */
+
+/* ── Purchase row grid (overrides the sale 6-col grid) ── */
+.item-row.purchase-row {
+  grid-template-columns: minmax(180px, 1.8fr) 120px 70px minmax(260px, 2fr) 110px;
+  grid-template-rows: auto;
+  align-items: start;
+  gap: 10px;
+}
+
+.item-row.purchase-row .item_name_field   { grid-column: 1; }
+.item-row.purchase-row input.unit_price   { grid-column: 2; width: 100%; }
+.item-row.purchase-row .qty-box           { grid-column: 3; width: 100%; }
+.item-row.purchase-row .serials           { grid-column: 4; }
+.item-row.purchase-row .row-actions       {
+  grid-column: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-self: start;
+}
+
+/* ── Serials column (purchase only) ── */
+.item-row.purchase-row .serials {
+  max-height: 240px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-right: 2px;
+}
+
+/* ── Serial pair: SN + comment side by side ── */
+.serials .serial-pair {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Serial number input — wider box */
+.serials .serial-pair input.sn {
+  flex: 0 0 205px;
+  width: 205px !important;       /* override .serials input { width:100% } */
+  min-width: 0;
+  padding: 6px 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.82rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #111827;
+  transition: all 0.18s;
+}
+
+/* Comment input — shorter, fills remaining space up to a cap */
+.serials .serial-pair input.cmt {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 160px;
+  width: auto !important;        /* override .serials input { width:100% } */
+  padding: 6px 10px;
+  font-size: 0.79rem;
+  font-style: italic;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  color: #4b5563;
+  background: #f9fafb;
+  transition: border-color 0.18s;
+}
+
+.serials .serial-pair input.sn:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.08);
+  background: #eff6ff;
+}
+.serials .serial-pair input.cmt:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #fff;
+}
+
+/* Status tag after comment */
+.serials .serial-pair .serial-status-tag {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  white-space: nowrap;
 }
