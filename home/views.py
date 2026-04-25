@@ -754,6 +754,11 @@ def get_items(request):
 
 @login_required
 def get_party_balance_ledger_exclusing_mains(request):
+    if not (
+        request.user.has_perm("auth.view_accounts_reports_page")
+        and request.user.has_perm("auth.view_company_valuation")
+    ):
+        return JsonResponse({}, safe=False)
     with connection.cursor() as cursor:
         cursor.execute(
             "SELECT get_party_balances_json_excluding(%s);",
@@ -766,6 +771,11 @@ def get_party_balance_ledger_exclusing_mains(request):
 
 @login_required
 def get_receivables_exclusing_mains(request):
+    if not (
+        request.user.has_perm("auth.view_accounts_reports_page")
+        and request.user.has_perm("auth.view_company_valuation")
+    ):
+        return JsonResponse({}, safe=False)
     with connection.cursor() as cursor:
         cursor.execute("SELECT get_accounts_receivable_json_excluding();")
         row = cursor.fetchone()
@@ -775,6 +785,11 @@ def get_receivables_exclusing_mains(request):
 
 @login_required
 def get_payables_exclusing_mains(request):
+    if not (
+        request.user.has_perm("auth.view_accounts_reports_page")
+        and request.user.has_perm("auth.view_company_valuation")
+    ):
+        return JsonResponse({}, safe=False)
     with connection.cursor() as cursor:
         cursor.execute(
             "SELECT get_accounts_payable_json_excluding(%s);",
