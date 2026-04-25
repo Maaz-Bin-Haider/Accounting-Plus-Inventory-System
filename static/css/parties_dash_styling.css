@@ -87,7 +87,7 @@
   padding-bottom: 40px;
 }
 
-.hub-hero-left {}
+/* .hub-hero-left {} */
 
 .hub-kicker {
   display: inline-flex;
@@ -221,7 +221,7 @@
   transition: var(--transition);
   cursor: pointer;
   min-height: 240px;
-  group: true;
+  
 }
 
 /* Animated gold shine on hover */
@@ -479,7 +479,7 @@
   color: var(--ivory);
   outline: none;
   transition: var(--transition);
-  -webkit-appearance: none;
+  /* -webkit-appearance: none; */
 }
 
 .hub-search-inner input::placeholder { color: var(--text-muted); }

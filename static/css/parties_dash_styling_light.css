@@ -388,7 +388,7 @@
   outline: none;
   transition: var(--transition);
   box-shadow: var(--shadow-sm);
-  -webkit-appearance: none;
+  /* -webkit-appearance: none; */
 }
 
 .hub-search-inner input::placeholder { color: var(--text-muted); }
