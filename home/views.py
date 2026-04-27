@@ -744,6 +744,14 @@ def get_parties(request):
 
 
 @login_required
+def get_parties_add_party_section(request):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT get_parties_json();")
+        data = json.loads(cursor.fetchone()[0])
+    return JsonResponse(data, safe=False)
+
+
+@login_required
 def get_items(request):
     with connection.cursor() as cursor:
         cursor.execute("SELECT get_items_json();")
