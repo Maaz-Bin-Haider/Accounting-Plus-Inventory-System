@@ -289,9 +289,12 @@ function fetchAccountsPayable() {
 // ==========================
 // 🧱 Render Table
 // ==========================
+// Columns that are display-only — shown on screen but excluded from PDF & CSV
+const DISPLAY_ONLY_COLS = ["created_by"];
+
 function renderTable(data) {
   const header = $("#reportHeader");
-  const body = $("#reportBody");
+  const body   = $("#reportBody");
 
   if (!data || data.length === 0) {
     header.html("");
@@ -300,14 +303,32 @@ function renderTable(data) {
   }
 
   const cols = Object.keys(data[0]);
-  header.html(`<tr>${cols.map((c) => `<th>${c.replace(/_/g, " ")}</th>`).join("")}</tr>`);
+
+  // Build header — mark display-only columns with data-no-export
+  const headerCells = cols.map((c) => {
+    const isDisplayOnly = DISPLAY_ONLY_COLS.includes(c);
+    const label = c === "created_by" ? "Entry By" : c.replace(/_/g, " ");
+    return isDisplayOnly
+      ? `<th data-no-export="1" class="col-entry-by">${label}</th>`
+      : `<th>${label}</th>`;
+  }).join("");
+  header.html(`<tr>${headerCells}</tr>`);
+
+  // Build data rows — display-only cells get a styled badge
   body.html(
-    data
-      .map(
-        (row) =>
-          `<tr>${cols.map((c) => `<td>${row[c] ?? ""}</td>`).join("")}</tr>`
-      )
-      .join("")
+    data.map((row) => {
+      const cells = cols.map((c) => {
+        const val = row[c] ?? "";
+        if (DISPLAY_ONLY_COLS.includes(c)) {
+          const display = (val && val !== "N/A")
+            ? `<span class="entry-by-pill"><i class="fa-solid fa-user-pen"></i> ${val}</span>`
+            : `<span class="entry-by-pill entry-by-unknown">—</span>`;
+          return `<td data-no-export="1" class="col-entry-by">${display}</td>`;
+        }
+        return `<td>${val}</td>`;
+      }).join("");
+      return `<tr>${cells}</tr>`;
+    }).join("")
   );
 }
 
@@ -365,13 +386,31 @@ $(document).on("click", "#download_pdf", function () {
     startY = 75;
   }
 
-  // Generate table
+  // Generate table — skip display-only columns (data-no-export="1")
+  // Build column indices to exclude
+  const allTh = document.querySelectorAll("#reportTable thead th");
+  const skipCols = [];
+  allTh.forEach((th, i) => { if (th.dataset.noExport === "1") skipCols.push(i); });
+
   doc.autoTable({
     html: "#reportTable",
     startY: startY,
     theme: "grid",
     headStyles: { fillColor: [25, 135, 84] },
     styles: { fontSize: 9 },
+    // didParseCell: exclude display-only columns from the PDF
+    didParseCell: function (data) {
+      if (skipCols.includes(data.column.index)) {
+        data.cell.text = [];   // blank out the cell content
+        data.cell.styles.fillColor = [245, 245, 245]; // visually suppress
+      }
+    },
+    // Use columnStyles to set width=0 and hide skipped columns entirely
+    willDrawCell: function (data) {
+      if (skipCols.includes(data.column.index)) {
+        return false; // skip drawing this cell
+      }
+    },
   });
 
   // Add page numbers
@@ -557,22 +596,28 @@ $(document).on("click", "#download_csv", function () {
     csv.push([]); // Empty row
   }
 
-  // Extract headers
+  // Collect indices of display-only columns to skip in CSV
+  const csvSkipCols = [];
+  const csvHeaderRow = table.querySelector("thead tr");
   const headers = [];
-  const headerRow = table.querySelector("thead tr");
-  if (headerRow) {
-    headerRow.querySelectorAll("th").forEach(th => {
-      headers.push(th.textContent.trim());
+  if (csvHeaderRow) {
+    csvHeaderRow.querySelectorAll("th").forEach((th, i) => {
+      if (th.dataset.noExport === "1") {
+        csvSkipCols.push(i);  // remember index, exclude from CSV
+      } else {
+        headers.push(th.textContent.trim());
+      }
     });
     csv.push(headers);
   }
 
-  // Extract data rows
+  // Extract data rows — skip display-only cells
   const tbody = table.querySelector("tbody");
   if (tbody) {
     tbody.querySelectorAll("tr").forEach(tr => {
       const row = [];
-      tr.querySelectorAll("td").forEach(td => {
+      tr.querySelectorAll("td").forEach((td, i) => {
+        if (csvSkipCols.includes(i)) return; // skip display-only column
         let cellData = td.textContent.trim();
         // Escape quotes and wrap in quotes if contains comma
         if (cellData.includes(",") || cellData.includes('"') || cellData.includes("\n")) {

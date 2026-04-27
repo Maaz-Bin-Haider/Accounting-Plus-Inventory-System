@@ -139,6 +139,10 @@ function navigateReceipt(action) {
             document.getElementById("method").value = data.method || "Cash";
             document.getElementById("description").value = data.description || "";
 
+            // update entry-by badge
+            const entryByName = document.getElementById("entryByName");
+            if (entryByName) entryByName.textContent = data.created_by || "—";
+
             // update hidden id
             document.getElementById("current_receipt_id").value = data.receipt_id;
 
@@ -287,6 +291,10 @@ function fetchReceipts(url) {
                                     document.getElementById("amount").value = data.amount || "";
                                     document.getElementById("method").value = data.method || "Cash";
                                     document.getElementById("description").value = data.description || "";
+
+                                    // update entry-by badge
+                                    const entryByNameR = document.getElementById("entryByName");
+                                    if (entryByNameR) entryByNameR.textContent = data.created_by || "—";
 
                                     // update hidden id
                                     document.getElementById("current_receipt_id").value = data.receipt_id;

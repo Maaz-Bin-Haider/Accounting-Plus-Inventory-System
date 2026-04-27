@@ -69,6 +69,12 @@
       <span class="dot-green"></span>
       Editing: {{ party.party_name }}
     </div>
+    {% if party.created_by_username %}
+    <p style="font-size:0.82rem;color:#6b7280;margin:0 0 12px;display:flex;align-items:center;gap:6px;">
+      <i class="fa-solid fa-user-pen" style="color:#9ca3af;"></i>
+      Added by: <strong>{{ party.created_by_username }}</strong>
+    </p>
+    {% endif %}
     {% endif %}
 
     <form method="post" autocomplete="off">

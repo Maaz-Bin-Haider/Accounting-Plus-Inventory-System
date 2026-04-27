@@ -1739,6 +1739,12 @@ function renderSaleData(data) {
   const badge = document.getElementById("invoiceIdBadge");
   if (badge) badge.textContent = data.sales_invoice_id ? `#${data.sales_invoice_id}` : "#NEW";
 
+  // Update "Entry by" badge
+  const entryByName = document.getElementById("entryByName");
+  if (entryByName) {
+    entryByName.textContent = data.created_by || "—";
+  }
+
   // Update save button label
   const saveBtn = document.getElementById("saveBtn");
   if (saveBtn) {

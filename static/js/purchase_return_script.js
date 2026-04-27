@@ -331,6 +331,10 @@ function renderPurchaseReturnData(data) {
   document.getElementById("return_date").value = data.return_date || "";
   document.getElementById("current_return_id").value = data.purchase_return_id || "";
 
+  // Update entry-by badge
+  const entryByName = document.getElementById("entryByName");
+  if (entryByName) entryByName.textContent = data.created_by || "—";
+
   // 🧹 Clear existing serial list
   const serialsDiv = document.getElementById("serials");
   serialsDiv.innerHTML = "";

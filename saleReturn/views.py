@@ -105,7 +105,8 @@ def createSaleReturn(request):
 
                         json_data = json.dumps(data.get("serials"))
                         with connection.cursor() as cursor:
-                            cursor.execute("SELECT create_sale_return(%s,%s)",[data.get('party_name'),json_data])
+                            # cursor.execute("SELECT create_sale_return(%s,%s)",[data.get('party_name'),json_data])
+                            cursor.execute("SELECT create_sale_return(%s,%s,%s)",[data.get('party_name'),json_data,request.user.id])
                         return JsonResponse({"success": True, "message": "Sale Return Sucessfull"}) 
                     except Exception as e:
                         return JsonResponse({"success": False, "message": f"Unable to Sale Return, Try Again!"}) 

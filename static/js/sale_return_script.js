@@ -238,6 +238,11 @@ function renderSaleReturnData(data) {
   document.getElementById("search_name").value = data.Customer || "";
   document.getElementById("return_date").value = data.return_date || "";
   document.getElementById("current_return_id").value = data.sales_return_id || "";
+
+  // Update entry-by badge
+  const entryByName = document.getElementById("entryByName");
+  if (entryByName) entryByName.textContent = data.created_by || "—";
+
   const serialsDiv = document.getElementById("serials");
   serialsDiv.innerHTML = "";
 

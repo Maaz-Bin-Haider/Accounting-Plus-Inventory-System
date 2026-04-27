@@ -3599,6 +3599,12 @@ function renderPurchaseData(data) {
   const badge = document.getElementById("invoiceIdBadge");
   if (badge) badge.textContent = data.purchase_invoice_id ? `#${data.purchase_invoice_id}` : "#NEW";
 
+  // Update "Entry by" badge
+  const entryByName = document.getElementById("entryByName");
+  if (entryByName) {
+    entryByName.textContent = data.created_by || "—";
+  }
+
   const saveBtn = document.getElementById("saveBtn");
   if (saveBtn) {
     saveBtn.innerHTML = data.purchase_invoice_id

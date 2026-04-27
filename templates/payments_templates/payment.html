@@ -21,7 +21,12 @@
 
 <form method='post' id="paymentForm">
     {% csrf_token %}
-    <h2><span class="paymet-icon">💳</span> Payment</h2>
+    <h2><span class="paymet-icon">💳</span> Payment
+      <span id="entryByBadge" style="display:inline-flex;align-items:center;gap:5px;font-size:0.78rem;font-weight:400;color:#6b7280;margin-left:12px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:20px;padding:2px 12px;vertical-align:middle;">
+        <i class="fa-solid fa-user-pen" style="color:#9ca3af;font-size:0.7rem;"></i>
+        <span id="entryByName">—</span>
+      </span>
+    </h2>
     
     <!-- top row: date + party -->
     <div class="form-row">

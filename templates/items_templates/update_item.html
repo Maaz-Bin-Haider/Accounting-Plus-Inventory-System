@@ -27,6 +27,13 @@
 {% endif %}
 
 <h2>{% if item %}Edit Item{% else %}Select Item First{% endif %}</h2>
+
+{% if item and item.created_by_username %}
+<p style="font-size:0.82rem;color:#6b7280;margin:0 0 14px;display:flex;align-items:center;gap:6px;">
+  <i class="fa-solid fa-user-pen" style="color:#9ca3af;"></i>
+  Added by: <strong>{{ item.created_by_username }}</strong>
+</p>
+{% endif %}
 <form method="post">
     {% csrf_token %}
     

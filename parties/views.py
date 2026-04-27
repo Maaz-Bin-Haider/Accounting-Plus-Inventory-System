@@ -204,7 +204,8 @@ def create_new_party(request):
                 "contact_info": contact_info,
                 "address": address,
                 "opening_balance": int(opening_balance or 0),
-                "balance_type": balance_type
+                "balance_type": balance_type,
+                "created_by_id": request.user.id
             }
 
             json_data = json.dumps(party_details)
@@ -314,7 +315,9 @@ def update_party(request):
                             "status": "error",
                             "message": "You do not have permission to Add Parties."
                         })
-                    cursor.execute("SELECT add_party_from_json(%s);", [json_data])
+                    data["created_by_id"] = request.user.id 
+                    json_data_only_for_add = json.dumps(data)
+                    cursor.execute("SELECT add_party_from_json(%s);", [json_data_only_for_add])
                     messages.success(request, f"Party '{data['party_name']}' created successfully!")
                 except IntegrityError:
                     messages.error(request, f"Party '{data['party_name']}' already exists!")

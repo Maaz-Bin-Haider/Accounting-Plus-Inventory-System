@@ -70,13 +70,22 @@ def make_payment(request):
                 cursor.execute("SELECT 1 FROM Parties WHERE UPPER(party_name) = %s",[party_name.upper()])
                 exists = cursor.fetchone()
                 if exists:
+                    # data = {
+                    #         "party_name":party_name.upper(),
+                    #         "amount": amount,
+                    #         "method": "Cash",
+                    #         "description": description if description else '',
+                    #         "payment_date": payment_date
+                    #     }
+                    # json_data = json.dumps(data)
                     data = {
-                            "party_name":party_name.upper(),
-                            "amount": amount,
-                            "method": "Cash",
-                            "description": description if description else '',
-                            "payment_date": payment_date
-                        }
+                        "party_name": party_name.upper(),
+                        "amount": amount,
+                        "method": "Cash",
+                        "description": description if description else '',
+                        "payment_date": payment_date,
+                        "created_by_id": request.user.id      # <-- added
+                    }
                     json_data = json.dumps(data)
                     
                     if not payment_id: # Means new payment

@@ -198,7 +198,8 @@ def create_new_item(request):
                 "sale_price": float(sale_price or 0),
                 "item_code": item_code,
                 "category": category,
-                "brand": brand
+                "brand": brand,
+                "created_by_id": request.user.id       # <-- added
             }
 
             json_data = json.dumps(item_data)
@@ -299,7 +300,9 @@ def update_item_view(request):
                             "status": "error",
                             "message": "You do not have permission to create items."
                         })
-                    cursor.execute("SELECT add_item_from_json(%s)",[json_data])
+                    data["created_by_id"] = request.user.id
+                    json_data_only_for_add = json.dumps(data)
+                    cursor.execute("SELECT add_item_from_json(%s)",[json_data_only_for_add])
                     messages.success(request, f"Item '{data['item_name']}' Added successfully!")
                 except IntegrityError:
                     messages.error(request, f"Item '{data['item_name']}' already exists!")

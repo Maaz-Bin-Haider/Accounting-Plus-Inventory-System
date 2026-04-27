@@ -72,13 +72,22 @@ def make_receipt(request):
                 cursor.execute("SELECT 1 FROM Parties WHERE UPPER(party_name) = %s",[party_name.upper()])
                 exists = cursor.fetchone()
                 if exists:
+                    # data = {
+                    #         "party_name":party_name.upper(),
+                    #         "amount": amount,
+                    #         "method": "Cash",
+                    #         "description": description if description else '',
+                    #         "receipt_date": receipt_date
+                    #     }
+                    # json_data = json.dumps(data)
                     data = {
-                            "party_name":party_name.upper(),
-                            "amount": amount,
-                            "method": "Cash",
-                            "description": description if description else '',
-                            "receipt_date": receipt_date
-                        }
+                        "party_name": party_name.upper(),
+                        "amount": amount,
+                        "method": "Cash",
+                        "description": description if description else '',
+                        "receipt_date": receipt_date,
+                        "created_by_id": request.user.id      # <-- added
+                    }
                     json_data = json.dumps(data)
                     
                     if not receipt_id: # Means new receipt

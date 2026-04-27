@@ -194,8 +194,8 @@ def purchasing(request):
 
                             # Postgres function `create_purchase`
                             cursor.execute("""
-                                SELECT create_purchase(%s, %s, %s::jsonb);
-                            """, [party_id, purchase_date, items_json])
+                                SELECT create_purchase(%s, %s, %s::jsonb, %s);
+                            """, [party_id, purchase_date, items_json,request.user.id])
 
                             # Fetch the returned invoice ID
                             invoice_id = cursor.fetchone()[0]
