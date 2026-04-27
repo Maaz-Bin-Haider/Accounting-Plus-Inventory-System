@@ -64,6 +64,9 @@ function selectReport(type){
   else if (type === "item-last-sale") {  // ✅ NEW
       renderItemLastSaleForm();
   }
+  else if (type === "seril-ledger-with-sold-flag"){
+      renderSerialFormWithSoldFlag();
+  }
   else {
       $formSection.empty();
       fetchReport(
@@ -139,6 +142,23 @@ function renderSerialForm() {
   $("#reportHeader").empty();
   $("#reportBody").html(`<tr><td class="no-data">Enter serial and click generate</td></tr>`);
 }
+
+function renderSerialFormWithSoldFlag() {
+  const html = `
+    <div class="form-row">
+      <div>
+        <label>Serial No</label><br>
+        <input type="text" id="serial_input" placeholder="Enter Serial e.g. IP15-001">
+      </div>
+      <button class="generate-btn" onclick="fetchSerialLedgerWithSoldFlag()">Generate</button>
+    </div>
+  `;
+
+  $("#report-form-container").html(html);
+  $("#reportHeader").empty();
+  $("#reportBody").html(`<tr><td class="no-data">Enter serial and click generate</td></tr>`);
+}
+
 
 function renderSerialFormPurchaseOnly() {
   const html = `
@@ -338,6 +358,27 @@ function fetchSerialLedger(){
   Swal.fire({title:"Loading serial ledger...", didOpen:()=>Swal.showLoading(), allowOutsideClick:false});
 
   fetch("/accountsReports/serial-ledger/", {
+    method: "POST",
+    headers: { "Content-Type":"application/json", "X-CSRFToken": getCSRFToken() },
+    body: JSON.stringify({ serial })
+  })
+  .then(r => r.json())
+  .then(data => {
+    Swal.close();
+    if (data.error) return Swal.fire("Error", data.error, "error");
+    renderTable(data);
+  })
+  .catch(() => Swal.fire("Error", "Unable to fetch serial ledger", "error"));
+}
+
+// for Fetching Serial Ledger
+function fetchSerialLedgerWithSoldFlag(){
+  const serial = $("#serial_input").val().trim();
+  if (!serial) return Swal.fire("Missing Serial", "Please enter a serial", "warning");
+
+  Swal.fire({title:"Loading serial ledger...", didOpen:()=>Swal.showLoading(), allowOutsideClick:false});
+
+  fetch("/accountsReports/serial-ledger-sold-flag/", {
     method: "POST",
     headers: { "Content-Type":"application/json", "X-CSRFToken": getCSRFToken() },
     body: JSON.stringify({ serial })
