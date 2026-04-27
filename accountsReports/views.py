@@ -483,7 +483,7 @@ def serial_ledger_purchase_only_view(request):
 
 @login_required
 def serial_ledger_view_sale_price_hidden(request):
-    if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_serial_ledger"):
+    if not request.user.has_perm("auth.view_stock_reports_page") or not request.user.has_perm("auth.view_last_purchasing"):
         messages.error(request, "Access Denied!")
         return redirect("home:home")
     
