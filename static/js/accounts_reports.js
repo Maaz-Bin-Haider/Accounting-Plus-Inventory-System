@@ -1,651 +1,475 @@
-// ==========================
-// 🧭 Report Selector
-// ==========================
+/* ============================================================
+   ACCOUNTS REPORTS  —  JavaScript  (v3-final)
+   • Compact filter forms (party ledger + cash ledger)
+   • Post-render table search/filter with row count
+   • Professional branded PDF (header stripe + footer)
+   • CSV exports visible rows only
+   ============================================================ */
 
+// ── Active report metadata (title, filters) shared by PDF/CSV ──
+let _rMeta = { title: "Report", subtitle: "", filters: {} };
+
+// ═══════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════
+function getCSRFToken() {
+  for (let c of decodeURIComponent(document.cookie).split(";")) {
+    c = c.trim();
+    if (c.startsWith("csrftoken=")) return c.slice("csrftoken=".length);
+  }
+  return "";
+}
+
+function showLoader(msg = "Loading…") {
+  Swal.fire({ title: msg, didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+}
+
+function fmt(date) {
+  // "2024-01-31" → "31 Jan 2024"
+  if (!date) return "—";
+  const d = new Date(date);
+  return d.toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+// ═══════════════════════════════════════════
+// REPORT SELECTOR
+// ═══════════════════════════════════════════
 function selectReport(type) {
   $(".report-btn").removeClass("active");
-  
-  if (type === "ledger") {
-    $("#btn-ledger").addClass("active");
-  } else if (type === "cash-ledger") {
-    $("#btn-cash-ledger").addClass("active");
-  } else if (type === "receivable") {
-    $("#btn-receivable").addClass("active");
-  } else if (type === "payable") {
-    $("#btn-payable").addClass("active");
-  } else {
-    $("#btn-trial").addClass("active");
-  }
+  const btnMap = { ledger:"#btn-ledger", "cash-ledger":"#btn-cash-ledger",
+                   receivable:"#btn-receivable", payable:"#btn-payable",
+                   trial:"#btn-trial", ledger2:"#btn-ledger2" };
+  $(btnMap[type] || "#btn-trial").addClass("active");
 
-  const $formSection = $("#report-form-container");
-  $formSection.empty()
-
-  $("#reportHeader").html("");
-  $("#reportBody").html(`<tr><td class="no-data">Loading...</td></tr>`);
-
-  if (type === "ledger") {
-    renderLedgerForm();
-  } else if (type === "cash-ledger") {
-    renderCashLedgerForm();
-  } else if (type === "receivable") {
-    $formSection.empty()
-    fetchAccountsReceivable();
-  } else if (type === "payable") {
-    $formSection.empty()
-    fetchAccountsPayable();
-  } else {
-    $("#report-form-container").html("");
-    fetchTrialBalance();
-  }
-}
-
-// ==========================
-// 💵 Cash Ledger Form
-// ==========================
-function renderCashLedgerForm() {
-  const today = new Date().toISOString().split("T")[0];
-  const currentYear = new Date().getFullYear();
-  const yearStart = `${currentYear}-01-01`;
-  
-  const formHTML = `
-    <div class="form-row">
-      <label for="cash_from_date">From Date:</label>
-      <input type="date" id="cash_from_date" value="${yearStart}" required>
-      <label for="cash_to_date">To Date:</label>
-      <input type="date" id="cash_to_date" value="${today}" required>
-      <button class="generate-btn" onclick="fetchCashLedger()">Generate</button>
-    </div>
-  `;
-  $("#report-form-container").html(formHTML);
-  $("#reportHeader").html("");
-  $("#reportBody").html(`<tr><td class="no-data">Select date range to generate cash ledger</td></tr>`);
-}
-
-// ==========================
-// 💵 Fetch Cash Ledger
-// ==========================
-function fetchCashLedger() {
-  const fromDate = $("#cash_from_date").val();
-  const toDate = $("#cash_to_date").val();
-
-  if (!fromDate || !toDate) {
-    Swal.fire("Missing Fields", "Please select both dates.", "warning");
+  // toggle ledger2 vs classic
+  if (type === "ledger2") {
+    $("#ledger2-section").show();
+    $("#classic-section").hide();
     return;
   }
+  $("#ledger2-section").hide();
+  $("#classic-section").show();
 
-  Swal.fire({
-    title: "Fetching Cash Ledger...",
-    text: "Please wait while data loads.",
-    didOpen: () => Swal.showLoading(),
-    allowOutsideClick: false,
-  });
+  _clearTable();
+  $("#report-form-container").empty();
 
-  fetch("/accountsReports/cash-ledger/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": getCSRFToken(),
-    },
-    body: JSON.stringify({ from_date: fromDate, to_date: toDate }),
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      Swal.close();
-      if (data.error) {
-        Swal.fire("Error", data.error, "error");
-      } else {
-        renderTable(data);
-      }
-    })
-    .catch(() => {
-      Swal.fire("Error", "Unable to fetch cash ledger data.", "error");
-    });
+  if      (type === "ledger")      renderLedgerForm();
+  else if (type === "cash-ledger") renderCashLedgerForm();
+  else if (type === "receivable")  fetchAccountsReceivable();
+  else if (type === "payable")     fetchAccountsPayable();
+  else                             fetchTrialBalance();
 }
 
-// ==========================
-// 🧾 Detailed Ledger Form
-// ==========================
+function _clearTable() {
+  $("#reportHeader").html("");
+  $("#reportBody").html(`<tr><td class="no-data">Select a report to view results</td></tr>`);
+  $("#reportToolbar").remove();
+}
+
+// ═══════════════════════════════════════════
+// FORM RENDERERS
+// ═══════════════════════════════════════════
+
+// ── Cash Ledger ──────────────────────────────────────────────
+function renderCashLedgerForm() {
+  const today = new Date().toISOString().split("T")[0];
+  const yrStart = `${new Date().getFullYear()}-01-01`;
+
+  $("#report-form-container").html(`
+    <div class="filter-form">
+      <div class="filter-field">
+        <label><i class="fa-regular fa-calendar"></i>&nbsp;From Date</label>
+        <input type="date" id="cash_from_date" value="${yrStart}" max="${today}">
+      </div>
+      <div class="filter-field">
+        <label><i class="fa-regular fa-calendar"></i>&nbsp;To Date</label>
+        <input type="date" id="cash_to_date" value="${today}" max="${today}">
+      </div>
+      <button class="generate-btn" onclick="fetchCashLedger()">
+        <i class="fa-solid fa-bolt"></i> Generate
+      </button>
+    </div>
+  `);
+  $("#reportHeader").html("");
+  $("#reportBody").html(`<tr><td class="no-data">Set a date range and click Generate</td></tr>`);
+}
+
+// ── Party Ledger ─────────────────────────────────────────────
 function renderLedgerForm() {
   const today = new Date().toISOString().split("T")[0];
-  const fromDefault = "2000-01-01";
-  const formHTML = `
-    <div class="form-row autocomplete-container">
-        <input type="text" id="search_name" name="search_name"
-                placeholder="Enter Party Name"
-                autocomplete="off"
-                data-autocomplete-url="/parties/autocomplete-party">
-        <div id="suggestions"></div>
+
+  $("#report-form-container").html(`
+    <div class="filter-form">
+      <div class="filter-field autocomplete-container">
+        <label><i class="fa-solid fa-building"></i>&nbsp;Party Name</label>
+        <input type="text" id="search_name" placeholder="Type to search party…"
+               autocomplete="off" data-autocomplete-url="/parties/autocomplete-party">
+        <div id="suggestions" style="display:none;"></div>
+      </div>
+      <div class="filter-field">
+        <label><i class="fa-regular fa-calendar"></i>&nbsp;From Date</label>
+        <input type="date" id="from_date" value="2000-01-01">
+      </div>
+      <div class="filter-field">
+        <label><i class="fa-regular fa-calendar"></i>&nbsp;To Date</label>
+        <input type="date" id="to_date" value="${today}" max="${today}">
+      </div>
+      <button class="generate-btn" onclick="fetchLedgerReport()">
+        <i class="fa-solid fa-bolt"></i> Generate
+      </button>
     </div>
-    <div class="form-row">
-      <input type="date" id="from_date" value="${fromDefault}" required>
-      <input type="date" id="to_date" value="${today}" required>
-      <button class="generate-btn" onclick="fetchLedgerReport()">Generate</button>
-    </div>
-  `;
-  $("#report-form-container").html(formHTML);
+  `);
   $("#reportHeader").html("");
-  $("#reportBody").html(`<tr><td class="no-data">Enter filters to generate ledger</td></tr>`);
+  $("#reportBody").html(`<tr><td class="no-data">Enter party name and date range, then click Generate</td></tr>`);
   initAutocomplete();
 }
 
-// ==========================
-// 📘 Fetch Detailed Ledger
-// ==========================
+// ═══════════════════════════════════════════
+// DATA FETCHERS
+// ═══════════════════════════════════════════
+
+function fetchCashLedger() {
+  const from = $("#cash_from_date").val();
+  const to   = $("#cash_to_date").val();
+  if (!from || !to) { Swal.fire("Missing Fields", "Please select both dates.", "warning"); return; }
+
+  _rMeta = { title: "Cash Ledger", subtitle: "Cash account transactions",
+             filters: { From: fmt(from), To: fmt(to) } };
+  showLoader("Fetching Cash Ledger…");
+
+  fetch("/accountsReports/cash-ledger/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+    body: JSON.stringify({ from_date: from, to_date: to })
+  })
+  .then(r => r.json())
+  .then(data => { Swal.close(); data.error ? Swal.fire("Error", data.error, "error") : renderTable(data); })
+  .catch(() => Swal.fire("Error", "Unable to fetch cash ledger data.", "error"));
+}
+
 function fetchLedgerReport() {
-  const partyName = $("#search_name").val().trim();
-  const fromDate = $("#from_date").val();
-  const toDate = $("#to_date").val();
+  const party = $("#search_name").val().trim();
+  const from  = $("#from_date").val();
+  const to    = $("#to_date").val();
+  if (!party || !from || !to) { Swal.fire("Missing Fields", "Please fill all fields.", "warning"); return; }
 
-  if (!partyName || !fromDate || !toDate) {
-    Swal.fire("Missing Fields", "Please fill all input fields.", "warning");
-    return;
-  }
-
-  Swal.fire({
-    title: "Fetching...",
-    text: "Please wait while ledger data loads.",
-    didOpen: () => Swal.showLoading(),
-    allowOutsideClick: false,
-  });
+  _rMeta = { title: "Party Ledger", subtitle: `Account statement for ${party}`,
+             filters: { Party: party, From: fmt(from), To: fmt(to) } };
+  showLoader("Fetching Ledger…");
 
   fetch("/accountsReports/detailed-ledger/", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": getCSRFToken(),
-    },
-    body: JSON.stringify({ party_name: partyName, from_date: fromDate, to_date: toDate }),
+    headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+    body: JSON.stringify({ party_name: party, from_date: from, to_date: to })
   })
-    .then((res) => res.json())
-    .then((data) => {
-      Swal.close();
-      if (data.error) {
-        Swal.fire("Error", data.error, "error");
-      } else {
-        renderTable(data);
-      }
-    })
-    .catch(() => {
-      Swal.fire("Error", "Unable to fetch ledger data.", "error");
-    });
+  .then(r => r.json())
+  .then(data => { Swal.close(); data.error ? Swal.fire("Error", data.error, "error") : renderTable(data); })
+  .catch(() => Swal.fire("Error", "Unable to fetch ledger data.", "error"));
 }
 
-// ==========================
-// 📊 Fetch Trial Balance
-// ==========================
 function fetchTrialBalance() {
-  Swal.fire({
-    title: "Loading Trial Balance...",
-    didOpen: () => Swal.showLoading(),
-    allowOutsideClick: false,
-  });
-
+  _rMeta = { title: "Trial Balance", subtitle: "Summary of all account balances", filters: {} };
+  showLoader("Loading Trial Balance…");
   fetch("/accountsReports/trial-balance/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": getCSRFToken(),
-    },
+    method: "POST", headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() }
   })
-    .then((res) => res.json())
-    .then((data) => {
-      Swal.close();
-      if (data.error) {
-        Swal.fire("Error", data.error, "error");
-      } else {
-        renderTable(data);
-      }
-    })
-    .catch(() => {
-      Swal.fire("Error", "Unable to fetch trial balance.", "error");
-    });
+  .then(r => r.json())
+  .then(data => { Swal.close(); data.error ? Swal.fire("Error", data.error, "error") : renderTable(data); })
+  .catch(() => Swal.fire("Error", "Unable to fetch trial balance.", "error"));
 }
 
-
-// // ==========================
-// // 📊 Fetch Accounts Receivable
-// // ==========================
 function fetchAccountsReceivable() {
-  Swal.fire({
-    title: "Loading Trial Balance...",
-    didOpen: () => Swal.showLoading(),
-    allowOutsideClick: false,
-  });
-
+  _rMeta = { title: "Accounts Receivable", subtitle: "Outstanding amounts owed to us", filters: {} };
+  showLoader("Loading Receivables…");
   fetch("/accountsReports/accounts-receivable/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": getCSRFToken(),
-    },
+    method: "POST", headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() }
   })
-    .then(async (res) => {
-      const data = await res.json();
-
-      // 🔥 Fix for string JSON
-      if (typeof data === "string") {
-        return JSON.parse(data);
-      }
-
-      return data;
-    })
-    .then((data) => {
-      Swal.close();
-
-      if (data.error) {
-        Swal.fire("Error", data.error, "error");
-      } else {
-        renderTable(data);
-      }
-    })
-    .catch((err) => {
-      console.error(err);
-      Swal.fire("Error", "Unable to fetch Accounts Receivable.", "error");
-    });
+  .then(async r => { const d = await r.json(); return typeof d === "string" ? JSON.parse(d) : d; })
+  .then(data => { Swal.close(); data.error ? Swal.fire("Error", data.error, "error") : renderTable(data); })
+  .catch(e => { console.error(e); Swal.fire("Error", "Unable to fetch Receivable.", "error"); });
 }
 
-// ==========================
-// 📊 Fetch Accounts Payable
-// ==========================
 function fetchAccountsPayable() {
-  Swal.fire({
-    title: "Loading Trial Balance...",
-    didOpen: () => Swal.showLoading(),
-    allowOutsideClick: false,
-  });
-
+  _rMeta = { title: "Accounts Payable", subtitle: "Outstanding amounts we owe", filters: {} };
+  showLoader("Loading Payables…");
   fetch("/accountsReports/accounts-payable/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": getCSRFToken(),
-    },
+    method: "POST", headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() }
   })
-    .then(async (res) => {
-      const data = await res.json();
-
-      // 🔥 Fix for string JSON
-      if (typeof data === "string") {
-        return JSON.parse(data);
-      }
-
-      return data;
-    })
-    .then((data) => {
-      Swal.close();
-
-      if (data.error) {
-        Swal.fire("Error", data.error, "error");
-      } else {
-        renderTable(data);
-      }
-    })
-    .catch((err) => {
-      console.error(err);
-      Swal.fire("Error", "Unable to fetch Accounts Payable.", "error");
-    });
+  .then(async r => { const d = await r.json(); return typeof d === "string" ? JSON.parse(d) : d; })
+  .then(data => { Swal.close(); data.error ? Swal.fire("Error", data.error, "error") : renderTable(data); })
+  .catch(e => { console.error(e); Swal.fire("Error", "Unable to fetch Payable.", "error"); });
 }
 
-// ==========================
-// 🧱 Render Table
-// ==========================
-// Columns that are display-only — shown on screen but excluded from PDF & CSV
+// ═══════════════════════════════════════════
+// TABLE RENDERER
+// ═══════════════════════════════════════════
 const DISPLAY_ONLY_COLS = ["created_by"];
 
 function renderTable(data) {
-  const header = $("#reportHeader");
-  const body   = $("#reportBody");
+  const $header = $("#reportHeader");
+  const $body   = $("#reportBody");
 
-  if (!data || data.length === 0) {
-    header.html("");
-    body.html(`<tr><td class="no-data">No records found</td></tr>`);
+  if (!data || !data.length) {
+    $header.html("");
+    $body.html(`<tr><td class="no-data">No records found</td></tr>`);
+    injectToolbar(0);
     return;
   }
 
   const cols = Object.keys(data[0]);
 
-  // Build header — mark display-only columns with data-no-export
-  const headerCells = cols.map((c) => {
-    const isDisplayOnly = DISPLAY_ONLY_COLS.includes(c);
+  $header.html(`<tr>${cols.map(c => {
+    const isDisplay = DISPLAY_ONLY_COLS.includes(c);
     const label = c === "created_by" ? "Entry By" : c.replace(/_/g, " ");
-    return isDisplayOnly
+    return isDisplay
       ? `<th data-no-export="1" class="col-entry-by">${label}</th>`
       : `<th>${label}</th>`;
-  }).join("");
-  header.html(`<tr>${headerCells}</tr>`);
+  }).join("")}</tr>`);
 
-  // Build data rows — display-only cells get a styled badge
-  body.html(
-    data.map((row) => {
-      const cells = cols.map((c) => {
-        const val = row[c] ?? "";
-        if (DISPLAY_ONLY_COLS.includes(c)) {
-          const display = (val && val !== "N/A")
-            ? `<span class="entry-by-pill"><i class="fa-solid fa-user-pen"></i> ${val}</span>`
-            : `<span class="entry-by-pill entry-by-unknown">—</span>`;
-          return `<td data-no-export="1" class="col-entry-by">${display}</td>`;
-        }
-        return `<td>${val}</td>`;
-      }).join("");
-      return `<tr>${cells}</tr>`;
-    }).join("")
-  );
+  $body.html(data.map(row => `<tr>${cols.map(c => {
+    const val = row[c] ?? "";
+    if (DISPLAY_ONLY_COLS.includes(c)) {
+      const pill = (val && val !== "N/A")
+        ? `<span class="entry-by-pill"><i class="fa-solid fa-user-pen"></i> ${val}</span>`
+        : `<span class="entry-by-pill entry-by-unknown">—</span>`;
+      return `<td data-no-export="1" class="col-entry-by">${pill}</td>`;
+    }
+    return `<td>${val}</td>`;
+  }).join("")}</tr>`).join(""));
+
+  injectToolbar(data.length);
 }
 
+// ═══════════════════════════════════════════
+// TOOLBAR — search filter + download buttons
+// ═══════════════════════════════════════════
+function injectToolbar(total) {
+  $("#reportToolbar").remove();
 
-// ==========================
-// 🧾 Download Table as PDF
-// ==========================
+  const $bar = $(`
+    <div id="reportToolbar" class="report-toolbar">
+      <div class="table-filter-bar">
+        <div class="table-search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="tableSearch" placeholder="Filter results…" autocomplete="off">
+        </div>
+        <span class="table-row-count" id="rowCount">${total} row${total !== 1 ? "s" : ""}</span>
+      </div>
+      <div class="table-actions">
+        <button id="download_pdf" class="btn-download">
+          <i class="fa-solid fa-file-pdf"></i> PDF
+        </button>
+        <button id="download_csv" class="btn-download btn-csv">
+          <i class="fa-solid fa-file-csv"></i> CSV
+        </button>
+      </div>
+    </div>
+  `);
+
+  $(".table-container").before($bar);
+
+  // Live filter
+  $("#tableSearch").on("input", function () {
+    const q = this.value.toLowerCase().trim();
+    let vis = 0;
+    $("#reportBody tr").each(function () {
+      const match = !q || $(this).text().toLowerCase().includes(q);
+      $(this).toggleClass("filtered-out", !match);
+      if (match) vis++;
+    });
+    $("#rowCount").text(`${vis} row${vis !== 1 ? "s" : ""}`);
+  });
+}
+
+// ═══════════════════════════════════════════
+// PDF  —  branded header + footer
+// ═══════════════════════════════════════════
 $(document).on("click", "#download_pdf", function () {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "pt", "a4");
 
-  const activeBtn = $(".report-btn.active");
-  let activeReport = "Report";
-  let party = "";
-  let fromDate = "";
-  let toDate = "";
+  // Find display-only col indices
+  const allTh    = [...document.querySelectorAll("#reportTable thead th")];
+  const skipCols = allTh.reduce((a, th, i) => { if (th.dataset.noExport === "1") a.push(i); return a; }, []);
 
-  // Determine which report is active
-  if (activeBtn.attr("id") === "btn-ledger") {
-    activeReport = "Detailed Ledger";
-    party = $("#search_name").val() || "All";
-    fromDate = $("#from_date").val() || "N/A";
-    toDate = $("#to_date").val() || "N/A";
-  } else if (activeBtn.attr("id") === "btn-cash-ledger") {
-    activeReport = "Cash Ledger";
-    fromDate = $("#cash_from_date").val() || "N/A";
-    toDate = $("#cash_to_date").val() || "N/A";
-  } else if (activeBtn.attr("id") === "btn-trial") {
-    activeReport = "Trial Balance";
-  } else if (activeBtn.attr("id") === "btn-receivable") {
-    activeReport = "Receivable";
-  } else if (activeBtn.attr("id") === "btn-payable") {
-    activeReport = "Payable";
+  // Column headers for export
+  const colHeaders = allTh.filter((_, i) => !skipCols.includes(i)).map(th => th.textContent.trim());
+
+  // Visible rows for export
+  const rowData = [];
+  document.querySelectorAll("#reportBody tr:not(.filtered-out)").forEach(tr => {
+    const cells = [];
+    tr.querySelectorAll("td").forEach((td, i) => {
+      if (!skipCols.includes(i)) cells.push(td.textContent.trim());
+    });
+    if (cells.length && !cells[0].includes("No records")) rowData.push(cells);
+  });
+
+  if (!rowData.length) { Swal.fire("No Data", "Nothing visible to export.", "warning"); return; }
+
+  const doc    = new jsPDF("p", "pt", "a4");
+  const pW     = doc.internal.pageSize.width;
+  const pH     = doc.internal.pageSize.height;
+  const today  = new Date().toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" });
+  const m      = _rMeta;
+  const fParts = Object.entries(m.filters || {}).map(([k, v]) => `${k}: ${v}`);
+
+  // ── draw branded header ──
+  function drawHeader(pg, total) {
+    // Blue top bar
+    doc.setFillColor(37, 99, 235);
+    doc.rect(0, 0, pW, 38, "F");
+    // App name
+    doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor(255, 255, 255);
+    doc.text("Financee", 36, 25);
+    // Report title (right)
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    doc.text(m.title, pW - 36, 25, { align: "right" });
+    // Light-blue sub-strip
+    doc.setFillColor(239, 246, 255);
+    doc.rect(0, 38, pW, 26, "F");
+    // Subtitle + filters
+    doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(71, 85, 105);
+    let sub = m.subtitle || "";
+    if (fParts.length) sub += (sub ? "   ·   " : "") + fParts.join("   ·   ");
+    doc.text(sub, 36, 55);
+    // Generated date (right)
+    doc.setFont("helvetica", "normal");
+    doc.text(`Generated: ${today}   Page ${pg} of ${total}`, pW - 36, 55, { align: "right" });
+    // Thin separator
+    doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.5);
+    doc.line(0, 64, pW, 64);
   }
 
-  // Add report title
-  doc.setFontSize(14);
-  doc.text(`${activeReport} Report`, 40, 40);
-  doc.setFontSize(10);
-  
-  // Add metadata based on report type
-  let startY = 60;
-  if (activeReport === "Detailed Ledger") {
-    doc.text(`Party: ${party}`, 40, 60);
-    doc.text(`From: ${fromDate}    To: ${toDate}`, 40, 75);
-    startY = 100;
-  } else if (activeReport === "Cash Ledger") {
-    doc.text(`From: ${fromDate}    To: ${toDate}`, 40, 60);
-    startY = 85;
-  } else if (activeReport === "Receivable") {
-    startY = 85;
-  } else if (activeReport === "Payable") {
-    startY = 85;
-  } else if (activeReport === "Trial Balance") {
-    startY = 75;
+  // ── draw footer ──
+  function drawFooter(pg, total) {
+    const y = pH - 18;
+    doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.4);
+    doc.line(36, y - 7, pW - 36, y - 7);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(148, 163, 184);
+    doc.text("Financee  —  Confidential", 36, y + 2);
+    doc.text(`Page ${pg} of ${total}`, pW - 36, y + 2, { align: "right" });
   }
-
-  // Generate table — skip display-only columns (data-no-export="1")
-  // Build column indices to exclude
-  const allTh = document.querySelectorAll("#reportTable thead th");
-  const skipCols = [];
-  allTh.forEach((th, i) => { if (th.dataset.noExport === "1") skipCols.push(i); });
 
   doc.autoTable({
-    html: "#reportTable",
-    startY: startY,
-    theme: "grid",
-    headStyles: { fillColor: [25, 135, 84] },
-    styles: { fontSize: 9 },
-    // didParseCell: exclude display-only columns from the PDF
-    didParseCell: function (data) {
-      if (skipCols.includes(data.column.index)) {
-        data.cell.text = [];   // blank out the cell content
-        data.cell.styles.fillColor = [245, 245, 245]; // visually suppress
-      }
+    head:   [colHeaders],
+    body:   rowData,
+    startY: 72,
+    margin: { left: 36, right: 36, top: 72, bottom: 32 },
+    theme:  "grid",
+    headStyles: {
+      fillColor: [30, 58, 128], textColor: [255, 255, 255],
+      fontStyle: "bold", fontSize: 8, cellPadding: 6,
     },
-    // Use columnStyles to set width=0 and hide skipped columns entirely
-    willDrawCell: function (data) {
-      if (skipCols.includes(data.column.index)) {
-        return false; // skip drawing this cell
-      }
+    bodyStyles: {
+      fontSize: 8, textColor: [30, 41, 59], cellPadding: 5,
+      lineColor: [226, 232, 240],
     },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    didDrawPage: (d) => drawHeader(d.pageNumber, "…"),   // placeholder
   });
 
-  // Add page numbers
-  const totalPages = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
+  // Redraw header/footer on every page with correct page count
+  const totalPg = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPg; i++) {
     doc.setPage(i);
-    doc.setFontSize(8);
-    doc.text(`Page ${i} of ${totalPages}`, doc.internal.pageSize.width - 60, doc.internal.pageSize.height - 20);
+    drawHeader(i, totalPg);
+    drawFooter(i, totalPg);
   }
 
-  // Save with appropriate filename
-  const filename = `${activeReport.replace(/ /g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
-  doc.save(filename);
+  doc.save(`${m.title.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`);
 });
 
-
-// ==========================
-// 🔐 Utility: CSRF Token
-// ==========================
-function getCSRFToken() {
-  const name = "csrftoken=";
-  const decodedCookie = decodeURIComponent(document.cookie);
-  const cookies = decodedCookie.split(";");
-  for (let c of cookies) {
-    c = c.trim();
-    if (c.indexOf(name) === 0) return c.substring(name.length, c.length);
-  }
-  return "";
-}
-
-// ==========================
-// ✨ Autocomplete with Keyboard Nav
-// ==========================
-function initAutocomplete() {
-
-
-  const $input = $("#search_name");
-  const $suggestions = $("#suggestions");
-  const autocompleteUrl = $input.data("autocomplete-url");
-
-  let selectedIndex = -1;
-  let currentSuggestions = [];
-
-  $input.on("input", function () {
-    const query = $(this).val();
-    selectedIndex = -1;
-    if (query.length < 1) {
-      $suggestions.hide();
-      return;
-    }
-
-    $.ajax({
-      url: autocompleteUrl,
-      data: { term: query },
-      dataType: "json",
-      success: function (data) {
-        $suggestions.empty();
-        currentSuggestions = data;
-
-        if (data.length > 0) {
-          data.forEach((party, index) => {
-            $("<div>")
-              .addClass("suggestion-item")
-              .text(party)
-              .css({ padding: "5px", cursor: "pointer", borderBottom: "1px solid #ddd" })
-              .on("mouseenter", function () {
-                $(".suggestion-item").removeClass("highlight");
-                $(this).addClass("highlight");
-                selectedIndex = index;
-              })
-              .on("click", function () {
-                $input.val(party);
-                $suggestions.hide();
-              })
-              .appendTo($suggestions);
-          });
-          $suggestions.show();
-        } else {
-          $suggestions.hide();
-        }
-      },
-      error: function (xhr, status, error) {
-        console.error("AJAX error:", status, error);
-      },
-    });
-  });
-
-  $input.on("keydown", function (e) {
-    const items = $suggestions.children(".suggestion-item");
-
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      if (items.length > 0) {
-        selectedIndex = (selectedIndex + 1) % items.length;
-        items.removeClass("highlight");
-        $(items[selectedIndex]).addClass("highlight");
-      }
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      if (items.length > 0) {
-        selectedIndex = (selectedIndex - 1 + items.length) % items.length;
-        items.removeClass("highlight");
-        $(items[selectedIndex]).addClass("highlight");
-      }
-    } else if (e.key === "Enter") {
-      if (currentSuggestions.length === 1) {
-        e.preventDefault();
-        $input.val(currentSuggestions[0]);
-        $suggestions.hide();
-      } else if (selectedIndex >= 0 && selectedIndex < items.length) {
-        e.preventDefault();
-        const selectedText = $(items[selectedIndex]).text();
-        $input.val(selectedText);
-        $suggestions.hide();
-      }
-    } else if (e.key === "Escape") {
-      $suggestions.hide();
-    }
-  });
-
-  $(document).on("click", function (e) {
-    if (!$(e.target).closest("#search_name, #suggestions").length) {
-      $suggestions.hide();
-    }
-  });
-}
-
-// ==========================
-// 🚀 Init Default View
-// ==========================
-$(document).ready(() => {
-  selectReport("cash-ledger");
-});
-
-
-
-
-// ==========================
-// 📊 Download Table as CSV
-// ==========================
+// ═══════════════════════════════════════════
+// CSV  —  visible rows + metadata header
+// ═══════════════════════════════════════════
 $(document).on("click", "#download_csv", function () {
-  const activeBtn = $(".report-btn.active");
-  let activeReport = "Report";
-  let party = "";
-  let fromDate = "";
-  let toDate = "";
+  const tbl = document.getElementById("reportTable");
+  if (!tbl) { Swal.fire("No Data", "No data to export.", "warning"); return; }
 
-  // Determine which report is active
-  if (activeBtn.attr("id") === "btn-ledger") {
-    activeReport = "Detailed_Ledger";
-    party = $("#search_name").val() || "All";
-    fromDate = $("#from_date").val() || "N/A";
-    toDate = $("#to_date").val() || "N/A";
-  } else if (activeBtn.attr("id") === "btn-cash-ledger") {
-    activeReport = "Cash_Ledger";
-    fromDate = $("#cash_from_date").val() || "N/A";
-    toDate = $("#cash_to_date").val() || "N/A";
-  } else if (activeBtn.attr("id") === "btn-trial") {
-    activeReport = "Trial_Balance";
-  }
+  const allTh    = [...tbl.querySelectorAll("thead th")];
+  const skipCols = allTh.reduce((a, th, i) => { if (th.dataset.noExport === "1") a.push(i); return a; }, []);
+  const m        = _rMeta;
+  const rows     = [];
 
-  // Get table data
-  const table = document.getElementById("reportTable");
-  if (!table || table.rows.length === 0) {
-    Swal.fire("No Data", "No data available to download.", "warning");
-    return;
-  }
+  // Meta header
+  rows.push([`${m.title} Report`]);
+  Object.entries(m.filters || {}).forEach(([k, v]) => rows.push([`${k}: ${v}`]));
+  rows.push([`Generated: ${new Date().toLocaleString()}`]);
+  rows.push([]);
 
-  let csv = [];
-  
-  // Add metadata header
-  if (activeReport === "Detailed_Ledger") {
-    csv.push([`${activeReport.replace(/_/g, " ")} Report`]);
-    csv.push([`Party: ${party}`]);
-    csv.push([`From: ${fromDate}`, `To: ${toDate}`]);
-    csv.push([]); // Empty row
-  } else if (activeReport === "Cash_Ledger") {
-    csv.push([`${activeReport.replace(/_/g, " ")} Report`]);
-    csv.push([`From: ${fromDate}`, `To: ${toDate}`]);
-    csv.push([]); // Empty row
-  } else {
-    csv.push([`${activeReport.replace(/_/g, " ")} Report`]);
-    csv.push([]); // Empty row
-  }
+  // Column headers
+  rows.push(allTh.filter((_, i) => !skipCols.includes(i)).map(th => th.textContent.trim()));
 
-  // Collect indices of display-only columns to skip in CSV
-  const csvSkipCols = [];
-  const csvHeaderRow = table.querySelector("thead tr");
-  const headers = [];
-  if (csvHeaderRow) {
-    csvHeaderRow.querySelectorAll("th").forEach((th, i) => {
-      if (th.dataset.noExport === "1") {
-        csvSkipCols.push(i);  // remember index, exclude from CSV
-      } else {
-        headers.push(th.textContent.trim());
-      }
+  // Data rows — visible only
+  tbl.querySelectorAll("tbody tr:not(.filtered-out)").forEach(tr => {
+    const row = [];
+    tr.querySelectorAll("td").forEach((td, i) => {
+      if (skipCols.includes(i)) return;
+      let v = td.textContent.trim();
+      if (/[,"\n]/.test(v)) v = `"${v.replace(/"/g, '""')}"`;
+      row.push(v);
     });
-    csv.push(headers);
-  }
+    if (row.length && !row[0].includes("No records")) rows.push(row);
+  });
 
-  // Extract data rows — skip display-only cells
-  const tbody = table.querySelector("tbody");
-  if (tbody) {
-    tbody.querySelectorAll("tr").forEach(tr => {
-      const row = [];
-      tr.querySelectorAll("td").forEach((td, i) => {
-        if (csvSkipCols.includes(i)) return; // skip display-only column
-        let cellData = td.textContent.trim();
-        // Escape quotes and wrap in quotes if contains comma
-        if (cellData.includes(",") || cellData.includes('"') || cellData.includes("\n")) {
-          cellData = '"' + cellData.replace(/"/g, '""') + '"';
-        }
-        row.push(cellData);
-      });
-      // Only add row if it's not the "no data" message
-      if (row.length > 0 && !row[0].includes("No records found") && !row[0].includes("Select a report")) {
-        csv.push(row);
-      }
-    });
-  }
-
-  // Convert to CSV string
-  const csvContent = csv.map(row => row.join(",")).join("\n");
-
-  // Create download link
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-  
-  link.setAttribute("href", url);
-  const filename = `${activeReport}_${new Date().toISOString().split("T")[0]}.csv`;
-  link.setAttribute("download", filename);
-  link.style.visibility = "hidden";
-  
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const blob = new Blob([rows.map(r => r.join(",")).join("\n")], { type: "text/csv;charset=utf-8;" });
+  const a = Object.assign(document.createElement("a"), {
+    href: URL.createObjectURL(blob),
+    download: `${m.title.replace(/\s+/g,"_")}_${new Date().toISOString().split("T")[0]}.csv`,
+    style: "display:none",
+  });
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
 });
+
+// ═══════════════════════════════════════════
+// AUTOCOMPLETE
+// ═══════════════════════════════════════════
+function initAutocomplete() {
+  const $inp  = $("#search_name");
+  const $box  = $("#suggestions");
+  const url   = $inp.data("autocomplete-url");
+  let idx = -1, items = [];
+
+  $inp.on("input", function () {
+    idx = -1;
+    const q = $(this).val();
+    if (!q) { $box.hide(); return; }
+
+    $.ajax({ url, data: { term: q }, dataType: "json",
+      success(data) {
+        $box.empty(); items = data;
+        if (!data.length) { $box.hide(); return; }
+        data.forEach((p, i) =>
+          $("<div>").addClass("suggestion-item").text(p)
+            .on("mouseenter", () => { $(".suggestion-item").removeClass("highlight"); $box.children().eq(i).addClass("highlight"); idx = i; })
+            .on("click",      () => { $inp.val(p); $box.hide(); })
+            .appendTo($box)
+        );
+        $box.show();
+      },
+      error(_, s, e) { console.error("Autocomplete:", s, e); }
+    });
+  });
+
+  $inp.on("keydown", function (e) {
+    const $it = $box.children(".suggestion-item");
+    if      (e.key === "ArrowDown")  { e.preventDefault(); idx = (idx + 1) % $it.length; }
+    else if (e.key === "ArrowUp")    { e.preventDefault(); idx = (idx - 1 + $it.length) % $it.length; }
+    else if (e.key === "Escape")     { $box.hide(); return; }
+    else if (e.key === "Enter") {
+      if (items.length === 1) { $inp.val(items[0]); $box.hide(); }
+      else if (idx >= 0)      { $inp.val($it.eq(idx).text()); $box.hide(); }
+      return;
+    } else return;
+    $it.removeClass("highlight").eq(idx).addClass("highlight");
+  });
+
+  $(document).on("click.acl", e => {
+    if (!$(e.target).closest("#search_name,#suggestions").length) $box.hide();
+  });
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+$(document).ready(() => selectReport("cash-ledger"));

@@ -1,607 +1,418 @@
-function getCSRFToken(){
-  const name = "csrftoken=";
-  const parts = decodeURIComponent(document.cookie).split(";");
-  for (let p of parts){
-    p = p.trim();
-    if (p.startsWith(name)) return p.substring(name.length);
+/* ============================================================
+   STOCK REPORTS  —  JavaScript  (v3-final)
+   • Compact filter forms for all report types
+   • Post-render table search/filter with row count
+   • Professional branded PDF (green header)
+   • CSV exports visible rows only
+   ============================================================ */
+
+let _rMeta = { title: "Stock Report", subtitle: "", filters: {} };
+
+// ═══════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════
+function getCSRFToken() {
+  for (let c of decodeURIComponent(document.cookie).split(";")) {
+    c = c.trim();
+    if (c.startsWith("csrftoken=")) return c.slice("csrftoken=".length);
   }
   return "";
 }
 
-// ---------- SELECT REPORT ----------
-// function selectReport(type){
-//   $(".report-btn").removeClass("active");
-//   $(`#btn-${type}`).addClass("active");
+function showLoader(msg = "Loading…") {
+  Swal.fire({ title: msg, didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+}
 
-//   $("#reportHeader").empty();
-//   $("#reportBody").html(`<tr><td class="no-data">Loading...</td></tr>`);
+function fmt(date) {
+  if (!date) return "—";
+  return new Date(date).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" });
+}
 
-//   // Hide or show form section
-//   const $formSection = $("#report-form-container");
-//   if (type === "history") {
-//     renderHistoryForm();
-//   } else {
-//     $formSection.empty();  // hide input fields for stock/worth
-//     fetchReport(
-//       type === "stock" 
-//         ? "/accountsReports/stock-report/"
-//         : "/accountsReports/stock-worth-report/"
-//     );
-//   }
-// }
-
-function selectReport(type){
+// ═══════════════════════════════════════════
+// REPORT SELECTOR
+// ═══════════════════════════════════════════
+function selectReport(type) {
   $(".report-btn").removeClass("active");
   $(`#btn-${type}`).addClass("active");
-
   $("#reportHeader").empty();
-  $("#reportBody").html(`<tr><td class="no-data">Loading...</td></tr>`);
+  $("#reportBody").html(`<tr><td class="no-data">Loading…</td></tr>`);
+  $("#reportToolbar").remove();
+  $("#report-form-container").empty();
 
-  const $formSection = $("#report-form-container");
-  $formSection.empty()
+  const map = {
+    "history":                    () => renderHistoryForm(),
+    "serial":                     () => renderSerialForm("fetchSerialLedger", "Serial Ledger"),
+    "seril-ledger-with-sold-flag":() => renderSerialForm("fetchSerialLedgerWithSoldFlag", "Serial Ledger — Sold Flag"),
+    "serial-purchase-only":       () => renderSerialForm("fetchSerialLedgerPurchaseOnly", "Serial Ledger — Purchase"),
+    "serial-sale-only":           () => renderSerialForm("fetchSerialLedgerSaleOnly", "Serial Ledger — Sale"),
+    "summary":                    () => _fetchDirect("/accountsReports/stock-summary/", "Stock Summary", "All items current stock"),
+    "item-detail":                () => renderItemDetailForm(),
+    "item-last-purchase":         () => _fetchDirect("/accountsReports/item-last-purchase/", "Item Last Purchase", "Most recent purchase per item"),
+    "item-last-sale":             () => _fetchDirect("/accountsReports/item-last-sale/", "Item Last Sale", "Most recent sale per item"),
+    "stock":                      () => _fetchDirect("/accountsReports/stock-report/", "Stock Serial Wise", "All serials and their status"),
+    "worth":                      () => _fetchDirect("/accountsReports/stock-worth-report/", "Stock Worth Report", "Valuation of current stock"),
+  };
 
-  if (type === "history") {
-      renderHistoryForm();
-  } 
-  else if (type === "serial") {   // ✅ add this
-      renderSerialForm();
-  }
-  else if (type === "serial-purchase-only") {   
-      renderSerialFormPurchaseOnly();
-  }
-  else if (type === "serial-sale-only") {  
-      renderSerialFormSaleOnly();
-  }
-  else if (type === "summary") {
-      renderStockSummary();
-  }
-  else if (type === "item-detail") {  // ✅ NEW
-      renderItemDetailForm();
-  }
-  else if (type === "item-last-purchase") {  // ✅ NEW
-      renderItemLastPurchaseForm();
-  }
-  else if (type === "item-last-sale") {  // ✅ NEW
-      renderItemLastSaleForm();
-  }
-  else if (type === "seril-ledger-with-sold-flag"){
-      renderSerialFormWithSoldFlag();
-  }
-  else {
-      $formSection.empty();
-      fetchReport(
-        type === "stock"
-        ? "/accountsReports/stock-report/"
-        : "/accountsReports/stock-worth-report/"
-      );
-  }
+  (map[type] || map["summary"])();
 }
 
+// ═══════════════════════════════════════════
+// FORM RENDERERS
+// ═══════════════════════════════════════════
 
-
-// ---------- FETCH GENERIC REPORT ----------
-function renderStockSummary(){
-  Swal.fire({ title: "Loading...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
-  fetch("/accountsReports/stock-summary/", {
-    method: "POST",
-    headers: {"Content-Type": "application/json", "X-CSRFToken": getCSRFToken()}
-  })
-  .then(r => r.json())
-  .then(data => {
-    Swal.close();
-    if (data.error) return Swal.fire("Error", data.error, "error");
-    renderTable(data);
-  })
-  .catch(() => Swal.fire("Error", "Unable to fetch data", "error")); 
-}
-
-
-// ---------- RENDER ITEM HISTORY FORM ----------
-function renderHistoryForm(){
+function renderHistoryForm() {
   const today = new Date().toISOString().split("T")[0];
-  const html = `
-    <div class="form-row">
-      <div class="autocomplete-container">
-        <label>Item Name</label><br>
-        <input type="text" id="item_name" placeholder="Enter item name" autocomplete="off"
-               data-autocomplete-url="${window.ITEM_AUTOCOMPLETE_URL}">
-        <div id="suggestions"></div>
+  $("#report-form-container").html(`
+    <div class="filter-form">
+      <div class="filter-field autocomplete-container">
+        <label><i class="fa-solid fa-box"></i>&nbsp;Item Name</label>
+        <input type="text" id="item_name" placeholder="Type to search item…"
+               autocomplete="off" data-autocomplete-url="${window.ITEM_AUTOCOMPLETE_URL}">
+        <div id="suggestions" style="display:none;"></div>
       </div>
-    </div>
-    <div class="form-row-inline">
-      <div class="date-group">
-        <label>From:</label>
+      <div class="filter-field">
+        <label><i class="fa-regular fa-calendar"></i>&nbsp;From Date</label>
         <input type="date" id="from_date" value="2000-01-01">
       </div>
-      <div class="date-group">
-        <label>To:</label>
-        <input type="date" id="to_date" value="${today}">
+      <div class="filter-field">
+        <label><i class="fa-regular fa-calendar"></i>&nbsp;To Date</label>
+        <input type="date" id="to_date" value="${today}" max="${today}">
       </div>
-      <button class="generate-btn" onclick="fetchItemHistory()">Generate</button>
-    </div>`;
-  
-  $("#report-form-container").html(html);
+      <button class="generate-btn" onclick="fetchItemHistory()">
+        <i class="fa-solid fa-bolt"></i> Generate
+      </button>
+    </div>
+  `);
   $("#reportHeader").empty();
-  $("#reportBody").html(`<tr><td class="no-data">Enter item name and date range</td></tr>`);
+  $("#reportBody").html(`<tr><td class="no-data">Enter item name and date range, then click Generate</td></tr>`);
   initAutocomplete();
 }
 
-
-function renderSerialForm() {
-  const html = `
-    <div class="form-row">
-      <div>
-        <label>Serial No</label><br>
-        <input type="text" id="serial_input" placeholder="Enter Serial e.g. IP15-001">
+function renderSerialForm(fetchFn, label) {
+  $("#report-form-container").html(`
+    <div class="filter-form">
+      <div class="filter-field">
+        <label><i class="fa-solid fa-barcode"></i>&nbsp;Serial No.</label>
+        <input type="text" id="serial_input" placeholder="e.g. IP15-001" style="width:200px;">
       </div>
-      <button class="generate-btn" onclick="fetchSerialLedger()">Generate</button>
+      <button class="generate-btn" onclick="${fetchFn}()">
+        <i class="fa-solid fa-bolt"></i> Generate
+      </button>
     </div>
-  `;
-
-  $("#report-form-container").html(html);
+  `);
   $("#reportHeader").empty();
-  $("#reportBody").html(`<tr><td class="no-data">Enter serial and click generate</td></tr>`);
+  $("#reportBody").html(`<tr><td class="no-data">Enter serial number and click Generate</td></tr>`);
 }
 
-function renderSerialFormWithSoldFlag() {
-  const html = `
-    <div class="form-row">
-      <div>
-        <label>Serial No</label><br>
-        <input type="text" id="serial_input" placeholder="Enter Serial e.g. IP15-001">
-      </div>
-      <button class="generate-btn" onclick="fetchSerialLedgerWithSoldFlag()">Generate</button>
-    </div>
-  `;
-
-  $("#report-form-container").html(html);
-  $("#reportHeader").empty();
-  $("#reportBody").html(`<tr><td class="no-data">Enter serial and click generate</td></tr>`);
-}
-
-
-function renderSerialFormPurchaseOnly() {
-  const html = `
-    <div class="form-row">
-      <div>
-        <label>Serial No</label><br>
-        <input type="text" id="serial_input" placeholder="Enter Serial e.g. IP15-001">
-      </div>
-      <button class="generate-btn" onclick="fetchSerialLedgerPurchaseOnly()">Generate</button>
-    </div>
-  `;
-
-  $("#report-form-container").html(html);
-  $("#reportHeader").empty();
-  $("#reportBody").html(`<tr><td class="no-data">Enter serial and click generate</td></tr>`);
-}
-
-function renderSerialFormSaleOnly() {
-  const html = `
-    <div class="form-row">
-      <div>
-        <label>Serial No</label><br>
-        <input type="text" id="serial_input" placeholder="Enter Serial e.g. IP15-001">
-      </div>
-      <button class="generate-btn" onclick="fetchSerialLedgerSaleOnly()">Generate</button>
-    </div>
-  `;
-
-  $("#report-form-container").html(html);
-  $("#reportHeader").empty();
-  $("#reportBody").html(`<tr><td class="no-data">Enter serial and click generate</td></tr>`);
-}
-
-
-// ---------- RENDER ITEM DETAIL FORM ---------- ✅ NEW
 function renderItemDetailForm() {
-  const html = `
-    <div class="form-row">
-      <div class="autocomplete-container">
-        <label>Item Name</label><br>
-        <input type="text" id="item_detail_name" placeholder="Enter item name" autocomplete="off"
-               data-autocomplete-url="${window.ITEM_AUTOCOMPLETE_URL}">
-        <div id="suggestions_detail"></div>
+  $("#report-form-container").html(`
+    <div class="filter-form">
+      <div class="filter-field autocomplete-container">
+        <label><i class="fa-solid fa-box"></i>&nbsp;Item Name</label>
+        <input type="text" id="item_detail_name" placeholder="Type to search item…"
+               autocomplete="off" data-autocomplete-url="${window.ITEM_AUTOCOMPLETE_URL}">
+        <div id="suggestions_detail" style="display:none;"></div>
       </div>
-      <button class="generate-btn" onclick="fetchItemDetail()">Generate</button>
+      <button class="generate-btn" onclick="fetchItemDetail()">
+        <i class="fa-solid fa-bolt"></i> Generate
+      </button>
     </div>
-  `;
-
-  $("#report-form-container").html(html);
+  `);
   $("#reportHeader").empty();
-  $("#reportBody").html(`<tr><td class="no-data">Enter item name and click generate</td></tr>`);
+  $("#reportBody").html(`<tr><td class="no-data">Enter item name and click Generate</td></tr>`);
   initAutocompleteDetail();
 }
 
-function renderItemLastPurchaseForm(){
-  Swal.fire({ title: "Loading...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
-  fetch("/accountsReports/item-last-purchase/", {
-    method: "POST",
-    headers: {"Content-Type": "application/json", "X-CSRFToken": getCSRFToken()}
-  })
+// ═══════════════════════════════════════════
+// FETCH HELPERS
+// ═══════════════════════════════════════════
+
+function _fetchDirect(url, title, subtitle = "") {
+  _rMeta = { title, subtitle, filters: {} };
+  showLoader(`Loading ${title}…`);
+  fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() } })
   .then(r => r.json())
-  .then(data => {
-    Swal.close();
-    if (data.error) return Swal.fire("Error", data.error, "error");
-    renderTable(data);
-  })
-  .catch(() => Swal.fire("Error", "Unable to fetch data", "error")); 
+  .then(data => { Swal.close(); data.error ? Swal.fire("Error", data.error, "error") : renderTable(data); })
+  .catch(() => Swal.fire("Error", "Unable to fetch data.", "error"));
 }
 
-function renderItemLastSaleForm(){
-  Swal.fire({ title: "Loading...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
-  fetch("/accountsReports/item-last-sale/", {
-    method: "POST",
-    headers: {"Content-Type": "application/json", "X-CSRFToken": getCSRFToken()}
-  })
-  .then(r => r.json())
-  .then(data => {
-    Swal.close();
-    if (data.error) return Swal.fire("Error", data.error, "error");
-    renderTable(data);
-  })
-  .catch(() => Swal.fire("Error", "Unable to fetch data", "error")); 
-}
-
-
-
-// ---------- FETCH ITEM DETAIL ---------- ✅ NEW
-function fetchItemDetail(){
-  const item = $("#item_detail_name").val().trim();
-  if (!item) return Swal.fire("Missing Item", "Please enter an item name", "warning");
-
-  Swal.fire({ title: "Loading item detail...", didOpen: ()=> Swal.showLoading(), allowOutsideClick:false });
-
-  fetch("/accountsReports/item-detail/", {
-    method: "POST",
-    headers: {"Content-Type":"application/json","X-CSRFToken": getCSRFToken()},
-    body: JSON.stringify({ item_name: item })
-  })
-  .then(r => r.json())
-  .then(data => {
-    Swal.close();
-    if (data.error) return Swal.fire("Error", data.error, "error");
-    renderTable(data);
-  })
-  .catch(()=> Swal.fire("Error", "Unable to fetch item detail", "error"));
-}
-
-
-
-// ---------- AUTOCOMPLETE FOR ITEM DETAIL ---------- ✅ NEW
-function initAutocompleteDetail(){
-  const $input = $("#item_detail_name"), $box = $("#suggestions_detail");
-  const url = $input.data("autocomplete-url");
-  let index = -1, items = [];
-
-  $input.off(".auto").on("input.auto", function(){
-    const q = $(this).val();
-    index = -1; items = []; $box.empty();
-    if (!q) return $box.hide();
-
-    $.getJSON(url, { term: q }, function(data){
-      items = data || [];
-      $box.empty();
-      if (!items.length) return $box.hide();
-      items.forEach((t,i)=>{
-        $("<div>").addClass("suggestion-item").text(t)
-        .on("click", ()=>{ $input.val(t); $box.hide(); })
-        .appendTo($box);
-      });
-      $box.show();
-    });
-  });
-
-  $input.on("keydown.auto", function(e){
-    const $it = $box.children(".suggestion-item");
-    if (e.key === "ArrowDown"){ e.preventDefault(); if ($it.length) index = (index+1)%$it.length; }
-    if (e.key === "ArrowUp"){ e.preventDefault(); if ($it.length) index = (index-1+$it.length)%$it.length; }
-    $it.removeClass("highlight").eq(index).addClass("highlight");
-
-    if (e.key === "Enter"){
-      e.preventDefault();
-      if (items.length === 1) { $input.val(items[0]); $box.hide(); }
-      else if (index >= 0) { $input.val($it.eq(index).text()); $box.hide(); }
-    }
-    if (e.key === "Escape") $box.hide();
-  });
-
-  $(document).on("click.autoDetail", e=>{
-    if(!$(e.target).closest("#item_detail_name,#suggestions_detail").length) $box.hide();
-  });
-}
-
-// ---------- FETCH GENERIC REPORT ----------
-function fetchReport(url){
-  Swal.fire({ title: "Loading...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
-  fetch(url, {
-    method: "POST",
-    headers: {"Content-Type": "application/json", "X-CSRFToken": getCSRFToken()}
-  })
-  .then(r => r.json())
-  .then(data => {
-    Swal.close();
-    if (data.error) return Swal.fire("Error", data.error, "error");
-    renderTable(data);
-  })
-  .catch(() => Swal.fire("Error", "Unable to fetch data", "error"));
-}
-
-// ---------- FETCH ITEM HISTORY ----------
-function fetchItemHistory(){
+function fetchItemHistory() {
   const item = $("#item_name").val().trim();
   const from = $("#from_date").val();
-  const to = $("#to_date").val();
-  if (!item) return Swal.fire("Missing Item", "Please enter an item name", "warning");
+  const to   = $("#to_date").val();
+  if (!item) { Swal.fire("Missing Item", "Please enter an item name.", "warning"); return; }
 
-  Swal.fire({ title: "Loading item history...", didOpen: ()=> Swal.showLoading(), allowOutsideClick:false });
-
+  _rMeta = { title: "Item History", subtitle: `History for: ${item}`,
+             filters: { Item: item, From: fmt(from), To: fmt(to) } };
+  showLoader("Loading item history…");
   fetch("/accountsReports/item-history/", {
     method: "POST",
-    headers: {"Content-Type":"application/json","X-CSRFToken": getCSRFToken()},
+    headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
     body: JSON.stringify({ item_name: item, from_date: from, to_date: to })
   })
   .then(r => r.json())
-  .then(data => {
-    Swal.close();
-    if (data.error) return Swal.fire("Error", data.error, "error");
-    renderTable(data);
-  })
-  .catch(()=> Swal.fire("Error", "Unable to fetch item history", "error"));
+  .then(data => { Swal.close(); data.error ? Swal.fire("Error", data.error, "error") : renderTable(data); })
+  .catch(() => Swal.fire("Error", "Unable to fetch item history.", "error"));
 }
 
-// for Fetching Serial Ledger
-function fetchSerialLedger(){
+function _fetchSerial(url, title) {
   const serial = $("#serial_input").val().trim();
-  if (!serial) return Swal.fire("Missing Serial", "Please enter a serial", "warning");
-
-  Swal.fire({title:"Loading serial ledger...", didOpen:()=>Swal.showLoading(), allowOutsideClick:false});
-
-  fetch("/accountsReports/serial-ledger/", {
+  if (!serial) { Swal.fire("Missing Serial", "Please enter a serial number.", "warning"); return; }
+  _rMeta = { title, subtitle: `Serial: ${serial}`, filters: { Serial: serial } };
+  showLoader(`Loading ${title}…`);
+  fetch(url, {
     method: "POST",
-    headers: { "Content-Type":"application/json", "X-CSRFToken": getCSRFToken() },
+    headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
     body: JSON.stringify({ serial })
   })
   .then(r => r.json())
-  .then(data => {
-    Swal.close();
-    if (data.error) return Swal.fire("Error", data.error, "error");
-    renderTable(data);
-  })
-  .catch(() => Swal.fire("Error", "Unable to fetch serial ledger", "error"));
+  .then(data => { Swal.close(); data.error ? Swal.fire("Error", data.error, "error") : renderTable(data); })
+  .catch(() => Swal.fire("Error", "Unable to fetch serial ledger.", "error"));
 }
 
-// for Fetching Serial Ledger
-function fetchSerialLedgerWithSoldFlag(){
-  const serial = $("#serial_input").val().trim();
-  if (!serial) return Swal.fire("Missing Serial", "Please enter a serial", "warning");
+function fetchSerialLedger()             { _fetchSerial("/accountsReports/serial-ledger/",               "Serial Ledger"); }
+function fetchSerialLedgerWithSoldFlag() { _fetchSerial("/accountsReports/serial-ledger-sold-flag/",     "Serial Ledger — Sold Flag"); }
+function fetchSerialLedgerPurchaseOnly() { _fetchSerial("/accountsReports/serial-ledger-purchase-only/", "Serial Ledger — Purchase"); }
+function fetchSerialLedgerSaleOnly()     { _fetchSerial("/accountsReports/serial-ledger-sale-only/",     "Serial Ledger — Sale"); }
 
-  Swal.fire({title:"Loading serial ledger...", didOpen:()=>Swal.showLoading(), allowOutsideClick:false});
-
-  fetch("/accountsReports/serial-ledger-sold-flag/", {
+function fetchItemDetail() {
+  const item = $("#item_detail_name").val().trim();
+  if (!item) { Swal.fire("Missing Item", "Please enter an item name.", "warning"); return; }
+  _rMeta = { title: "Item Detail", subtitle: `Detail for: ${item}`, filters: { Item: item } };
+  showLoader("Loading item detail…");
+  fetch("/accountsReports/item-detail/", {
     method: "POST",
-    headers: { "Content-Type":"application/json", "X-CSRFToken": getCSRFToken() },
-    body: JSON.stringify({ serial })
+    headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+    body: JSON.stringify({ item_name: item })
   })
   .then(r => r.json())
-  .then(data => {
-    Swal.close();
-    if (data.error) return Swal.fire("Error", data.error, "error");
-    renderTable(data);
-  })
-  .catch(() => Swal.fire("Error", "Unable to fetch serial ledger", "error"));
+  .then(data => { Swal.close(); data.error ? Swal.fire("Error", data.error, "error") : renderTable(data); })
+  .catch(() => Swal.fire("Error", "Unable to fetch item detail.", "error"));
 }
 
-// For Fetching Serial Ledger Purchase only
-function fetchSerialLedgerPurchaseOnly(){
-  const serial = $("#serial_input").val().trim();
-  if (!serial) return Swal.fire("Missing Serial", "Please enter a serial", "warning");
+// ═══════════════════════════════════════════
+// TABLE RENDERER
+// ═══════════════════════════════════════════
+function renderTable(data) {
+  const $header = $("#reportHeader");
+  const $body   = $("#reportBody");
 
-  Swal.fire({title:"Loading serial ledger...", didOpen:()=>Swal.showLoading(), allowOutsideClick:false});
-
-  fetch("/accountsReports/serial-ledger-purchase-only/", {
-    method: "POST",
-    headers: { "Content-Type":"application/json", "X-CSRFToken": getCSRFToken() },
-    body: JSON.stringify({ serial })
-  })
-  .then(r => r.json())
-  .then(data => {
-    Swal.close();
-    if (data.error) return Swal.fire("Error", data.error, "error");
-    renderTable(data);
-  })
-  .catch(() => Swal.fire("Error", "Unable to fetch serial ledger", "error"));
-}
-
-// For Fetching Serial Ledger Purchase only
-function fetchSerialLedgerSaleOnly(){
-  const serial = $("#serial_input").val().trim();
-  if (!serial) return Swal.fire("Missing Serial", "Please enter a serial", "warning");
-
-  Swal.fire({title:"Loading serial ledger...", didOpen:()=>Swal.showLoading(), allowOutsideClick:false});
-
-  fetch("/accountsReports/serial-ledger-sale-only/", {
-    method: "POST",
-    headers: { "Content-Type":"application/json", "X-CSRFToken": getCSRFToken() },
-    body: JSON.stringify({ serial })
-  })
-  .then(r => r.json())
-  .then(data => {
-    Swal.close();
-    if (data.error) return Swal.fire("Error", data.error, "error");
-    renderTable(data);
-  })
-  .catch(() => Swal.fire("Error", "Unable to fetch serial ledger", "error"));
-}
-
-
-// ---------- RENDER TABLE ----------
-function renderTable(data){
-  const header = $("#reportHeader"), body = $("#reportBody");
-  if (!data || !data.length){
-    header.empty(); body.html(`<tr><td class="no-data">No records found</td></tr>`); return;
+  if (!data || !data.length) {
+    $header.empty();
+    $body.html(`<tr><td class="no-data">No records found</td></tr>`);
+    injectToolbar(0);
+    return;
   }
+
   const cols = Object.keys(data[0]);
-  header.html(`<tr>${cols.map(c=>`<th>${c.replace(/_/g," ")}</th>`).join("")}</tr>`);
-  body.html(data.map(row => 
-    `<tr>${cols.map(c=>`<td>${row[c] ?? ""}</td>`).join("")}</tr>`).join(""));
+  $header.html(`<tr>${cols.map(c => `<th>${c.replace(/_/g, " ")}</th>`).join("")}</tr>`);
+  $body.html(data.map(row =>
+    `<tr>${cols.map(c => `<td>${row[c] ?? ""}</td>`).join("")}</tr>`
+  ).join(""));
+
+  injectToolbar(data.length);
 }
 
-// ---------- PDF DOWNLOAD ----------
-$(document).on("click","#download_pdf", function(){
+// ═══════════════════════════════════════════
+// TOOLBAR
+// ═══════════════════════════════════════════
+function injectToolbar(total) {
+  $("#reportToolbar").remove();
+
+  $(`<div id="reportToolbar" class="report-toolbar">
+      <div class="table-filter-bar">
+        <div class="table-search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="tableSearch" placeholder="Filter results…" autocomplete="off">
+        </div>
+        <span class="table-row-count" id="rowCount">${total} row${total !== 1 ? "s" : ""}</span>
+      </div>
+      <div class="table-actions">
+        <button id="download_pdf" class="btn-download">
+          <i class="fa-solid fa-file-pdf"></i> PDF
+        </button>
+        <button id="download_csv" class="btn-download btn-csv">
+          <i class="fa-solid fa-file-csv"></i> CSV
+        </button>
+      </div>
+    </div>`)
+    .insertBefore(".table-container");
+
+  $("#tableSearch").on("input", function () {
+    const q = this.value.toLowerCase().trim();
+    let vis = 0;
+    $("#reportBody tr").each(function () {
+      const show = !q || $(this).text().toLowerCase().includes(q);
+      $(this).toggleClass("filtered-out", !show);
+      if (show) vis++;
+    });
+    $("#rowCount").text(`${vis} row${vis !== 1 ? "s" : ""}`);
+  });
+}
+
+// ═══════════════════════════════════════════
+// PDF  —  green branded header + footer
+// ═══════════════════════════════════════════
+$(document).on("click", "#download_pdf", function () {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p","pt","a4");
-  doc.setFontSize(14);
-  doc.text("Stock Report", 40, 40);
-  doc.autoTable({ html: "#reportTable", startY: 60, theme:"grid", styles:{fontSize:9} });
-  const pages = doc.internal.getNumberOfPages();
-  for(let i=1;i<=pages;i++){
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.text(`Page ${i} of ${pages}`, doc.internal.pageSize.width - 60, doc.internal.pageSize.height - 20);
+
+  const colHeaders = [...document.querySelectorAll("#reportTable thead th")].map(th => th.textContent.trim());
+  const rowData    = [];
+  document.querySelectorAll("#reportBody tr:not(.filtered-out)").forEach(tr => {
+    const cells = [...tr.querySelectorAll("td")].map(td => td.textContent.trim());
+    if (cells.length && !cells[0].includes("No records")) rowData.push(cells);
+  });
+
+  if (!rowData.length) { Swal.fire("No Data", "Nothing visible to export.", "warning"); return; }
+
+  const doc   = new jsPDF("l", "pt", "a4");   // landscape — stock tables tend to be wide
+  const pW    = doc.internal.pageSize.width;
+  const pH    = doc.internal.pageSize.height;
+  const today = new Date().toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" });
+  const m     = _rMeta;
+  const fStr  = Object.entries(m.filters || {}).map(([k, v]) => `${k}: ${v}`).join("   ·   ");
+
+  function drawHeader(pg, total) {
+    doc.setFillColor(5, 150, 105);             // emerald-green brand
+    doc.rect(0, 0, pW, 38, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor(255, 255, 255);
+    doc.text("Financee", 36, 25);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    doc.text(m.title, pW - 36, 25, { align: "right" });
+
+    doc.setFillColor(236, 253, 245);
+    doc.rect(0, 38, pW, 26, "F");
+    doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(71, 85, 105);
+    let sub = m.subtitle || "";
+    if (fStr) sub += (sub ? "   ·   " : "") + fStr;
+    doc.text(sub, 36, 55);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Generated: ${today}   Page ${pg} of ${total}`, pW - 36, 55, { align: "right" });
+    doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.5); doc.line(0, 64, pW, 64);
   }
-  doc.save(`stock_report_${new Date().toISOString().split("T")[0]}.pdf`);
+
+  function drawFooter(pg, total) {
+    const y = pH - 18;
+    doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.4); doc.line(36, y - 7, pW - 36, y - 7);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(148, 163, 184);
+    doc.text("Financee  —  Confidential", 36, y + 2);
+    doc.text(`Page ${pg} of ${total}`, pW - 36, y + 2, { align: "right" });
+  }
+
+  doc.autoTable({
+    head: [colHeaders], body: rowData,
+    startY: 72,
+    margin: { left: 28, right: 28, top: 72, bottom: 32 },
+    theme: "grid",
+    headStyles:         { fillColor: [4, 120, 87], textColor: [255,255,255], fontStyle: "bold", fontSize: 7.5, cellPadding: 5 },
+    bodyStyles:         { fontSize: 7.5, textColor: [30, 41, 59], cellPadding: 4, lineColor: [226, 232, 240] },
+    alternateRowStyles: { fillColor: [240, 253, 250] },
+    didDrawPage: d => drawHeader(d.pageNumber, "…"),
+  });
+
+  const totalPg = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPg; i++) { doc.setPage(i); drawHeader(i, totalPg); drawFooter(i, totalPg); }
+
+  doc.save(`${m.title.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`);
 });
 
-// ---------- AUTOCOMPLETE ----------
-function initAutocomplete(){
-  const $input = $("#item_name"), $box = $("#suggestions");
-  const url = $input.data("autocomplete-url");
-  let index = -1, items = [];
+// ═══════════════════════════════════════════
+// CSV
+// ═══════════════════════════════════════════
+$(document).on("click", "#download_csv", function () {
+  const tbl = document.getElementById("reportTable");
+  if (!tbl) { Swal.fire("No Data", "Nothing to export.", "warning"); return; }
 
-  $input.off(".auto").on("input.auto", function(){
-    const q = $(this).val();
-    index = -1; items = []; $box.empty();
+  const m    = _rMeta;
+  const rows = [];
+  rows.push([`${m.title} Report`]);
+  Object.entries(m.filters || {}).forEach(([k, v]) => rows.push([`${k}: ${v}`]));
+  rows.push([`Generated: ${new Date().toLocaleString()}`]);
+  rows.push([]);
+  rows.push([...tbl.querySelectorAll("thead th")].map(th => th.textContent.trim()));
+
+  tbl.querySelectorAll("tbody tr:not(.filtered-out)").forEach(tr => {
+    const row = [...tr.querySelectorAll("td")].map(td => {
+      let v = td.textContent.trim();
+      if (/[,"\n]/.test(v)) v = `"${v.replace(/"/g, '""')}"`;
+      return v;
+    });
+    if (row.length && !row[0].includes("No records")) rows.push(row);
+  });
+
+  const a = Object.assign(document.createElement("a"), {
+    href: URL.createObjectURL(new Blob([rows.map(r => r.join(",")).join("\n")], { type: "text/csv;charset=utf-8;" })),
+    download: `${m.title.replace(/\s+/g,"_")}_${new Date().toISOString().split("T")[0]}.csv`,
+    style: "display:none",
+  });
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+});
+
+// ═══════════════════════════════════════════
+// AUTOCOMPLETE — item_name
+// ═══════════════════════════════════════════
+function initAutocomplete() {
+  const $inp = $("#item_name"), $box = $("#suggestions");
+  const url  = $inp.data("autocomplete-url");
+  let idx = -1, items = [];
+
+  $inp.off(".auto").on("input.auto", function () {
+    const q = $(this).val(); idx = -1; items = []; $box.empty();
     if (!q) return $box.hide();
-
-    $.getJSON(url, { term: q }, function(data){
-      items = data || [];
-      $box.empty();
+    $.getJSON(url, { term: q }, data => {
+      items = data || []; $box.empty();
       if (!items.length) return $box.hide();
-      items.forEach((t,i)=>{
-        $("<div>").addClass("suggestion-item").text(t)
-        .on("click", ()=>{ $input.val(t); $box.hide(); })
-        .appendTo($box);
-      });
+      items.forEach(t => $("<div>").addClass("suggestion-item").text(t)
+        .on("click", () => { $inp.val(t); $box.hide(); }).appendTo($box));
       $box.show();
     });
   });
 
-  $input.on("keydown.auto", function(e){
+  $inp.on("keydown.auto", function (e) {
     const $it = $box.children(".suggestion-item");
-    if (e.key === "ArrowDown"){ e.preventDefault(); if ($it.length) index = (index+1)%$it.length; }
-    if (e.key === "ArrowUp"){ e.preventDefault(); if ($it.length) index = (index-1+$it.length)%$it.length; }
-    $it.removeClass("highlight").eq(index).addClass("highlight");
-
-    if (e.key === "Enter"){
-      e.preventDefault();
-      if (items.length === 1) { $input.val(items[0]); $box.hide(); }
-      else if (index >= 0) { $input.val($it.eq(index).text()); $box.hide(); }
-    }
+    if (e.key === "ArrowDown") { e.preventDefault(); idx = (idx + 1) % $it.length; }
+    if (e.key === "ArrowUp")   { e.preventDefault(); idx = (idx - 1 + $it.length) % $it.length; }
+    $it.removeClass("highlight").eq(idx).addClass("highlight");
+    if (e.key === "Enter") { e.preventDefault(); if (items.length === 1) { $inp.val(items[0]); $box.hide(); } else if (idx >= 0) { $inp.val($it.eq(idx).text()); $box.hide(); } }
     if (e.key === "Escape") $box.hide();
   });
 
-  $(document).on("click.auto", e=>{
-    if(!$(e.target).closest("#item_name,#suggestions").length) $box.hide();
-  });
+  $(document).on("click.auto", e => { if (!$(e.target).closest("#item_name,#suggestions").length) $box.hide(); });
 }
 
-// ---------- INIT ----------
-$(document).ready(()=> selectReport("summary"));
+// ═══════════════════════════════════════════
+// AUTOCOMPLETE — item_detail_name
+// ═══════════════════════════════════════════
+function initAutocompleteDetail() {
+  const $inp = $("#item_detail_name"), $box = $("#suggestions_detail");
+  const url  = $inp.data("autocomplete-url");
+  let idx = -1, items = [];
 
-
-// ==========================
-// 📊 Download Table as CSV
-// ==========================
-$(document).on("click", "#download_csv", function () {
-  const activeBtn = $(".report-btn.active");
-  let activeReport = "Report";
-  let party = "";
-  let fromDate = "";
-  let toDate = "";
-
-  // Determine which report is active
-  if (activeBtn.attr("id") === "btn-ledger") {
-    activeReport = "Detailed_Ledger";
-    party = $("#search_name").val() || "All";
-    fromDate = $("#from_date").val() || "N/A";
-    toDate = $("#to_date").val() || "N/A";
-  } else if (activeBtn.attr("id") === "btn-cash-ledger") {
-    activeReport = "Cash_Ledger";
-    fromDate = $("#cash_from_date").val() || "N/A";
-    toDate = $("#cash_to_date").val() || "N/A";
-  } else if (activeBtn.attr("id") === "btn-trial") {
-    activeReport = "Trial_Balance";
-  }
-
-  // Get table data
-  const table = document.getElementById("reportTable");
-  if (!table || table.rows.length === 0) {
-    Swal.fire("No Data", "No data available to download.", "warning");
-    return;
-  }
-
-  let csv = [];
-  
-  // Add metadata header
-  if (activeReport === "Detailed_Ledger") {
-    csv.push([`${activeReport.replace(/_/g, " ")} Report`]);
-    csv.push([`Party: ${party}`]);
-    csv.push([`From: ${fromDate}`, `To: ${toDate}`]);
-    csv.push([]); // Empty row
-  } else if (activeReport === "Cash_Ledger") {
-    csv.push([`${activeReport.replace(/_/g, " ")} Report`]);
-    csv.push([`From: ${fromDate}`, `To: ${toDate}`]);
-    csv.push([]); // Empty row
-  } else {
-    csv.push([`${activeReport.replace(/_/g, " ")} Report`]);
-    csv.push([]); // Empty row
-  }
-
-  // Extract headers
-  const headers = [];
-  const headerRow = table.querySelector("thead tr");
-  if (headerRow) {
-    headerRow.querySelectorAll("th").forEach(th => {
-      headers.push(th.textContent.trim());
+  $inp.off(".autoD").on("input.autoD", function () {
+    const q = $(this).val(); idx = -1; items = []; $box.empty();
+    if (!q) return $box.hide();
+    $.getJSON(url, { term: q }, data => {
+      items = data || []; $box.empty();
+      if (!items.length) return $box.hide();
+      items.forEach(t => $("<div>").addClass("suggestion-item").text(t)
+        .on("click", () => { $inp.val(t); $box.hide(); }).appendTo($box));
+      $box.show();
     });
-    csv.push(headers);
-  }
+  });
 
-  // Extract data rows
-  const tbody = table.querySelector("tbody");
-  if (tbody) {
-    tbody.querySelectorAll("tr").forEach(tr => {
-      const row = [];
-      tr.querySelectorAll("td").forEach(td => {
-        let cellData = td.textContent.trim();
-        // Escape quotes and wrap in quotes if contains comma
-        if (cellData.includes(",") || cellData.includes('"') || cellData.includes("\n")) {
-          cellData = '"' + cellData.replace(/"/g, '""') + '"';
-        }
-        row.push(cellData);
-      });
-      // Only add row if it's not the "no data" message
-      if (row.length > 0 && !row[0].includes("No records found") && !row[0].includes("Select a report")) {
-        csv.push(row);
-      }
-    });
-  }
+  $inp.on("keydown.autoD", function (e) {
+    const $it = $box.children(".suggestion-item");
+    if (e.key === "ArrowDown") { e.preventDefault(); idx = (idx + 1) % $it.length; }
+    if (e.key === "ArrowUp")   { e.preventDefault(); idx = (idx - 1 + $it.length) % $it.length; }
+    $it.removeClass("highlight").eq(idx).addClass("highlight");
+    if (e.key === "Enter") { e.preventDefault(); if (items.length === 1) { $inp.val(items[0]); $box.hide(); } else if (idx >= 0) { $inp.val($it.eq(idx).text()); $box.hide(); } }
+    if (e.key === "Escape") $box.hide();
+  });
 
-  // Convert to CSV string
-  const csvContent = csv.map(row => row.join(",")).join("\n");
+  $(document).on("click.autoD", e => { if (!$(e.target).closest("#item_detail_name,#suggestions_detail").length) $box.hide(); });
+}
 
-  // Create download link
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-  
-  link.setAttribute("href", url);
-  const filename = `${activeReport}_${new Date().toISOString().split("T")[0]}.csv`;
-  link.setAttribute("download", filename);
-  link.style.visibility = "hidden";
-  
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-});
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+$(document).ready(() => selectReport("summary"));

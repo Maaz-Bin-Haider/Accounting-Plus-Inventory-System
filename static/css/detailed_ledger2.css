@@ -361,11 +361,13 @@
 }
 
 /* ── Footer totals ────────────────────────────────────────── */
-.ledger2-foot { background: var(--gray-800); color: #e2e8f0; }
+.ledger2-foot { 
+  background: var(--gray-800);
+  }
 .ledger2-foot td { padding: 10px 12px; }
-.foot-label   { font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; }
-.foot-total   { font-weight: 700; font-size: 0.875rem; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-.foot-balance { font-weight: 700; font-size: 0.875rem; }
+.foot-label   { font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; color: #fff !important;}
+.foot-total   { font-weight: 700; font-size: 0.875rem; font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: #fff !important;}
+.foot-balance { font-weight: 700; font-size: 0.875rem; color: #fff !important;}
 .foot-balance .bal-dr-cr { background: rgba(255,255,255,0.2); color: #fff; }
 
 /* ── Action buttons ───────────────────────────────────────── */
