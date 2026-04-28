@@ -1,176 +1,34 @@
-.reports-wrapper {
-  display: flex;
-  min-height: 85vh;
-  background: #f8f9fa;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-}
+/* ============================================================
+   PROFIT REPORTS — extends accounts_reports.css shared tokens
+   ============================================================ */
 
-/* Left Sidebar */
-.left-panel {
-  width: 250px;
-  background: linear-gradient(160deg, #1f2937, #111827);
-  color: #f3f4f6;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-}
-
-.left-panel h3 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #f3f4f6;
-  font-weight: 600;
-}
-
-/* Sidebar Buttons */
-.report-btn {
-  background: transparent;
-  color: white;
-  border: 1px solid rgba(255,255,255,0.08);
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  width: 100%;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s;
-}
-
-.report-btn:hover,
-.report-btn.active {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: #f1f6f8;
-  font-weight: 600;
-}
-
-/* Right Panel */
-.right-panel {
-  flex: 1;
-  padding: 30px;
-  background: #fff;
-  overflow-x: auto;
-}
-
-/* Form Container */
-#report-form-container {
-  margin-bottom: 20px;
-  background: #f1f5f9;
-  padding: 15px 20px;
-  border-radius: 10px;
-}
-
-/* Input Row */
-.form-row {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 10px;
-}
-
-.form-row input,
-.form-row select {
-  flex: 1;
-  padding: 10px;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-}
-
-/* Generate Button */
-.generate-btn {
-  background: #1d3557;
-  color: white;
-  border: none;
-  padding: 10px 25px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: 0.3s;
-}
-
-.generate-btn:hover {
-  background: #457b9d;
-}
-
-/* Table Styles */
-.table-container {
-  margin-top: 10px;
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-table th,
-table td {
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  text-align: left;
-}
-
-thead {
-  background: #1d3557;
-  color: white;
-}
-
-.no-data {
-  text-align: center;
-  color: #999;
-  padding: 15px;
-}
-
-.btn-download {
-  background: #1976d2;
-  color: #fff;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-bottom: 10px;
-}
-
-.btn-download:hover {
-  background: #1565c0;
-}
-
-@media (max-width: 768px) {
-  .reports-wrapper {
-    flex-direction: column;
-  }
-  .left-panel {
-    width: 100%;
-    flex-direction: row;
-    justify-content: space-around;
-  }
-  .report-btn {
-    flex: 1;
-    margin-bottom: 0;
-  }
-}
-
-
-/* ========================
-   Company Valuation Layout
-======================== */
+/* ===== COMPANY VALUATION CARDS ===== */
 .valuation-section {
-  margin: 20px 0;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 20px;
+  margin: 1.1rem 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .valuation-section h3 {
-  margin-bottom: 15px;
-  color: #1e293b;
-  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.015em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
+.valuation-section h3 i {
+  color: var(--brand-primary);
+  font-size: 0.9rem;
+}
+
+/* Valuation table */
 .valuation-table {
   width: 100%;
   border-collapse: collapse;
@@ -178,24 +36,89 @@ thead {
 
 .valuation-table th {
   text-align: left;
-  color: #334155;
+  color: var(--text-secondary);
   width: 60%;
-  padding: 10px;
+  padding: 9px 10px;
   font-weight: 500;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .valuation-table td {
   text-align: right;
-  padding: 10px;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.valuation-table tr:not(:last-child) {
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.valuation-table .highlight {
-  background: #f1f5f9;
+  padding: 9px 10px;
   font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--border-color);
 }
+
+.valuation-table tr:last-child th,
+.valuation-table tr:last-child td {
+  border-bottom: none;
+}
+
+.valuation-table .highlight th {
+  background: var(--gray-50);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.valuation-table .highlight td {
+  background: var(--gray-50);
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.valuation-table .profit-positive td {
+  color: var(--brand-success);
+}
+
+.valuation-table .profit-negative td {
+  color: var(--brand-danger);
+}
+
+/* ===== KPI SUMMARY ROW ===== */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 1.1rem;
+}
+
+.kpi-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s;
+}
+
+.kpi-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.kpi-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-tertiary);
+}
+
+.kpi-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.kpi-card.kpi-profit .kpi-value { color: var(--brand-success); }
+.kpi-card.kpi-loss   .kpi-value { color: var(--brand-danger); }
+.kpi-card.kpi-sales  .kpi-value { color: var(--brand-primary); }
