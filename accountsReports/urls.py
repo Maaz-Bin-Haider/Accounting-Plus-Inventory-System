@@ -1,5 +1,27 @@
 from django.urls import path
-from .views import detailed_ledger_view, trial_balance_view,stock_report_view,stock__worth_report_view,item_history_view, company_valuation_report,sale_wise_report, serial_ledger_view,stock_summary,item_detail_view,cash_ledger_view,items_last_purchasing,receivable,payable,serial_ledger_purchase_only_view,serial_ledger_sale_only_view, items_last_sale,detailed_ledger2_view,serial_ledger_view_sale_price_hidden
+from .views import (
+    detailed_ledger_view,
+    trial_balance_view,
+    stock_report_view,
+    stock__worth_report_view,
+    item_history_view, 
+    company_valuation_report,
+    sale_wise_report, 
+    serial_ledger_view,
+    stock_summary,
+    item_detail_view,
+    cash_ledger_view,
+    items_last_purchasing,
+    receivable,
+    payable,
+    serial_ledger_purchase_only_view,
+    serial_ledger_sale_only_view, 
+    items_last_sale,
+    detailed_ledger2_view,
+    serial_ledger_view_sale_price_hidden,
+    monthly_position_report,
+    monthly_income_report
+    )
 
 app_name = "accountsReports"
 
@@ -23,4 +45,7 @@ urlpatterns = [
     path("serial-ledger-purchase-only/", serial_ledger_purchase_only_view, name="serial_ledger_purchase_only"),
     path("serial-ledger-sale-only/", serial_ledger_sale_only_view, name="serial_ledger_sale_only"),
     path("stock-summary/",stock_summary,name="stock_summary"),
+     # ── NEW monthly reports ──
+    path('monthly-position/',           monthly_position_report,                name='monthly_position_report'),
+    path('monthly-income/',             monthly_income_report,                  name='monthly_income_report'),
 ]

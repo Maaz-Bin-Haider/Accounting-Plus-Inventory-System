@@ -675,8 +675,213 @@ def sale_wise_report(request):
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
+# # =============================================================================
+# # VIEW 1 – Monthly Company Position
+# # =============================================================================
+ 
+# @login_required
+# def monthly_position_report(request):
+#     """
+#     GET  → renders the monthly reports HTML page (left panel will activate this)
+#     POST → calls monthly_company_position(p_as_of_date) and returns JSON
+#     """
+#     if not request.user.has_perm("auth.view_sale_wise_profit_report"):
+#         messages.error(request, "Access Denied!")
+#         return redirect("home:home")
+ 
+#     if request.method == "GET":
+#         return render(request, "display_report_templates/monthly_reports_template.html")
+ 
+#     elif request.method == "POST":
+#         try:
+#             data = json.loads(request.body)
+#             as_of_date = data.get("as_of_date")
+ 
+#             try:
+#                 datetime.strptime(as_of_date, "%Y-%m-%d")
+#             except (ValueError, TypeError):
+#                 return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+ 
+#             with connection.cursor() as cursor:
+#                 cursor.execute("SELECT monthly_company_position(%s)", [as_of_date])
+#                 row = cursor.fetchone()
+ 
+#             result = row[0] if row else None
+#             if not result:
+#                 return JsonResponse({"error": "No data found."}, status=404)
+ 
+#             return JsonResponse(result, safe=False)
+ 
+#         except IntegrityError as e:
+#             return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+#         except Exception as e:
+#             return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+ 
+#     return JsonResponse({"error": "Method not allowed"}, status=405)
+ 
+ 
+# # =============================================================================
+# # VIEW 2 – Monthly Income Statement
+# # =============================================================================
+ 
+# @login_required
+# def monthly_income_report(request):
+#     """
+#     GET  → renders the monthly reports HTML page
+#     POST → calls monthly_income_statement(from, to) and returns JSON
+#     """
+#     if not request.user.has_perm("auth.view_sale_wise_profit_report"):
+#         messages.error(request, "Access Denied!")
+#         return redirect("home:home")
+ 
+#     if request.method == "GET":
+#         return render(request, "display_report_templates/monthly_reports_template.html")
+ 
+#     elif request.method == "POST":
+#         try:
+#             data = json.loads(request.body)
+#             from_date = data.get("from_date")
+#             to_date = data.get("to_date")
+ 
+#             try:
+#                 datetime.strptime(from_date, "%Y-%m-%d")
+#                 datetime.strptime(to_date, "%Y-%m-%d")
+#             except (ValueError, TypeError):
+#                 return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+ 
+#             with connection.cursor() as cursor:
+#                 cursor.execute("SELECT monthly_income_statement(%s, %s)", [from_date, to_date])
+#                 row = cursor.fetchone()
+ 
+#             result = row[0] if row else None
+#             if not result:
+#                 return JsonResponse({"error": "No data found."}, status=404)
+ 
+#             return JsonResponse(result, safe=False)
+ 
+#         except IntegrityError as e:
+#             return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+#         except Exception as e:
+#             return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+ 
+#     return JsonResponse({"error": "Method not allowed"}, status=405)
 
 
+"""
+Views for the two new monthly reports.
+Add these functions to accountsReports/views.py
+(also add them to the imports in urls.py)
+
+New URL names (unique, won't conflict):
+  monthly_position_report   -> /accountsReports/monthly-position/
+  monthly_income_report     -> /accountsReports/monthly-income/
+"""
+
+
+
+
+# =============================================================================
+# VIEW 1 – Monthly Company Position
+# =============================================================================
+
+@login_required
+def monthly_position_report(request):
+    """
+    GET  → renders the monthly reports HTML page (left panel will activate this)
+    POST → calls monthly_company_position(p_as_of_date) and returns JSON
+    """
+    if not request.user.has_perm("auth.view_sale_wise_profit_report"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+
+    if request.method == "GET":
+        return render(request, "display_report_templates/monthly_reports_template.html")
+
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            as_of_date = data.get("as_of_date")
+
+            try:
+                datetime.strptime(as_of_date, "%Y-%m-%d")
+            except (ValueError, TypeError):
+                return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT monthly_company_position(%s)", [as_of_date])
+                row = cursor.fetchone()
+
+            result = row[0] if row else None
+            if not result:
+                return JsonResponse({"error": "No data found."}, status=404)
+
+            return JsonResponse(result, safe=False)
+
+        except IntegrityError as e:
+            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+# =============================================================================
+# VIEW 2 – Monthly Income Statement
+# =============================================================================
+
+@login_required
+def monthly_income_report(request):
+    """
+    GET  → renders the monthly reports HTML page
+    POST → calls monthly_income_statement(from, to, sales_revenue, cogs)
+           User supplies sales_revenue (already net of returns) and cogs manually.
+    """
+    if not request.user.has_perm("auth.view_sale_wise_profit_report"):
+        messages.error(request, "Access Denied!")
+        return redirect("home:home")
+
+    if request.method == "GET":
+        return render(request, "display_report_templates/monthly_reports_template.html")
+
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            from_date     = data.get("from_date")
+            to_date       = data.get("to_date")
+            sales_revenue = data.get("sales_revenue")
+            cogs          = data.get("cogs")
+
+            try:
+                datetime.strptime(from_date, "%Y-%m-%d")
+                datetime.strptime(to_date, "%Y-%m-%d")
+            except (ValueError, TypeError):
+                return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+
+            try:
+                sales_revenue = float(sales_revenue)
+                cogs          = float(cogs)
+            except (ValueError, TypeError):
+                return JsonResponse({"error": "Sales Revenue and COGS must be valid numbers."}, status=400)
+
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT monthly_income_statement(%s, %s, %s, %s)",
+                    [from_date, to_date, sales_revenue, cogs]
+                )
+                row = cursor.fetchone()
+
+            result = row[0] if row else None
+            if not result:
+                return JsonResponse({"error": "No data found."}, status=404)
+
+            return JsonResponse(result, safe=False)
+
+        except IntegrityError as e:
+            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+        except Exception as e:
+            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 
 

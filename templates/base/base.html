@@ -96,6 +96,9 @@
             <a href="{% url 'accountsReports:stock_summary' %}" class="{% if request.resolver_match.url_name == 'stock_summary' %}active{% endif %}">
                 <i class="fa-solid fa-warehouse"></i> Stock Reports
             </a>
+            <a href="{% url 'accountsReports:monthly_position_report' %}" class="{% if request.resolver_match.url_name == 'monthly_position_report' or request.resolver_match.url_name == 'monthly_income_report' %}active{% endif %}">
+                <i class="fa-solid fa-chart-pie"></i> Monthly Reports
+            </a>
             <a href="{% url 'accountsReports:company_valuation' %}" class="{% if request.resolver_match.url_name == 'company_valuation' %}active{% endif %}">
                 <i class="fa-solid fa-chart-pie"></i> Profit Reports
             </a>
