@@ -122,3 +122,152 @@
 .kpi-card.kpi-profit .kpi-value { color: var(--brand-success); }
 .kpi-card.kpi-loss   .kpi-value { color: var(--brand-danger); }
 .kpi-card.kpi-sales  .kpi-value { color: var(--brand-primary); }
+
+/* ===== SALE-WISE REPORT ROW HIGHLIGHT COLOURS ===== */
+/* Priority 1 – sale price ≤ 4  → light blue  */
+#reportTable tbody tr.row-low-sale {
+  background-color: #dbeafe !important;  /* blue-100 */
+}
+#reportTable tbody tr.row-low-sale:hover {
+  background-color: #bfdbfe !important;  /* blue-200 */
+}
+
+/* Priority 2 – purchase price ≤ 4  → light yellow */
+#reportTable tbody tr.row-low-purchase {
+  background-color: #fef9c3 !important;  /* yellow-100 */
+}
+#reportTable tbody tr.row-low-purchase:hover {
+  background-color: #fef08a !important;  /* yellow-200 */
+}
+
+/* Priority 3 – profit/loss < 0  → light red */
+#reportTable tbody tr.row-loss {
+  background-color: #fee2e2 !important;  /* red-100 */
+}
+#reportTable tbody tr.row-loss:hover {
+  background-color: #fecaca !important;  /* red-200 */
+}
+
+/* Totals row */
+#reportTable tbody tr.row-totals td {
+  font-weight: 700;
+  background-color: #f1f5f9 !important;
+  border-top: 2px solid #cbd5e1;
+  color: #1e293b;
+}
+#reportTable tbody tr.row-totals td:first-child {
+  color: #475569;
+  font-style: italic;
+}
+
+/* Legend bar */
+.row-colour-legend {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0.45rem 0.75rem;
+  margin-bottom: 0.6rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.row-colour-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.row-colour-legend .swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+.swatch-blue   { background: #dbeafe; }
+.swatch-yellow { background: #fef9c3; }
+.swatch-red    { background: #fee2e2; }
+
+/* ===== VENDOR FILTER BAR ===== */
+.vendor-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.55rem 0.85rem;
+  margin-bottom: 0.55rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.vendor-filter-icon {
+  color: #3b82f6;          /* blue-500 */
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.vendor-filter-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vendor-filter-select {
+  flex: 1;
+  min-width: 180px;
+  max-width: 320px;
+  padding: 0.32rem 0.65rem;
+  font-size: 0.82rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-page, #f8fafc);
+  color: var(--text-primary);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.vendor-filter-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.vendor-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.vendor-clear-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.vendor-count-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #3b82f6;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 9999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
