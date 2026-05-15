@@ -961,3 +961,39 @@ def get_receipts_date_wise(request):
     except Exception as e:
         
         return JsonResponse({"error": str(e)}, status=500)
+    
+
+@login_required
+def get_party_balance(request):
+    """
+    AJAX endpoint: returns the current balance for a party by name.
+    Used by the receipts page to display live balance when a party is selected.
+ 
+    GET /receipts/party-balance/?name=PARTY_NAME
+    Response: { "found": true, "party_name": "...", "balance": 12345.67, "party_type": "Customer" }
+              { "found": false, "party_name": "..." }
+              { "error": "..." }   on bad input or DB error
+    """
+    party_name = request.GET.get("name", "").strip()
+ 
+    if not party_name:
+        return JsonResponse({"error": "Party name is required."}, status=400)
+ 
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT get_party_balance_by_name(%s)",
+                [party_name]
+            )
+            row = cursor.fetchone()
+ 
+        if not row or row[0] is None:
+            return JsonResponse({"found": False, "party_name": party_name})
+ 
+        data = json.loads(row[0]) if isinstance(row[0], str) else row[0]
+        return JsonResponse(data)
+ 
+    except DatabaseError as e:
+        return JsonResponse({"error": "Database error.", "details": str(e)}, status=500)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
