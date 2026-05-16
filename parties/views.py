@@ -576,14 +576,25 @@ def create_new_party(request):
     return render(request, "parties_templates/add_new_party.html")
 
 
+# def get_party_by_name(party_name:str):
+#     with connection.cursor() as cursor:
+#         cursor.execute("SELECT get_party_by_name(%s)",[party_name.upper()])
+#         row = cursor.fetchone()
+    
+#     if row and row[0]:
+#         data = json.loads(row[0])
+#         return data
+#     return None
+
 def get_party_by_name(party_name:str):
     with connection.cursor() as cursor:
         cursor.execute("SELECT get_party_by_name(%s)",[party_name.upper()])
         row = cursor.fetchone()
-    
+
     if row and row[0]:
-        data = json.loads(row[0])
-        return data
+        data = row[0] if isinstance(row[0], list) else json.loads(row[0])
+        if isinstance(data, list) and len(data) > 0:
+            return data[0]
     return None
 
 @login_required
@@ -622,7 +633,7 @@ def update_party(request):
             "contact_info": request.POST.get('contact_info'),
             "address": request.POST.get('address'),
             "opening_balance": float(request.POST.get('opening_balance') or 0),
-            "balance_type": request.POST.get('balance_type')
+            "balance_type": str(request.POST.get('balance_type'))
         }
 
         if party_id:
