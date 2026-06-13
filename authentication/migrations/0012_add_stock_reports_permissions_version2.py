@@ -6,7 +6,7 @@ def add_stock_reports_permissions_version2(apps, schema_editor):
     from django.contrib.auth.models import Permission
     from django.contrib.contenttypes.models import ContentType
 
-    content_type = ContentType.objects.get(app_label='auth', model='user')
+    content_type, _ = ContentType.objects.get_or_create(app_label='auth', model='user')
 
     permissions = [
         ('view_stock_reports_page', 'Can view Stock reports page'),

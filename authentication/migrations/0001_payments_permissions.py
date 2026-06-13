@@ -5,7 +5,7 @@ def add_payments_permissions(apps, schema_editor):
     from django.contrib.auth.models import Permission
     from django.contrib.contenttypes.models import ContentType
 
-    content_type = ContentType.objects.get(app_label='auth', model='user')
+    content_type, _ = ContentType.objects.get_or_create(app_label='auth', model='user')
 
     permissions = [
         ('create_payment', 'Can create payment'),
@@ -24,7 +24,8 @@ def add_payments_permissions(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        
+        ('contenttypes', '__latest__'),
+        ('auth', '__latest__'),
     ]
 
     operations = [
