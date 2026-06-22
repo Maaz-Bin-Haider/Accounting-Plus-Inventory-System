@@ -3749,6 +3749,7 @@ const TXN_META = {
   "Payment":          { badge: "txn-payment",   icon: "⬆", label: "Payment"        },
   "Sale Return":      { badge: "txn-sret",      icon: "↩", label: "Sale Return"    },
   "Purchase Return":  { badge: "txn-pret",      icon: "↪", label: "Purch. Return"  },
+  "Contra Entry":     { badge: "txn-contra",    icon: "⇄", label: "Contra Entry"   },
 };
 function getTxnMeta(type) {
   return TXN_META[type] || { badge: "txn-misc", icon: "•", label: type || "Entry" };
@@ -3967,6 +3968,16 @@ function buildInvoicePanel(rawDetail) {
   } else if (type === "Sale Return") {
     return topStrip("Return", d.sales_return_id, "Customer", d.customer, d.return_date, "Total", d.total_amount)
          + `<div class="dp-body">${srItemsTable(d.items)}</div>`;
+
+  } else if (type === "Contra Entry") {
+    return topStrip("Contra", d.contra_id, "From → To", `${d.from_party} → ${d.to_party}`, d.contra_date, "Amount", d.amount)
+         + `<div class="dp-body">${paymentCard([
+              ["From (credited)", d.from_party],
+              ["To (debited)",    d.to_party],
+              ["Method",          d.method],
+              ["Reference #",     d.reference_no],
+              ["Description",     d.description],
+            ])}</div>`;
 
   } else {
     return `<div class="dp-empty">Unknown transaction type: ${escHtml(type)}</div>`;

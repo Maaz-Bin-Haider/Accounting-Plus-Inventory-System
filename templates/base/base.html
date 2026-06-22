@@ -78,6 +78,11 @@
             <a href="{% url 'receipts:receipt' %}" class="{% if request.resolver_match.url_name == 'receipt' %}active{% endif %}">
                 <i class="fa-solid fa-receipt"></i> Receipts
             </a>
+            {% if perms.auth.view_contra_entry %}
+            <a href="{% url 'contra:contra' %}" class="{% if request.resolver_match.url_name == 'contra' %}active{% endif %}">
+                <i class="fa-solid fa-right-left"></i> Contra Entry
+            </a>
+            {% endif %}
             <a href="{% url 'saleReturn:create_sale_return' %}" class="{% if request.resolver_match.url_name == 'create_sale_return' %}active{% endif %}">
                 <i class="fa-solid fa-rotate-left"></i> Sale Return
             </a>

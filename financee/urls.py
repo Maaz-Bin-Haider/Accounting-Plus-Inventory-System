@@ -29,6 +29,7 @@ from home import urls as home_urls
 from saleReturn import urls as sale_return_urls
 from accountsReports import urls as account_reports_urls
 from authentication import urls as authentication_urls
+from contra import urls as contra_urls
 
 
 def redirect_to_home(request):
@@ -51,4 +52,5 @@ urlpatterns = [
     path('home/', include(home_urls, namespace='home')),
     path('accountsReports/',include(account_reports_urls,namespace='accountsReports')),
     path('authentication/',include(authentication_urls,namespace='authentication')),
+    path('contra/', include(contra_urls, namespace='contra')),
 ]

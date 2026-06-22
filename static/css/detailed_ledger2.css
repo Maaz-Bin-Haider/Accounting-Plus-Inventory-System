@@ -164,6 +164,7 @@
 .txn-payment-row  { background: #fffaf8; }
 .txn-sret-row     { background: #fffbf8; }
 .txn-pret-row     { background: #f8fbff; }
+.txn-contra-row   { background: #f4fdfb; }
 
 /* column widths */
 .col-date   { white-space: nowrap; width: 95px; }
@@ -192,6 +193,7 @@
 .txn-payment  { background: #fff3e8; color: #c2410c; }
 .txn-sret     { background: #fff8e0; color: #b45309; }
 .txn-pret     { background: #e8f0ff; color: #1e40af; }
+.txn-contra   { background: #ccfbf1; color: #0f766e; }
 .txn-misc     { background: var(--gray-100); color: var(--gray-500); }
 
 /* ── Balance cell ─────────────────────────────────────────── */
@@ -270,6 +272,7 @@
 .dp-strip-badge.txn-payment  { background: #c2410c; color: #fff; }
 .dp-strip-badge.txn-sret     { background: #b45309; color: #fff; }
 .dp-strip-badge.txn-pret     { background: #1e40af; color: #fff; }
+.dp-strip-badge.txn-contra   { background: #0f766e; color: #fff; }
 .dp-strip-badge.txn-misc     { background: var(--gray-500); color: #fff; }
 
 .dp-strip-ref  { font-size: 0.875rem; font-weight: 700; color: var(--text-primary); }
