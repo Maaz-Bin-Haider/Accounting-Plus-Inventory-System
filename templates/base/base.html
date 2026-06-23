@@ -89,7 +89,7 @@
             <a href="{% url 'purchaseReturn:create_purchase_return' %}" class="{% if request.resolver_match.url_name == 'create_purchase_return' %}active{% endif %}">
                 <i class="fa-solid fa-rotate-right"></i> Purchase Return
             </a>
-            <a href="{% url 'items:add_new_item' %}" class="{% if request.resolver_match.url_name == 'add_new_item' %}active{% endif %}">
+            <a href="{% url 'items:itemsDash' %}" class="{% if request.resolver_match.namespace == 'items' %}active{% endif %}">
                 <i class="fa-solid fa-box"></i> Items
             </a>
             <a href="{% url 'parties:partiesDash' %}" class="{% if request.resolver_match.url_name == 'add_new_party' %}active{% endif %}">
@@ -107,6 +107,31 @@
             <a href="{% url 'accountsReports:company_valuation' %}" class="{% if request.resolver_match.url_name == 'company_valuation' %}active{% endif %}">
                 <i class="fa-solid fa-chart-pie"></i> Profit Reports
             </a>
+            {% if perms.auth.can_set_or_update_opening %}
+            <a href="{% url 'set_opening:set_opening' %}" class="{% if request.resolver_match.url_name == 'set_opening' %}active{% endif %}">
+                <i class="fa-solid fa-sliders"></i> Set Opening
+            </a>
+            {% endif %}
+            {% if perms.auth.can_manage_owner_equity %}
+            <a href="{% url 'owner_equity:owner_equity' %}" class="{% if request.resolver_match.url_name == 'owner_equity' %}active{% endif %}">
+                <i class="fa-solid fa-user-tie"></i> Owner Equity
+            </a>
+            {% endif %}
+            {% if perms.auth.can_close_period %}
+            <a href="{% url 'month_close:month_close' %}" class="{% if request.resolver_match.url_name == 'month_close' %}active{% endif %}">
+                <i class="fa-solid fa-calendar-check"></i> Month-End Close
+            </a>
+            {% endif %}
+            {% if perms.auth.can_view_sales_summary or perms.auth.can_view_product_profitability or ... %}
+            <a href="{% url 'sales_reports:sales_reports' %}" class="{% if request.resolver_match.url_name == 'sales_reports' %}active{% endif %}">
+                <i class="fa-solid fa-chart-line"></i> Sales Reports
+            </a>
+            {% endif %}
+            {% if perms.auth.view_opening_stock %}
+            <a href="{% url 'opening_stock:opening_stock' %}" class="{% if request.resolver_match.url_name == 'opening_stock' %}active{% endif %}">
+                <i class="fa-solid fa-boxes-stacked"></i> Opening Stock
+            </a>
+            {% endif %}
             </nav>
         </div>
 
