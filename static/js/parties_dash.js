@@ -1,323 +1,292 @@
 $(function () {
+  "use strict";
 
-  /* ══════════════════════════════════
-     CONFIG
-  ══════════════════════════════════ */
-  const AUTOCOMPLETE_URL = $("#hubSearchInput").data("autocomplete-url");
-  const UPDATE_URL       = $("#hubSearchInput").data("update-url");
-  const PAGE_SIZE        = 10;
-  const PARTIES_URL      = $("#hubSearchInput").data("parties-url");
+  /* ════════════ CONFIG ════════════ */
+  var cfg = document.getElementById("partiesConfig");
+  var AUTOCOMPLETE_URL = cfg.getAttribute("data-autocomplete-url");
+  var ADD_URL          = cfg.getAttribute("data-add-url");
+  var UPDATE_URL       = cfg.getAttribute("data-update-url");
+  var LIST_URL         = cfg.getAttribute("data-list-url");
 
-  let allParties      = [];
-  let filtered        = [];
-  let currentPage     = 1;
+  var listLoaded = false;
 
-  /* ── Keyboard nav state ── */
-  let suggestionItems = [];   // live NodeList cache
-  let activeIdx       = -1;   // -1 = none highlighted
+  function getCsrf(form) {
+    var el = form.querySelector('[name=csrfmiddlewaretoken]');
+    return el ? el.value : "";
+  }
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
 
-  /* ══════════════════════════════════
-     FETCH ALL PARTIES
-  ══════════════════════════════════ */
-  function loadParties() {
-    $.ajax({
-      url: PARTIES_URL,
-      method: "GET",
-      dataType: "json",
-
-      success: function (data) {
-        allParties = data.map(function (p, i) {
-          return {
-            name: p.party_name,
-            type: p.party_type,
-            idx:  i
-          };
-        });
-
-        filtered = [...allParties];
-
-        renderStats();
-        renderTable();
-
-        $("#tableLoading").hide();
-
-        if (allParties.length === 0) {
-          $("#emptyState").show();
-        } else {
-          $("#tableContainer").show();
-        }
-      },
-
-      error: function (xhr) {
-        console.error(xhr.responseText);
-        $("#tableLoading").html(
-          '<p style="color:#f87171;">Failed to load parties.</p>'
-        );
-      }
+  /* ════════════ TAB SWITCHING ════════════ */
+  window.selectPartyTab = function (tab) {
+    var map = {
+      add:    { btn: "pbtn-add",    sec: "padd-section" },
+      update: { btn: "pbtn-update", sec: "pupdate-section" },
+      list:   { btn: "pbtn-list",   sec: "plist-section" }
+    };
+    Object.keys(map).forEach(function (k) {
+      document.getElementById(map[k].sec).style.display = (k === tab) ? "block" : "none";
+      document.getElementById(map[k].btn).classList.toggle("active", k === tab);
     });
-  }
+    if (tab === "list" && !listLoaded) { loadPartiesList(); }
+  };
 
-  /* ══════════════════════════════════
-     STATS
-  ══════════════════════════════════ */
-  function renderStats() {
-    const total        = allParties.length;
-    const bothCount    = allParties.filter(p => p.type === "Both").length;
-    const expenseCount = allParties.filter(p => p.type === "Expense").length;
-
-    $("#statTotal").text(total);
-    $("#statBoth").text(bothCount);
-    $("#statExpense").text(expenseCount);
-  }
-
-  /* ══════════════════════════════════
-     TABLE RENDER
-  ══════════════════════════════════ */
-  function renderTable() {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const page  = filtered.slice(start, start + PAGE_SIZE);
-    const $body = $("#partiesTableBody").empty();
-
-    if (page.length === 0) {
-      $body.append(`
-        <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">
-          No parties match your search.
-        </td></tr>
-      `);
-    } else {
-      page.forEach(function (p) {
-        const initials = p.name.slice(0, 2).toUpperCase();
-        const row = `
-          <tr>
-            <td>
-              <span class="td-avatar ${p.type.toLowerCase()}">${initials}</span>
-              <span class="td-name">${p.name}</span>
-            </td>
-            <td>
-              <span class="td-badge ${p.type.toLowerCase()}">
-                ${p.type}
-              </span>
-            </td>
-            <td style="color:var(--text-muted);font-size:13px;">—</td>
-            <td class="td-balance debit">—</td>
-            <td>
-              <div class="td-actions">
-                <a class="tbl-btn edit" href="${UPDATE_URL}?search_name=${encodeURIComponent(p.name)}">
-                  <i class="fa-solid fa-pen-to-square"></i> Edit
-                </a>
-              </div>
-            </td>
-          </tr>
-        `;
-        $body.append(row);
-      });
-    }
-
-    renderPagination();
-  }
-
-  /* ══════════════════════════════════
-     PAGINATION
-  ══════════════════════════════════ */
-  function renderPagination() {
-    const total = filtered.length;
-    const pages = Math.ceil(total / PAGE_SIZE);
-    const start = (currentPage - 1) * PAGE_SIZE + 1;
-    const end   = Math.min(currentPage * PAGE_SIZE, total);
-
-    $("#pagInfo").text(
-      total === 0 ? 'No results' : `Showing ${start}–${end} of ${total}`
-    );
-
-    const $btns = $("#pagBtns").empty();
-
-    // Prev
-    $btns.append(
-      $('<button class="pag-btn">‹ Prev</button>')
-        .prop('disabled', currentPage === 1)
-        .css('opacity', currentPage === 1 ? 0.4 : 1)
-        .on('click', function () { if (currentPage > 1) { currentPage--; renderTable(); } })
-    );
-
-    // Page numbers
-    const range = getPageRange(currentPage, pages);
-    range.forEach(function (pg) {
-      $btns.append(
-        $(`<button class="pag-btn ${pg === currentPage ? 'active' : ''}">${pg}</button>`)
-          .on('click', function () { currentPage = pg; renderTable(); })
-      );
-    });
-
-    // Next
-    $btns.append(
-      $('<button class="pag-btn">Next ›</button>')
-        .prop('disabled', currentPage >= pages)
-        .css('opacity', currentPage >= pages ? 0.4 : 1)
-        .on('click', function () { if (currentPage < pages) { currentPage++; renderTable(); } })
-    );
-  }
-
-  function getPageRange(cur, total) {
-    const delta = 2;
-    const range = [];
-    for (let i = Math.max(1, cur - delta); i <= Math.min(total, cur + delta); i++) {
-      range.push(i);
-    }
-    return range;
-  }
-
-  /* ══════════════════════════════════
-     HELPERS — keyboard highlight
-  ══════════════════════════════════ */
-  function setActiveItem(idx) {
-    // Refresh live list
-    suggestionItems = $("#hubSuggestions .suggestion-item").toArray();
-
-    // Clear previous
-    suggestionItems.forEach(el => el.classList.remove("suggestion-item--active"));
-
-    activeIdx = idx;
-
-    if (activeIdx >= 0 && activeIdx < suggestionItems.length) {
-      const el = suggestionItems[activeIdx];
-      el.classList.add("suggestion-item--active");
-      // Scroll into view inside dropdown
-      el.scrollIntoView({ block: "nearest" });
-    }
-  }
-
-  function closeSuggestions() {
-    $hubSugg.hide().empty();
-    activeIdx = -1;
-    suggestionItems = [];
-  }
-
-  /* ══════════════════════════════════
-     SEARCH / FILTER + AUTOCOMPLETE
-  ══════════════════════════════════ */
-  const $hubInput = $("#hubSearchInput");
-  const $hubSugg  = $("#hubSuggestions");
-
-  // Debounce timer
-  let acTimer = null;
-
-  $hubInput.on("input", function () {
-    const q = $(this).val().trim().toUpperCase();
-    activeIdx = -1;   // reset keyboard selection on new input
-
-    // Filter table
-    if (q.length > 0) {
-      filtered = allParties.filter(p => p.name.toUpperCase().includes(q));
-    } else {
-      filtered = [...allParties];
-    }
-    currentPage = 1;
-    renderTable();
-
-    // Autocomplete dropdown
-    if (q.length < 1) { closeSuggestions(); return; }
-
-    clearTimeout(acTimer);
-    acTimer = setTimeout(function () {
-      $.ajax({
-        url: AUTOCOMPLETE_URL,
-        data: { term: q },
-        dataType: 'json',
-        success: function (data) {
-          $hubSugg.empty();
-          activeIdx = -1;
-
-          if (data.length) {
-            data.slice(0, 6).forEach(function (name) {
-              const $item = $(`
-                <div class="suggestion-item" tabindex="-1" role="option">
-                  <div class="si-icon"><i class="fa-solid fa-user"></i></div>
-                  <span class="si-name">${name}</span>
-                  <span class="si-hint">Edit →</span>
-                </div>
-              `).on('click', function () {
-                window.location.href = UPDATE_URL + '?search_name=' + encodeURIComponent(name);
+  /* ════════════ ADD PARTY ════════════ */
+  var addForm = document.getElementById("add_party_form");
+  addForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var fd = new FormData(addForm);
+    fetch(ADD_URL, {
+      method: "POST",
+      body: fd,
+      headers: { "X-CSRFToken": getCsrf(addForm) }
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.status === "success") {
+          listLoaded = false;
+          Swal.fire({ icon: "success", title: "Success", text: data.message,
+                      showConfirmButton: false, timer: 2200, timerProgressBar: true })
+              .then(function () {
+                addForm.reset();
+                document.getElementById("add_opening_balance").value = "0";
+                document.getElementById("add_party_name").focus();
               });
-              $hubSugg.append($item);
-            });
-
-            // Refresh cache after building
-            suggestionItems = $hubSugg.find(".suggestion-item").toArray();
-            $hubSugg.show();
-          } else {
-            closeSuggestions();
-          }
-        }
-      });
-    }, 160);   // 160 ms debounce
-  });
-
-  /* ── Keyboard navigation ── */
-  $hubInput.on("keydown", function (e) {
-    const isOpen = $hubSugg.is(":visible");
-
-    switch (e.key) {
-
-      // ── Arrow Down ──
-      case "ArrowDown":
-        e.preventDefault();
-        if (!isOpen) return;
-        suggestionItems = $hubSugg.find(".suggestion-item").toArray();
-        setActiveItem(Math.min(activeIdx + 1, suggestionItems.length - 1));
-        break;
-
-      // ── Arrow Up ──
-      case "ArrowUp":
-        e.preventDefault();
-        if (!isOpen) return;
-        setActiveItem(Math.max(activeIdx - 1, 0));
-        break;
-
-      // ── Enter — navigate to highlighted item ──
-      case "Enter":
-        if (isOpen && activeIdx >= 0 && suggestionItems[activeIdx]) {
-          e.preventDefault();
-          suggestionItems[activeIdx].click();
-        }
-        break;
-
-      // ── Tab — confirm highlighted item or close ──
-      case "Tab":
-        if (isOpen && activeIdx >= 0 && suggestionItems[activeIdx]) {
-          e.preventDefault();
-          // Fill input with the selected name
-          const selectedName = $(suggestionItems[activeIdx]).find(".si-name").text();
-          $hubInput.val(selectedName);
-          // Re-filter table with full name
-          filtered = allParties.filter(p =>
-            p.name.toUpperCase().includes(selectedName.toUpperCase())
-          );
-          currentPage = 1;
-          renderTable();
-          closeSuggestions();
         } else {
-          closeSuggestions();
+          Swal.fire({ icon: "error", title: "Error", text: data.message, confirmButtonColor: "#3085d6" });
         }
-        break;
+      })
+      .catch(function () {
+        Swal.fire({ icon: "error", title: "Error", text: "Something went wrong while saving.", confirmButtonColor: "#d33" });
+      });
+  });
 
-      // ── Escape — close dropdown ──
-      case "Escape":
-        closeSuggestions();
-        $hubInput.blur();
-        break;
+  /* ════════════ UPDATE PARTY ════════════ */
+  var searchInput   = document.getElementById("search_name");
+  var suggestionsBox = document.getElementById("suggestions");
+  var editCard      = document.getElementById("pedit_card");
+  var placeholder   = document.getElementById("pupdate_placeholder");
+  var activeIndex   = -1;
+
+  function clearSuggestions() {
+    suggestionsBox.innerHTML = "";
+    suggestionsBox.style.display = "none";
+    activeIndex = -1;
+  }
+
+  function renderSuggestions(list) {
+    suggestionsBox.innerHTML = "";
+    activeIndex = -1;
+    if (!list || !list.length) { suggestionsBox.style.display = "none"; return; }
+    list.forEach(function (name) {
+      var d = document.createElement("div");
+      d.textContent = name;
+      d.addEventListener("mousedown", function (ev) {
+        ev.preventDefault();
+        searchInput.value = name;
+        clearSuggestions();
+        doSearch();
+      });
+      d.addEventListener("mouseover", function () {
+        setActive(Array.prototype.indexOf.call(suggestionsBox.children, d));
+      });
+      suggestionsBox.appendChild(d);
+    });
+    suggestionsBox.style.display = "block";
+  }
+
+  function setActive(idx) {
+    var nodes = suggestionsBox.children;
+    if (!nodes.length) return;
+    if (idx < 0) idx = nodes.length - 1;
+    if (idx >= nodes.length) idx = 0;
+    for (var i = 0; i < nodes.length; i++) nodes[i].classList.remove("active-suggestion");
+    nodes[idx].classList.add("active-suggestion");
+    nodes[idx].scrollIntoView({ block: "nearest" });
+    activeIndex = idx;
+  }
+
+  searchInput.addEventListener("input", function () {
+    var q = searchInput.value.trim();
+    if (q.length < 1) { clearSuggestions(); return; }
+    fetch(AUTOCOMPLETE_URL + "?term=" + encodeURIComponent(q))
+      .then(function (r) { return r.json(); })
+      .then(function (list) { renderSuggestions(list); });
+  });
+
+  searchInput.addEventListener("keydown", function (e) {
+    var open = suggestionsBox.style.display === "block" && suggestionsBox.children.length;
+    if (e.key === "ArrowDown") {
+      if (open) { e.preventDefault(); setActive(activeIndex + 1); }
+    } else if (e.key === "ArrowUp") {
+      if (open) { e.preventDefault(); setActive(activeIndex - 1); }
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (open && activeIndex >= 0) { searchInput.value = suggestionsBox.children[activeIndex].textContent; }
+      clearSuggestions();
+      doSearch();
+    } else if (e.key === "Escape") {
+      clearSuggestions();
     }
   });
 
-  /* ── Click outside closes dropdown ── */
-  $(document).on('click', function (e) {
-    if (!$(e.target).closest('#hubSearchInput, #hubSuggestions').length) {
-      closeSuggestions();
-    }
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest("#search_name, #suggestions")) { clearSuggestions(); }
   });
 
-  /* ══════════════════════════════════
-     INIT
-  ══════════════════════════════════ */
-  loadParties();
+  function resetUpdateSection() {
+    document.getElementById("update_party_form").reset();
+    document.getElementById("upd_party_id").value = "";
+    searchInput.value = "";
+    editCard.style.display = "none";
+    placeholder.style.display = "block";
+    document.getElementById("padded_by_note").style.display = "none";
+    clearSuggestions();
+  }
+
+  function fillForm(p) {
+    document.getElementById("upd_party_id").value = p.party_id || "";
+    document.getElementById("upd_party_name").value = p.party_name || "";
+    document.getElementById("upd_party_type").value = (p.party_type === "Expense") ? "Expense" : "Both";
+    document.getElementById("upd_contact_info").value = p.contact_info || "";
+    document.getElementById("upd_address").value = p.address || "";
+    document.getElementById("upd_opening_balance").value = (p.opening_balance != null ? p.opening_balance : 0);
+    document.getElementById("upd_balance_type").value = (p.balance_type === "Credit") ? "Credit" : "Debit";
+
+    var note = document.getElementById("padded_by_note");
+    var nameEl = document.getElementById("padded_by_name");
+    if (p.created_by_username && p.created_by_username !== "N/A") {
+      nameEl.textContent = p.created_by_username;
+      note.style.display = "flex";
+    } else {
+      note.style.display = "none";
+    }
+    editCard.style.display = "block";
+    placeholder.style.display = "none";
+  }
+
+  function doSearch() {
+    var name = searchInput.value.trim();
+    if (!name) {
+      Swal.fire({ icon: "info", title: "Enter a name", text: "Please type a party name to search.", confirmButtonColor: "#3085d6" });
+      return;
+    }
+    fetch(UPDATE_URL + "?search_name=" + encodeURIComponent(name), {
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.status === "found") {
+          fillForm(data.party);
+        } else {
+          editCard.style.display = "none";
+          placeholder.style.display = "block";
+          Swal.fire({ icon: "error", title: "Not found", text: "Party '" + name + "' was not found.", confirmButtonColor: "#3085d6" });
+        }
+      })
+      .catch(function () {
+        Swal.fire({ icon: "error", title: "Error", text: "Could not search for the party.", confirmButtonColor: "#d33" });
+      });
+  }
+
+  document.getElementById("search_party_btn").addEventListener("click", doSearch);
+
+  var updForm = document.getElementById("update_party_form");
+  updForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!document.getElementById("upd_party_id").value) {
+      Swal.fire({ icon: "info", title: "No party selected", text: "Please search and select a party first.", confirmButtonColor: "#3085d6" });
+      return;
+    }
+    var fd = new FormData(updForm);
+    fetch(UPDATE_URL, {
+      method: "POST",
+      body: fd,
+      headers: { "X-CSRFToken": getCsrf(updForm), "X-Requested-With": "XMLHttpRequest" }
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.status === "success") {
+          listLoaded = false;
+          Swal.fire({ icon: "success", title: "Success", text: data.message,
+                      showConfirmButton: false, timer: 2200, timerProgressBar: true })
+              .then(function () { resetUpdateSection(); });
+        } else {
+          Swal.fire({ icon: "error", title: "Error", text: data.message, confirmButtonColor: "#3085d6" });
+        }
+      })
+      .catch(function () {
+        Swal.fire({ icon: "error", title: "Error", text: "Something went wrong while updating.", confirmButtonColor: "#d33" });
+      });
+  });
+
+  /* ════════════ ALL PARTIES TABLE ════════════ */
+  var tableBody = document.getElementById("partiesTableBody");
+
+  function loadPartiesList() {
+    tableBody.innerHTML = '<tr><td class="no-data" colspan="10">Loading parties…</td></tr>';
+    fetch(LIST_URL, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.status !== "success") {
+          tableBody.innerHTML = '<tr><td class="no-data" colspan="10">' + esc(data.message || "Could not load parties.") + '</td></tr>';
+          return;
+        }
+        document.getElementById("partiesCount").textContent = data.count + (data.count === 1 ? " party" : " parties");
+        if (!data.parties.length) {
+          tableBody.innerHTML = '<tr><td class="no-data" colspan="10">No parties have been added yet.</td></tr>';
+          listLoaded = true;
+          return;
+        }
+        var html = "";
+        data.parties.forEach(function (p, i) {
+          var byUnknown = (!p.created_by || p.created_by === "N/A");
+          var byCls = "by-pill" + (byUnknown ? " by-unknown" : "");
+          var typeCls = "type-pill" + (p.party_type === "Expense" ? " type-expense" : "");
+          html += "<tr>" +
+            "<td>" + (i + 1) + "</td>" +
+            "<td><strong>" + esc(p.party_name) + "</strong></td>" +
+            '<td><span class="' + typeCls + '">' + esc(p.party_type || "—") + "</span></td>" +
+            "<td>" + (esc(p.contact_info) || "—") + "</td>" +
+            "<td>" + (esc(p.address) || "—") + "</td>" +
+            "<td>" + esc(p.opening_balance) + "</td>" +
+            "<td>" + (esc(p.balance_type) || "—") + "</td>" +
+            '<td><span class="' + byCls + '"><i class="fa-solid fa-user-pen"></i>' + esc(p.created_by) + "</span></td>" +
+            "<td>" + (esc(p.date_created) || "—") + "</td>" +
+            '<td><button type="button" class="row-edit-btn" data-name="' + esc(p.party_name) + '"><i class="fa-solid fa-pen"></i> Edit</button></td>' +
+            "</tr>";
+        });
+        tableBody.innerHTML = html;
+        listLoaded = true;
+
+        // Wire up per-row Edit buttons → jump to Update tab and load that party
+        Array.prototype.forEach.call(tableBody.querySelectorAll(".row-edit-btn"), function (btn) {
+          btn.addEventListener("click", function () {
+            selectPartyTab("update");
+            searchInput.value = btn.getAttribute("data-name");
+            clearSuggestions();
+            doSearch();
+          });
+        });
+      })
+      .catch(function () {
+        tableBody.innerHTML = '<tr><td class="no-data" colspan="10">Could not load parties. Please try again.</td></tr>';
+      });
+  }
+
+  document.getElementById("refreshPartiesBtn").addEventListener("click", function () { listLoaded = false; loadPartiesList(); });
+
+  document.getElementById("partiesListSearch").addEventListener("input", function () {
+    var q = this.value.toLowerCase();
+    var rows = tableBody.querySelectorAll("tr");
+    rows.forEach(function (row) {
+      if (row.querySelector(".no-data")) return;
+      var match = row.textContent.toLowerCase().indexOf(q) !== -1;
+      row.classList.toggle("filtered-out", !match);
+    });
+  });
 
 });

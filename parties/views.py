@@ -614,6 +614,66 @@ def auto_complete_party(request):
 @login_required
 def update_party(request):
     context = {}
+
+    # ──────────────────────────────────────────────────────────────────
+    # AJAX branch (used by the Parties hub / single-page UI).
+    # Only triggers for XMLHttpRequest calls so the standalone
+    # update_party.html page keeps behaving exactly as before.
+    # ──────────────────────────────────────────────────────────────────
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        # --- AJAX search: return the party as JSON ---
+        if request.method == "GET" and "search_name" in request.GET:
+            party = get_party_by_name(party_name=request.GET.get("search_name"))
+            if party:
+                return JsonResponse({"status": "found", "party": party})
+            return JsonResponse({"status": "not_found"})
+
+        # --- AJAX update: apply changes and return JSON ---
+        if request.method == "POST":
+            party_id = request.POST.get("party_id")
+            if not party_id:
+                return JsonResponse({
+                    "status": "error",
+                    "message": "No party selected to update. Please search and select a party first."
+                })
+
+            if request.user.groups.filter(name="view_only_users").exists():
+                return JsonResponse({
+                    "status": "error",
+                    "message": "You do not have permission to Update Parties."
+                })
+
+            if not request.user.has_perm("auth.update_party"):
+                return JsonResponse({
+                    "status": "error",
+                    "message": "You do not have permission to Update Parties!"
+                })
+
+            data = {
+                "party_name": request.POST.get("party_name").upper(),
+                "party_type": request.POST.get("party_type"),
+                "contact_info": request.POST.get("contact_info"),
+                "address": request.POST.get("address"),
+                "opening_balance": float(request.POST.get("opening_balance") or 0),
+                "balance_type": str(request.POST.get("balance_type")),
+                "created_by_id": request.user.id,
+            }
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT update_party_from_json(%s,%s)", [int(party_id), json.dumps(data)])
+                return JsonResponse({
+                    "status": "success",
+                    "message": f"Party '{data['party_name']}' updated successfully!"
+                })
+            except Exception as e:
+                return JsonResponse({
+                    "status": "error",
+                    "message": f"An unexpected error occurred! {e}"
+                })
+
+    # ──────────────────────────────────────────────────────────────────
+    # Original (non-AJAX) standalone-page behaviour — unchanged.
+    # ──────────────────────────────────────────────────────────────────
     if request.method == 'GET' and 'search_name' in request.GET:
         search_name = request.GET.get('search_name')
         party = get_party_by_name(party_name=search_name)
@@ -683,3 +743,47 @@ def parties_hub(request):
         messages.error(request, "You do not have permission to view Parties!")
         return redirect("home:home")
     return render(request, "parties_templates/parties.html")
+
+@login_required
+def parties_list_json(request):
+    """
+    Returns the full parties directory as JSON for the 'All Parties' table:
+    name, type, contact, address, opening balance + type, who added/last-touched
+    it, and the creation date.
+    """
+    if not request.user.has_perm("auth.view_party"):
+        return JsonResponse({"status": "error", "message": "You do not have permission to view Parties!"}, status=403)
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT p.party_id,
+                   p.party_name,
+                   p.party_type,
+                   p.contact_info,
+                   p.address,
+                   p.opening_balance,
+                   p.balance_type,
+                   COALESCE(u.username, 'N/A') AS created_by,
+                   p.date_created
+            FROM Parties p
+            LEFT JOIN auth_user u ON u.id = p.created_by
+            ORDER BY p.date_created DESC NULLS LAST, p.party_id DESC
+        """)
+        rows = cursor.fetchall()
+
+    def fmt(dt):
+        return dt.strftime("%d %b %Y, %I:%M %p") if dt else ""
+
+    parties = [{
+        "party_id": r[0],
+        "party_name": r[1],
+        "party_type": r[2] or "",
+        "contact_info": r[3] or "",
+        "address": r[4] or "",
+        "opening_balance": str(r[5]) if r[5] is not None else "0.00",
+        "balance_type": r[6] or "",
+        "created_by": r[7],
+        "date_created": fmt(r[8]),
+    } for r in rows]
+
+    return JsonResponse({"status": "success", "count": len(parties), "parties": parties})
