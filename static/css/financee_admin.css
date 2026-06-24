@@ -92,7 +92,7 @@ body {
 #container { background: var(--bg); min-width: 320px; }
 .main, #main { background: var(--bg); }
 #content { padding: 28px 40px; max-width: 2000px; margin: 0 auto; box-sizing: border-box; }
-.dashboard #content { width: 80%; max-width: 2000px; margin: 0 auto; }
+.dashboard #content { width: 94%; max-width: 2000px; margin: 0 auto; }
 .popup #content { width: auto; max-width: none; margin: 0; }
 a:link, a:visited { color: var(--accent); }
 a:hover { color: var(--accent-dark); }
@@ -464,11 +464,20 @@ table.fin-table thead th {
   background: var(--surface); color: var(--muted); font-size: 0.66rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.06em; padding: 14px 16px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--border);
 }
-table.fin-table tbody td { padding: 14px 16px; border-bottom: 1px solid var(--hairline); color: var(--ink); vertical-align: middle; white-space: nowrap; }
+table.fin-table tbody td { 
+  padding: 14px 16px; border-bottom: 1px solid var(--hairline); color: var(--ink); vertical-align: middle; max-width: 150px;
+  white-space: nowrap; overflow: hidden; min-width: 54px;
+
+}
 table.fin-table tbody tr:last-child td { border-bottom: none; }
 table.fin-table tbody tr:hover td { background: var(--accent-soft); }
 .fin-activity-table td { white-space: normal; }
-.fin-activity-table .fin-desc { color: var(--slate); line-height: 1.45; }
+.fin-activity-table .fin-desc { 
+  color: var(--slate);
+  line-height: 1.45; 
+  max-width: 420px;
+  overflow: overlay;
+}
 .fin-muted { color: var(--muted); }
 .fin-link { color: var(--accent); font-weight: 600; text-decoration: none; }
 .fin-link:hover { color: var(--accent-dark); text-decoration: underline; }
