@@ -18,6 +18,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.shortcuts import redirect
 
+from financee.admin_site import financee_admin_site
+
 from parties import urls as parties_urls
 from items import urls as items_urls
 from payments import urls as payments_urls
@@ -40,7 +42,7 @@ def redirect_to_home(request):
 
 urlpatterns = [
     path('', redirect_to_home, name='home_redirect'),
-    path('admin/', admin.site.urls),
+    path('admin/', financee_admin_site.urls),
     path('parties/', include(parties_urls,namespace='parties')),
     path('items/', include(items_urls, namespace='items')),
     path('payments/',include(payments_urls,namespace='payments')),
