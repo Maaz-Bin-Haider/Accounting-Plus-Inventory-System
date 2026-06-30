@@ -988,7 +988,7 @@
      - Serial comments default to "All Ok"
      - Instant duplicate detection: within-invoice AND stock history
      - Total Items / Total Qty / Total Amount
-     - PDF download (AED currency)
+     - PDF download (PKR currency)
      - Previous / Next / Current navigation
      - Purchase history summary popup
    ============================================================ */
@@ -1751,7 +1751,7 @@
 //   doc.setTextColor(15, 40, 80);
 //   doc.setFont("helvetica","bold");
 //   doc.setFontSize(9);
-//   doc.text(`Total Qty: ${totalQty}   ·   Total Items: ${items.length}   ·   Invoice Amount: AED ${amount}`, PL, y+1);
+//   doc.text(`Total Qty: ${totalQty}   ·   Total Items: ${items.length}   ·   Invoice Amount: PKR ${amount}`, PL, y+1);
 
 //   y += 14;
 
@@ -1790,8 +1790,8 @@
 //     doc.text(item.name, PL+10, y+3.5);
 //     doc.setFont("helvetica","normal");
 //     doc.text(String(item.qty), PL+82, y+3.5);
-//     doc.text(`AED ${item.price.toFixed(2)}`, PL+100, y+3.5);
-//     doc.text(`AED ${item.subtotal.toFixed(2)}`, PR, y+3.5, {align:"right"});
+//     doc.text(`PKR ${item.price.toFixed(2)}`, PL+100, y+3.5);
+//     doc.text(`PKR ${item.subtotal.toFixed(2)}`, PR, y+3.5, {align:"right"});
 
 //     // Serials: 2 per line  (SN | comment)
 //     if (item.serials.length) {
@@ -1823,7 +1823,7 @@
 //   doc.setTextColor(255,255,255);
 //   doc.setFont("helvetica","bold");
 //   doc.setFontSize(10);
-//   doc.text(`TOTAL AMOUNT:  AED ${amount}`, PR, y+7, {align:"right"});
+//   doc.text(`TOTAL AMOUNT:  PKR ${amount}`, PR, y+7, {align:"right"});
 
 //   // Footer
 //   doc.setFontSize(7.5);
@@ -1864,7 +1864,7 @@
 //             <td>${p.invoice_date}</td>
 //             <td>${escapeHtml(p.vendor)}</td>
 //             <td style="text-align:right;font-family:'DM Mono',monospace;">
-//               AED ${parseFloat(p.total_amount).toFixed(2)}
+//               PKR ${parseFloat(p.total_amount).toFixed(2)}
 //             </td>
 //           </tr>`;
 //       });
@@ -1979,7 +1979,7 @@
      - Serial comments default to "All Ok"
      - Instant duplicate detection: within-invoice AND stock history
      - Total Items / Total Qty / Total Amount
-     - PDF download (AED currency)
+     - PDF download (PKR currency)
      - Previous / Next / Current navigation
      - Purchase history summary popup
    ============================================================ */
@@ -2744,7 +2744,7 @@
 //   doc.setTextColor(15, 40, 80);
 //   doc.setFont("helvetica","bold");
 //   doc.setFontSize(9);
-//   doc.text(`Total Qty: ${totalQty}   ·   Total Items: ${items.length}   ·   Invoice Amount: AED ${amount}`, PL, y+1);
+//   doc.text(`Total Qty: ${totalQty}   ·   Total Items: ${items.length}   ·   Invoice Amount: PKR ${amount}`, PL, y+1);
 
 //   y += 14;
 
@@ -2783,8 +2783,8 @@
 //     doc.text(item.name, PL+10, y+3.5);
 //     doc.setFont("helvetica","normal");
 //     doc.text(String(item.qty), PL+82, y+3.5);
-//     doc.text(`AED ${item.price.toFixed(2)}`, PL+100, y+3.5);
-//     doc.text(`AED ${item.subtotal.toFixed(2)}`, PR, y+3.5, {align:"right"});
+//     doc.text(`PKR ${item.price.toFixed(2)}`, PL+100, y+3.5);
+//     doc.text(`PKR ${item.subtotal.toFixed(2)}`, PR, y+3.5, {align:"right"});
 
 //     // Serials: 2 per line  (SN | comment)
 //     if (item.serials.length) {
@@ -2816,7 +2816,7 @@
 //   doc.setTextColor(255,255,255);
 //   doc.setFont("helvetica","bold");
 //   doc.setFontSize(10);
-//   doc.text(`TOTAL AMOUNT:  AED ${amount}`, PR, y+7, {align:"right"});
+//   doc.text(`TOTAL AMOUNT:  PKR ${amount}`, PR, y+7, {align:"right"});
 
 //   // Footer
 //   doc.setFontSize(7.5);
@@ -2857,7 +2857,7 @@
 //             <td>${p.invoice_date}</td>
 //             <td>${escapeHtml(p.vendor)}</td>
 //             <td style="text-align:right;font-family:'DM Mono',monospace;">
-//               AED ${parseFloat(p.total_amount).toFixed(2)}
+//               PKR ${parseFloat(p.total_amount).toFixed(2)}
 //             </td>
 //           </tr>`;
 //       });
@@ -2971,7 +2971,7 @@
      - Serial comments default to "All Ok"
      - Instant duplicate detection: within-invoice AND stock history
      - Total Items / Total Qty / Total Amount
-     - PDF download (AED currency)
+     - PDF download (PKR currency)
      - Previous / Next / Current navigation
      - Purchase history summary popup
    ============================================================ */
@@ -3383,8 +3383,9 @@ function buildAndSubmit(event) {
   }
 
   const purchaseId = document.getElementById("current_purchase_id")?.value || null;
+  const description = (document.getElementById("purchase_description")?.value || "").trim();
   const payload    = { party_name: partyName, purchase_date: purchaseDate,
-                       items, action };
+                       items, action, description };
   if (purchaseId) payload.purchase_id = purchaseId;
 
   fetch("/purchase/purchasing/", {
@@ -3595,6 +3596,8 @@ function renderPurchaseData(data) {
   document.getElementById("search_name").value         = data.Party || "";
   document.getElementById("purchase_date").value       = data.invoice_date || "";
   document.getElementById("current_purchase_id").value = data.purchase_invoice_id || "";
+  const _pDescEl = document.getElementById("purchase_description");
+  if (_pDescEl) _pDescEl.value = data.description || "";
 
   const badge = document.getElementById("invoiceIdBadge");
   if (badge) badge.textContent = data.purchase_invoice_id ? `#${data.purchase_invoice_id}` : "#NEW";
@@ -3737,7 +3740,7 @@ function downloadInvoicePDF() {
   doc.setTextColor(15, 40, 80);
   doc.setFont("helvetica","bold");
   doc.setFontSize(9);
-  doc.text(`Total Qty: ${totalQty}   ·   Total Items: ${items.length}   ·   Invoice Amount: AED ${amount}`, PL, y+1);
+  doc.text(`Total Qty: ${totalQty}   ·   Total Items: ${items.length}   ·   Invoice Amount: PKR ${amount}`, PL, y+1);
 
   y += 14;
 
@@ -3776,8 +3779,8 @@ function downloadInvoicePDF() {
     doc.text(item.name, PL+10, y+3.5);
     doc.setFont("helvetica","normal");
     doc.text(String(item.qty), PL+82, y+3.5);
-    doc.text(`AED ${item.price.toFixed(2)}`, PL+100, y+3.5);
-    doc.text(`AED ${item.subtotal.toFixed(2)}`, PR, y+3.5, {align:"right"});
+    doc.text(`PKR ${item.price.toFixed(2)}`, PL+100, y+3.5);
+    doc.text(`PKR ${item.subtotal.toFixed(2)}`, PR, y+3.5, {align:"right"});
 
     // Serials: 2 per line  (SN | comment)
     if (item.serials.length) {
@@ -3809,7 +3812,7 @@ function downloadInvoicePDF() {
   doc.setTextColor(255,255,255);
   doc.setFont("helvetica","bold");
   doc.setFontSize(10);
-  doc.text(`TOTAL AMOUNT:  AED ${amount}`, PR, y+7, {align:"right"});
+  doc.text(`TOTAL AMOUNT:  PKR ${amount}`, PR, y+7, {align:"right"});
 
   // Footer
   doc.setFontSize(7.5);
@@ -3850,7 +3853,7 @@ async function fetchPurchaseSummary(from = null, to = null) {
             <td>${p.invoice_date}</td>
             <td>${escapeHtml(p.vendor)}</td>
             <td style="text-align:right;font-family:'DM Mono',monospace;">
-              AED ${parseFloat(p.total_amount).toFixed(2)}
+              PKR ${parseFloat(p.total_amount).toFixed(2)}
             </td>
           </tr>`;
       });

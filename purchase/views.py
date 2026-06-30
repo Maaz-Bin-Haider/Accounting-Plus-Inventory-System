@@ -1,4 +1,7 @@
 # from django.shortcuts import render,redirect
+
+import logging
+logger = logging.getLogger(__name__)
 # from django.http import JsonResponse
 # from django.contrib import messages
 # from django.db import connection
@@ -657,7 +660,8 @@ def purchasing(request):
 
                         if not exists:
                             return JsonResponse({"success": False, "message": f"Party with '{data.get("party_name")}' Not exists!"})
-                except:
+                except Exception as e:
+                    logger.exception('swallowed exception in %s', __name__)
                     return JsonResponse({"success": False, "message": "Invalid Party-Name"})
 
                 # Validate purchase_date (must be in correct date format)
@@ -692,7 +696,8 @@ def purchasing(request):
 
                                 if not exists:
                                     return JsonResponse({"success": False, "message": f"Item with '{item_name.upper()}' Not exists!"})
-                        except:
+                        except Exception as e:
+                            logger.exception('swallowed exception in %s', __name__)
                             return JsonResponse({"success": False, "message": "Invalid Item-name"})
 
                         # validating quantity 
@@ -700,7 +705,8 @@ def purchasing(request):
                             qty = int(qty)
                             if qty <= 0:
                                 return JsonResponse({"success": False, "message": "Invalid Quantity"})
-                        except:
+                        except Exception as e:
+                            logger.exception('swallowed exception in %s', __name__)
                             return JsonResponse({"success": False, "message": "Invalid Quantity"})
 
                         # validating unit price
@@ -708,7 +714,8 @@ def purchasing(request):
                             unit_price = float(unit_price)
                             if unit_price <= 0:
                                 return JsonResponse({"success": False, "message": "Invalid Price"})
-                        except:
+                        except Exception as e:
+                            logger.exception('swallowed exception in %s', __name__)
                             return JsonResponse({"success": False, "message": "Invalid Price"})
                         
 
@@ -762,7 +769,8 @@ def purchasing(request):
                                     "message": "Invalid Serial Number!"
                                 })
                         
-                except:
+                except Exception as e:
+                    logger.exception('swallowed exception in %s', __name__)
                     return JsonResponse({"success": False, "message": "Unexpected Error Please try again!"})
                 
                 # Execute DB function
@@ -809,6 +817,11 @@ def purchasing(request):
 
                             # Fetch the returned invoice ID
                             invoice_id = cursor.fetchone()[0]
+                            # Save the optional user description on the invoice
+                            cursor.execute(
+                                "UPDATE purchaseinvoices SET description=%s WHERE purchase_invoice_id=%s",
+                                [(data.get("description") or "").strip() or None, invoice_id],
+                            )
                             return JsonResponse({"success": True, "message": "Purchase Successfull"})
                     except Exception as e:
                         return JsonResponse({"success": False, "message": f"Failed to make Purchase, try again! {e}"})  
@@ -856,7 +869,8 @@ def purchasing(request):
                                     "success": False,
                                     "message": message
                                 })
-                    except:
+                    except Exception as e:
+                        logger.exception('swallowed exception in %s', __name__)
                         return JsonResponse({"success": False, "message": "Update Failed Try Again!"})
                     try:
                         if request.user.groups.filter(name="view_only_users").exists():
@@ -900,9 +914,15 @@ def purchasing(request):
 
                             # Fetch the returned invoice ID
                             invoice_id = cursor.fetchone()[0]
+                            # Save the optional user description on the invoice
+                            cursor.execute(
+                                "UPDATE purchaseinvoices SET description=%s WHERE purchase_invoice_id=%s",
+                                [(data.get("description") or "").strip() or None, purchase_id],
+                            )
                             return JsonResponse({"success": True, "message": "Update Successfull"})
 
-                    except:
+                    except Exception as e:
+                        logger.exception('swallowed exception in %s', __name__)
                         return JsonResponse({"success": False, "message": "Failed to Update Purchase, try again!"})  
 
                     
@@ -943,7 +963,8 @@ def purchasing(request):
                             "success": False,
                             "message": message
                         })
-            except:
+            except Exception as e:
+                logger.exception('swallowed exception in %s', __name__)
                 return JsonResponse({"success": False, "message": "Failed to Delete Purchase, try again!"})  
             
             # Executing Delete
@@ -991,9 +1012,11 @@ def get_purchase(request):
                             last_purchase = last_purchase[0]
     
                             current_id = int(last_purchase) + 1
-                        except:
+                        except Exception as e:
+                            logger.exception('swallowed exception in %s', __name__)
                             return JsonResponse({"success": False, "message": "Invalid Last Purchase data!"})
-                except:
+                except Exception as e:
+                    logger.exception('swallowed exception in %s', __name__)
                     return JsonResponse({"success": False, "message": "Data base Connection Error While getting Previous Purchase!"})
     
             # Validating Current purchase ID
@@ -1010,7 +1033,8 @@ def get_purchase(request):
                  
                 if not result_data or not result_data[0]:
                     return JsonResponse({"success": False, "message": "No Previous Purchase Found"})
-            except:
+            except Exception as e:
+                logger.exception('swallowed exception in %s', __name__)
                 return JsonResponse({"success": False, "message": "Data base Connection Error While getting Previous Purchase!"})
         elif action == "next":
             # Validating Current purchase ID
@@ -1028,7 +1052,8 @@ def get_purchase(request):
 
                 if not result_data or not result_data[0]:
                     return JsonResponse({"success": False, "message": "No Next Purchase Found"})
-            except:
+            except Exception as e:
+                logger.exception('swallowed exception in %s', __name__)
                 return JsonResponse({"success": False, "message": "Data base Connection Error While getting Next Purchase!"})
             
         elif action == "current": # If no action is provided means we have to fetch current purchase ID
@@ -1048,11 +1073,13 @@ def get_purchase(request):
 
                 if not result_data or not result_data[0]:
                     return JsonResponse({"success": False, "message": "No Purchase Found"})
-            except:
+            except Exception as e:
+                logger.exception('swallowed exception in %s', __name__)
                 return JsonResponse({"success": False, "message": "Data base Connection Error While getting Next Purchase!"})
         else:
             pass
-    except:
+    except Exception as e:
+        logger.exception('swallowed exception in %s', __name__)
         return JsonResponse({"success": False, "message": "Data base Error!"})
     
     # Sending to frontend
@@ -1095,7 +1122,8 @@ def get_purchase_summary(request):
                 
                 if not result or not result[0]:
                     return JsonResponse({"success": False, "message": "No Purchase Invoices found in the given date range!"})
-            except:
+            except Exception as e:
+                logger.exception('swallowed exception in %s', __name__)
                 return JsonResponse({"success": False, "message": "Unable fetch Purchase Invoices, Check your Internet Connection!"})
         # if no date is specified then fetch last 20 purchase invoice summary
         else:

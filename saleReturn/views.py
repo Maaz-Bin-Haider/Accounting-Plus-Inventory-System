@@ -1,4 +1,7 @@
 # from django.shortcuts import render,redirect
+
+import logging
+logger = logging.getLogger(__name__)
 # from django.db import connection
 # from django.http import JsonResponse
 # import json
@@ -723,7 +726,8 @@ def createSaleReturn(request):
 
                         if not exists:
                             return JsonResponse({"success": False, "message": f"Party with '{data.get("party_name")}' Not exists!"})
-                except:
+                except Exception as e:
+                    logger.exception('swallowed exception in %s', __name__)
                     return JsonResponse({"success": False, "message": "Invalid Party-Name"})
                 
                 # Validate sale_return_date (must be in correct date format)
@@ -769,7 +773,8 @@ def createSaleReturn(request):
                                     return JsonResponse({"success": False, "message": f"The serial number '{serial}' was sold to {customer_name}, not to {data.get('party_name')}."})
                         except Exception as e:
                             return JsonResponse({ "success": False, "message":f"The Serial '{serial}' is Invalid!" })
-                except:
+                except Exception as e:
+                    logger.exception('swallowed exception in %s', __name__)
                     return JsonResponse({"success": False, "message": "Invalid Serial Data!"}) 
                 
 
@@ -792,6 +797,11 @@ def createSaleReturn(request):
                         json_data = json.dumps(data.get("serials"))
                         with connection.cursor() as cursor:
                             cursor.execute("SELECT create_sale_return(%s,%s,%s)",[data.get('party_name'),json_data,request.user.id])
+                            new_return_id = cursor.fetchone()[0]
+                            cursor.execute(
+                                "UPDATE salesreturns SET description=%s WHERE sales_return_id=%s",
+                                [(data.get("description") or "").strip() or None, new_return_id],
+                            )
                         return JsonResponse({"success": True, "message": "Sale Return Sucessfull"}) 
                     except Exception as e:
                         return JsonResponse({"success": False, "message": f"Unable to Sale Return, Try Again!"}) 
@@ -814,10 +824,15 @@ def createSaleReturn(request):
                         json_data = json.dumps(data.get("serials"))
                         with connection.cursor() as cursor:
                             cursor.execute("SELECT update_sale_return(%s,%s,%s)",[sale_return_ID,json_data,request.user.id])
+                            cursor.execute(
+                                "UPDATE salesreturns SET description=%s WHERE sales_return_id=%s",
+                                [(data.get("description") or "").strip() or None, sale_return_ID],
+                            )
                         return JsonResponse({"success": True, "message": "Sale-Return Updated Sucessfully"}) 
                     except Exception as e:
                         return JsonResponse({"success": False, "message": f"Unable to Update Sale-Return, Try Again!"})
-            except:
+            except Exception as e:
+                logger.exception('swallowed exception in %s', __name__)
                 return JsonResponse({"success": False, "message": f"Invalid Sale-Return Data!"})
 
         # Delete Sale Return
@@ -854,7 +869,8 @@ def sale_return_lookup(request,serial:str):
     #validating Serial Number
     try:
         serial = str(serial)
-    except:
+    except Exception as e:
+        logger.exception('swallowed exception in %s', __name__)
         return JsonResponse({ "success": False, "message":"Invalid Serial Number" })
     
     # checking in Current Stock
@@ -894,9 +910,11 @@ def get_sale_return(request):
                             last_sale_return = last_sale_return[0]
     
                             current_id = int(last_sale_return) + 1
-                        except:
+                        except Exception as e:
+                            logger.exception('swallowed exception in %s', __name__)
                             return JsonResponse({"success": False, "message": "Invalid Last Sale-Return data!"})
-                except:
+                except Exception as e:
+                    logger.exception('swallowed exception in %s', __name__)
                     return JsonResponse({"success": False, "message": "Data base Connection Error While getting Previous Sale-Return!"})
     
             # Validating Current sale-return ID
@@ -913,7 +931,8 @@ def get_sale_return(request):
                  
                 if not result_data or not result_data[0]:
                     return JsonResponse({"success": False, "message": "No Previous Sale-Return Found"})
-            except:
+            except Exception as e:
+                logger.exception('swallowed exception in %s', __name__)
                 return JsonResponse({"success": False, "message": "Data base Connection Error While getting Previous Sale-Return!"})
         elif action == "next":
             # Validating Current sale-return ID
@@ -931,7 +950,8 @@ def get_sale_return(request):
 
                 if not result_data or not result_data[0]:
                     return JsonResponse({"success": False, "message": "No Next Sale-Return Found"})
-            except:
+            except Exception as e:
+                logger.exception('swallowed exception in %s', __name__)
                 return JsonResponse({"success": False, "message": "Data base Connection Error While getting Next Sale-Return!"})
             
         elif action == "current": # If no action is provided means we have to fetch current sale-return ID
@@ -951,11 +971,13 @@ def get_sale_return(request):
 
                 if not result_data or not result_data[0]:
                     return JsonResponse({"success": False, "message": "No Sale-Return Found"})
-            except:
+            except Exception as e:
+                logger.exception('swallowed exception in %s', __name__)
                 return JsonResponse({"success": False, "message": "Data base Connection Error While getting Next Sale-Return!"})
         else:
             pass
-    except:
+    except Exception as e:
+        logger.exception('swallowed exception in %s', __name__)
         return JsonResponse({"success": False, "message": "Data base Error!"})
     
     # Sending to frontend
@@ -998,7 +1020,8 @@ def get_sale_return_summary(request):
                 
                 if not result or not result[0]:
                     return JsonResponse({"success": False, "message": "No Sale-Return Invoices found in the given date range!"})
-            except:
+            except Exception as e:
+                logger.exception('swallowed exception in %s', __name__)
                 return JsonResponse({"success": False, "message": "Unable fetch Sale-Return Invoices, Check your Internet Connection!"})
         # if no date is specified then fetch last 20 sale invoice summary
         else:

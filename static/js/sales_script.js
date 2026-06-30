@@ -1562,8 +1562,9 @@ function buildAndSubmit(event) {
   }
 
   const currentId = document.getElementById("current_sale_id").value || null;
+  const description = (document.getElementById("sale_description")?.value || "").trim();
   const payload   = { sale_id: currentId, party_name: partyName,
-                      sale_date: saleDate, items, action };
+                      sale_date: saleDate, items, action, description };
 
   _submitSale(payload);
 }
@@ -1734,6 +1735,8 @@ function renderSaleData(data) {
   document.getElementById("search_name").value       = data.Party || "";
   document.getElementById("sale_date").value         = data.invoice_date || "";
   document.getElementById("current_sale_id").value   = data.sales_invoice_id || "";
+  const _descEl = document.getElementById("sale_description");
+  if (_descEl) _descEl.value = data.description || "";
 
   // Update badge
   const badge = document.getElementById("invoiceIdBadge");
@@ -1890,7 +1893,7 @@ function downloadInvoicePDF() {
   doc.setTextColor(30, 58, 95);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.text(`Total Qty: ${totalQty}   ·   Total Items: ${items.length}   ·   Invoice Amount: AED ${amount}`, PL, y + 1);
+  doc.text(`Total Qty: ${totalQty}   ·   Total Items: ${items.length}   ·   Invoice Amount: PKR ${amount}`, PL, y + 1);
 
   y += 12;
 
@@ -1928,8 +1931,8 @@ function downloadInvoicePDF() {
     doc.text(item.name, PL + 10, y + 3.5);
     doc.setFont("helvetica", "normal");
     doc.text(String(item.qty), PL + 80, y + 3.5);
-    doc.text(`AED ${item.price.toFixed(2)}`, PL + 100, y + 3.5);
-    doc.text(`AED ${item.subtotal.toFixed(2)}`, PR, y + 3.5, { align: "right" });
+    doc.text(`PKR ${item.price.toFixed(2)}`, PL + 100, y + 3.5);
+    doc.text(`PKR ${item.subtotal.toFixed(2)}`, PR, y + 3.5, { align: "right" });
 
     // Serials in small gray text
     if (item.serials.length) {
@@ -1958,7 +1961,7 @@ function downloadInvoicePDF() {
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.text(`TOTAL AMOUNT:  AED ${amount}`, PR, y + 7, { align: "right" });
+  doc.text(`TOTAL AMOUNT:  PKR ${amount}`, PR, y + 7, { align: "right" });
 
   // ── Footer ──
   doc.setFontSize(7.5);
@@ -1998,7 +2001,7 @@ async function fetchSaleSummary(from = null, to = null) {
             <td>${sale.invoice_date}</td>
             <td>${escapeHtml(sale.customer)}</td>
             <td style="text-align:right;font-family:'DM Mono',monospace;">
-              AED ${parseFloat(sale.total_amount).toFixed(2)}
+              PKR ${parseFloat(sale.total_amount).toFixed(2)}
             </td>
           </tr>`;
       });

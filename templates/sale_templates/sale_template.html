@@ -81,6 +81,15 @@
           </div>
         </div>
 
+        <!-- Optional invoice description -->
+        <div class="sale-field-group" style="margin-top:14px;">
+          <label class="sale-field-label" for="sale_description">
+            <i class="fa-solid fa-note-sticky"></i> Description <span style="opacity:.6;font-weight:400;">(optional)</span>
+          </label>
+          <textarea id="sale_description" name="description" class="sale-input"
+                    rows="2" maxlength="1000" placeholder="Add a note for this invoice…"></textarea>
+        </div>
+
         <div class="sale-divider"></div>
 
         <!-- Items section -->
@@ -135,7 +144,7 @@
           </div>
           <div class="total-chip">
             <span class="total-chip-label">Invoice Amount</span>
-            <span class="total-chip-value amount-value">AED <span id="totalAmount">0.00</span></span>
+            <span class="total-chip-value amount-value">PKR <span id="totalAmount">0.00</span></span>
           </div>
         </div>
         <div class="sale-actions">
