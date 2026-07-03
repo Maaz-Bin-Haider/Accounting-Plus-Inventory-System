@@ -1,366 +1,261 @@
-<div align="center">
+# Accounting Plus Inventory Management System
 
-# 🏢 Accounting Plus Inventory Management System
-### *A Full-Featured Django-Based ERP System*
+A Django and PostgreSQL based accounting plus inventory management system. The repository contains the web application and a full PostgreSQL SQL backup named `db_backup_20260703_0000.sql`.
 
-![Python](https://img.shields.io/badge/Python-3.x-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Django](https://img.shields.io/badge/Django-4.x-092E20?style=for-the-badge&logo=django&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?style=for-the-badge&logo=postgresql&logoColor=white)
-![AWS](https://img.shields.io/badge/AWS-EC2-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)
-![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
-![Gunicorn](https://img.shields.io/badge/Gunicorn-499848?style=for-the-badge&logo=gunicorn&logoColor=white)
+The application is built as a thin Django layer over database-side business logic. Django handles authentication, permissions, routing, templates, static assets, and AJAX endpoints. PostgreSQL stores the core accounting and inventory data and implements most business workflows through stored functions, views, and triggers.
 
-> An enterprise-grade ERP system integrating **double-entry accounting**, **serial-number-based inventory tracking**, complete **purchase/sale cycles**, **returns management**, and **real-time financial reporting** — built with Django and powered by a PostgreSQL stored-procedure architecture.
+## Technology Stack
 
-</div>
+| Layer | Technology |
+| --- | --- |
+| Backend | Django |
+| Database | PostgreSQL |
+| Database driver | psycopg2-binary |
+| Configuration | django-environ and `.env` |
+| Frontend | Django templates, CSS, JavaScript |
+| Static files | Django staticfiles with manifest storage |
 
----
+`financee/settings.py` was generated for Django 5.2.6. Some migration comments mention Django 6.0, so pinning exact dependency versions is recommended before production deployment.
 
-## 📑 Table of Contents
+## Project Layout
 
-- [Overview](#-overview)
-- [System Architecture](#️-system-architecture)
-- [Tech Stack](#-tech-stack)
-- [Modules](#-modules)
-- [Key Features](#-key-features)
-- [Project Structure](#-project-structure)
-- [Permission System](#-permission-system)
-- [API Endpoints](#-api-endpoints)
-- [Database Design](#-database-design)
-- [Deployment](#-deployment)
-- [Getting Started](#-getting-started)
+| Path | Purpose |
+| --- | --- |
+| `financee/` | Main Django project settings, root URLs, WSGI/ASGI, custom admin site |
+| `authentication/` | Login/logout/current-user views and custom permission migrations |
+| `home/` | Main dashboard and dashboard JSON APIs |
+| `parties/` | Customer, vendor, both-type, and expense party management |
+| `items/` | Inventory item management and item autocomplete/list APIs |
+| `purchase/` | Purchase invoice workflow and serial checks |
+| `sale/` | Sale invoice workflow and serial lookup APIs |
+| `purchaseReturn/` | Purchase return workflow |
+| `saleReturn/` | Sale return workflow |
+| `payments/` | Outgoing payment workflow |
+| `receipts/` | Incoming receipt workflow |
+| `contra/` | Party-to-party transfer workflow |
+| `accountsReports/` | Accounts, stock, profit, and monthly reports |
+| `templates/` | Django HTML templates |
+| `static/` | CSS and JavaScript for the UI |
+| `db_backup_20260703_0000.sql` | PostgreSQL schema, functions, triggers, views, and data snapshot |
 
----
+## Frontend Features
 
-## 🌟 Overview
+### Smart Description Box
 
-This system is designed to serve small-to-medium businesses requiring a unified platform for:
+Seven document screens use a shared smart description enhancement:
 
-- **Accounting** – Full double-entry bookkeeping with automated journal entries
-- **Inventory Management** – Serial-number tracking with FIFO valuation
-- **Trading Operations** – Purchase, Sales, and Returns workflows
-- **Financial Reporting** – Profit & Loss, Balance Sheet, Stock Reports
+- Sale
+- Purchase
+- Sale return
+- Purchase return
+- Payment
+- Receipt
+- Contra entry
 
-All business logic is executed through **PostgreSQL stored functions**, making the backend thin, reliable, and extremely fast. Django handles routing, authentication, permission enforcement, and template rendering.
+The feature is frontend-only. Existing `textarea name="description"` fields remain the source of truth, and descriptions continue to save as plain text through the existing backend/database flow.
 
----
+Files:
 
-## 🏗️ System Architecture
+- `static/css/smart_description.css`
+- `static/js/smart_description.js`
 
-```
-┌─────────────────────────────────────────────────────┐
-│                    CLIENT BROWSER                   │
-└───────────────────────┬─────────────────────────────┘
-                        │ HTTPS
-                        ▼
-┌─────────────────────────────────────────────────────┐
-│              NGINX  (Reverse Proxy)                 │
-│         Static files │ SSL Termination              │
-└───────────────────────┬─────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────┐
-│           GUNICORN  (WSGI Application Server)       │
-└───────────────────────┬─────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────┐
-│              DJANGO APPLICATION                     │
-│  ┌──────────┐ ┌──────────┐ ┌──────────────────────┐ │
-│  │   Auth   │ │  Views   │ │  Django Templates    │ │
-│  │  Module  │ │ (Logic)  │ │  (Frontend / UI)     │ │
-│  └──────────┘ └──────────┘ └──────────────────────┘ │
-└───────────────────────┬─────────────────────────────┘
-                        │ psycopg2
-                        ▼
-┌─────────────────────────────────────────────────────┐
-│           POSTGRESQL DATABASE (AWS EC2)             │
-│   Tables │ Stored Functions │ Triggers │ Views      │
-└─────────────────────────────────────────────────────┘
-```
+The shared script enhances description textareas with:
 
----
+- soft light-blue modern UI
+- `Smart note` badge and `current / max` character counter
+- copy button
+- raw edit toggle for table descriptions
+- expand popup using SweetAlert
+- automatic Excel, CSV, and Google Sheets table detection
+- editable inline table preview with a capped height and internal scroll
+- editable expanded table popup
+- table copying as tab-separated text so it can be pasted back into spreadsheets
 
-## 🛠️ Tech Stack
+The seven templates load the shared assets directly. Existing per-page JavaScript still sets description values on create/update/navigation; the smart-description script observes those same textarea values and re-renders the preview.
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Backend Framework** | Django 4.x | Application logic, routing, auth |
-| **Database** | PostgreSQL 14+ | Data storage, stored procedures, triggers |
-| **DB Driver** | psycopg2-binary | Django–PostgreSQL connectivity |
-| **Config Management** | django-environ | Environment variable management |
-| **Frontend** | Django Templates + HTML/CSS/JS | Server-side rendered UI |
-| **Web Server** | Nginx | Reverse proxy, static file serving |
-| **App Server** | Gunicorn | WSGI production server |
-| **Cloud** | AWS EC2 | Deployment infrastructure |
+## Application Modules
 
----
+### Authentication and Permissions
 
-## 📦 Modules
+The app uses Django session authentication. Most business views check custom permissions stored under the Django `auth.user` content type, for example:
 
-The project is organized as a **multi-app Django project**, each app handling a dedicated business domain:
+- `auth.view_sale`, `auth.create_sale`, `auth.update_sale`, `auth.delete_sale`
+- `auth.view_purchase`, `auth.create_purchase`, `auth.update_purchase`, `auth.delete_purchase`
+- `auth.view_payment`, `auth.create_payment`, `auth.update_payment`, `auth.delete_payment`
+- `auth.view_receipt`, `auth.create_receipt`, `auth.update_receipt`, `auth.delete_receipt`
+- `auth.view_item`, `auth.create_item`, `auth.update_item`
+- `auth.view_party`, `auth.create_party`, `auth.update_party`
+- report permissions such as `auth.view_detailed_ledger`, `auth.view_stock_summary`, `auth.view_sale_wise_profit_report`
+- dashboard section permissions such as `auth.view_dash_sales_profit`, `auth.view_dash_stock_overview`, `auth.view_dash_smart_alerts`
+- contra permissions such as `auth.view_contra_entry`, `auth.create_contra_entry`, `auth.update_contra_entry`, `auth.delete_contra_entry`
 
-| App | Description |
-|-----|-------------|
-| `authentication` | Login, logout, session management, role-based permissions |
-| `home` | Dashboard — cash balance, party balances, item lookups |
-| `items` | Inventory item creation, updates, autocomplete search |
-| `parties` | Customer/vendor management (add, update) |
-| `sale` | Sales invoice creation, retrieval, summary reports |
-| `purchase` | Purchase invoice management |
-| `sale_return` | Sales return processing |
-| `purchase_return` | Purchase return processing |
-| `payments` | Outgoing payment recording and history |
-| `receipts` | Incoming receipt recording and history |
-| `display_reports` | Accounts Reports, Stock Reports, Profit Reports |
+The custom admin site is defined in `financee/admin_site.py`. It restricts admin access to superusers and adds user activity reporting across business tables.
 
----
+### Core Business Flows
 
-## ✨ Key Features
+- Parties: add, update, autocomplete, list JSON.
+- Items: add, update, autocomplete, list JSON.
+- Purchases: create/update/delete purchase invoices, validate serials, fetch previous/next/current invoices, show summaries.
+- Sales: create/update/delete sale invoices, validate stock serials, bulk serial lookup, fetch previous/next/current invoices, show summaries.
+- Purchase returns: return purchased serials to vendors, fetch previous/next/current returns, show summaries.
+- Sale returns: receive sold serials back from customers, fetch previous/next/current returns, show summaries.
+- Payments: create/update/delete outgoing payments and date-wise lookup.
+- Receipts: create/update/delete incoming receipts and date-wise lookup.
+- Contra entries: party-to-party transfers without cash movement.
+- Reports: ledgers, receivables, payables, trial balance, cash ledger, stock reports, serial ledgers, item history, company valuation, sale-wise profit, and monthly reports.
 
-### 🔐 Authentication & Role-Based Access Control
-- Session-based authentication using Django's built-in auth system
-- **Granular module-level permissions** — each module (Sales, Purchase, Payments, etc.) has its own `view`, `add`, `change`, `delete` permissions
-- Permissions assigned per user/group — unauthorized access redirects gracefully to the home dashboard
-- JSON responses for AJAX-based login/logout flows
+## Main URLs
 
-### 📊 Dashboard (Home)
-- Real-time **cash balance** display
-- **Party-wise balance** overview (receivables & payables)
-- **Expense party balances** for expense tracking
-- **Item & party autocomplete** APIs for fast data entry
+Root URL behavior:
 
-### 🛒 Sales Module
-- Full invoice creation with multiple line items
-- Party name validation against the database
-- Future-date restriction on invoice dates
-- Sale summary and detailed invoice retrieval
-- AJAX-based form submission with real-time error feedback
+- `/` redirects authenticated users to `/home/` and unauthenticated users to `/authentication/login/`.
+- `/admin/` uses the custom Financee admin site.
 
-### 🏭 Purchase Module
-- Complete purchase cycle: invoice creation → stock update → accounting entry
-- Linked to inventory serial-number tracking
+Important app route groups:
 
-### 🔄 Returns Management
-- **Sale Returns** — reversal of sales with automatic stock restoration
-- **Purchase Returns** — reversal of purchases with full accounting reversal
+| Prefix | App |
+| --- | --- |
+| `/authentication/` | login, logout, current user |
+| `/home/` | dashboard and dashboard APIs |
+| `/parties/` | parties dashboard, add/update, autocomplete, list |
+| `/items/` | items dashboard, add/update, autocomplete, list |
+| `/purchase/` | purchase invoices |
+| `/sale/` | sale invoices |
+| `/purchaseReturn/` | purchase returns |
+| `/saleReturn/` | sale returns |
+| `/payments/` | payments |
+| `/receipts/` | receipts |
+| `/contra/` | contra entries |
+| `/accountsReports/` | reporting endpoints |
 
-### 💵 Payments & Receipts
-- Date-wise payment/receipt history
-- Old payment/receipt lookup
-- Full party ledger support
+## Database Backup Summary
 
-### 📈 Reports
-- **Profit Reports** — Gross profit, net profit analysis
-- **Stock Reports** — Current inventory levels, valuation
-- **Accounts Reports** — Party ledgers, balance sheet data
+The included backup file is:
 
----
-
-## 📁 Project Structure
-
-```
-Accounting-Plus-Inventory-System/
-│
-├── financee/                   # Main Django project settings
-│   └── urls.py                 # Root URL configuration
-│
-├── authentication/             # User auth & permissions
-│   ├── views.py                # login_view, logout_view, current_user
-│   ├── urls.py
-│   └── migrations/             # Permission seeders (11 migrations)
-│
-├── home/                       # Dashboard
-│   └── views.py                # Cash balance, party APIs, item APIs
-│
-├── items/                      # Inventory items
-│   └── views.py                # CRUD + autocomplete
-│
-├── parties/                    # Customer/Vendor management
-│   └── views.py
-│
-├── sale/                       # Sales invoicing
-│   └── views.py
-│
-├── purchase/                   # Purchase invoicing
-│   └── views.py
-│
-├── sale_return/                # Sales return
-├── purchase_return/            # Purchase return
-├── payments/                   # Outgoing payments
-├── receipts/                   # Incoming receipts
-│
-├── templates/                  # Django HTML templates
-│   ├── base/base.html          # Base layout
-│   ├── authentication_templates/
-│   ├── home_templates/
-│   ├── items_templates/
-│   ├── parties_templates/
-│   ├── sale_templates/
-│   ├── purchase_templates/
-│   ├── sale_return_templates/
-│   ├── purchase_return_templates/
-│   ├── payments_templates/
-│   ├── receipts_templates/
-│   └── display_report_templates/
-│
-├── requirements.txt
-├── manage.py
-└── .gitignore
+```text
+db_backup_20260703_0000.sql
 ```
 
----
+It contains:
 
-## 🔑 Permission System
+- 29 `CREATE TABLE` statements
+- 13 `CREATE VIEW` statements
+- 134 `CREATE FUNCTION` statements
+- 11 `CREATE TRIGGER` statements
+- Data loaded through `COPY public... FROM stdin`
 
-Permissions are seeded via Django migrations. Each module defines its own set of permissions:
+Major business tables include:
 
-```python
-# Example – Sales Permissions Migration
-permissions = [
-    ("view_sale",   "Can View Sale Invoices"),
-    ("add_sale",    "Can Create Sale Invoices"),
-    ("change_sale", "Can Edit Sale Invoices"),
-    ("delete_sale", "Can Delete Sale Invoices"),
-]
-```
+- `chartofaccounts`
+- `parties`
+- `items`
+- `journalentries`
+- `journallines`
+- `purchaseinvoices`, `purchaseitems`, `purchaseunits`
+- `salesinvoices`, `salesitems`, `soldunits`
+- `purchasereturns`, `purchasereturnitems`
+- `salesreturns`, `salesreturnitems`
+- `payments`
+- `receipts`
+- `contra_entries`
+- `stockmovements`
 
-Every view enforces permission checks:
-```python
-@login_required
-def sales(request):
-    if not request.user.has_perm("auth.view_sale"):
-        messages.error(request, "You do not have permission to View Sale Invoices.")
-        return redirect("home:home")
-```
+Major database functions include:
 
-Modules with dedicated permissions: `Payments`, `Receipts`, `Purchase`, `Sale`, `Purchase Return`, `Sale Return`, `Items`, `Parties`, `Accounts Reports`, `Stock Reports`, `Profit Reports`.
+- party and item CRUD: `add_party_from_json`, `update_party_from_json`, `get_party_by_name`, `add_item_from_json`, `update_item_from_json`, `get_item_by_name`
+- purchase flow: `create_purchase`, `update_purchase_invoice`, `validate_purchase_update`, `validate_purchase_delete`, `delete_purchase`
+- sale flow: `create_sale`, `update_sale_invoice`, `validate_sales_update`, `validate_sales_delete`, `delete_sale`
+- return flow: `create_purchase_return`, `update_purchase_return`, `delete_purchase_return`, `create_sale_return`, `update_sale_return`, `delete_sale_return`
+- payment/receipt/contra flow: `make_payment`, `update_payment`, `delete_payment`, `make_receipt`, `update_receipt`, `delete_receipt`, `make_contra`, `update_contra`, `delete_contra`
+- reporting: `detailed_ledger`, `detailed_ledger2`, `get_cash_ledger_with_party`, `get_trial_balance_json`, `stock_summary`, `get_serial_ledger`, `sale_wise_profit`, `monthly_company_position`, `monthly_income_statement`
+- dashboard: `fn_dash_sales_today_kpi`, `fn_dash_sales_last7days`, `fn_dash_stock_kpi`, `fn_dash_low_stock_items`, `fn_dash_fast_moving_items`, `fn_dash_receivables_aging`, `fn_dash_recent_transactions`, `fn_dash_smart_alerts`
 
----
+## Backup Data Snapshot
 
-## 🌐 API Endpoints
+The backup includes application data. Row counts observed in the `COPY` sections include:
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET/POST` | `/auth/login/` | User authentication |
-| `POST` | `/auth/logout/` | Session logout |
-| `GET` | `/auth/current/user/` | Logged-in user info |
-| `GET` | `/api/cash/` | Current cash balance |
-| `GET` | `/api/parties/` | Party list |
-| `GET` | `/api/items/` | Item list |
-| `GET` | `/api/party-balances/` | Receivables & payables |
-| `GET` | `/items/autocomplete-item/` | Item search autocomplete |
-| `GET/POST` | `/sale/sales/` | Sale invoice CRUD |
-| `GET` | `/sale/get-sale/` | Fetch specific invoice |
-| `GET` | `/sale/get-sale-summary/` | Sales summary |
-| `GET/POST` | `/purchase/` | Purchase invoice CRUD |
-| `GET/POST` | `/payments/payment/` | Record payment |
-| `GET` | `/payments/get-old-payments/` | Payment history |
-| `GET/POST` | `/receipts/receipt/` | Record receipt |
-| `GET` | `/receipts/get-old-receipts/` | Receipt history |
+| Table | Rows |
+| --- | ---: |
+| `items` | 265 |
+| `parties` | 224 |
+| `purchaseinvoices` | 194 |
+| `purchaseitems` | 1,346 |
+| `purchaseunits` | 9,084 |
+| `salesinvoices` | 823 |
+| `salesitems` | 1,424 |
+| `soldunits` | 8,100 |
+| `payments` | 1,452 |
+| `receipts` | 1,670 |
+| `contra_entries` | 93 |
+| `journalentries` | 4,316 |
+| `journallines` | 10,336 |
+| `stockmovements` | 19,417 |
 
----
+The backup also includes Django auth users, groups, permissions, sessions, migrations, and admin logs. Treat it as sensitive production-like data.
 
-## 🗄️ Database Design
+## Setup
 
-All business logic lives in the **PostgreSQL layer** through stored functions and triggers. Django views simply call these functions via `connection.cursor()`:
+1. Create and activate a virtual environment.
 
-```python
-with connection.cursor() as cursor:
-    cursor.execute("SELECT * FROM create_sale_invoice(%s, %s, %s)", [party, date, items])
-    result = cursor.fetchone()
-```
-
-**Key Database Objects:**
-
-| Type | Count | Examples |
-|------|-------|---------|
-| Tables | 18 | ChartOfAccounts, Parties, Items, Sale, Purchase... |
-| Stored Functions | 40+ | `create_sale_invoice()`, `process_purchase_return()` |
-| Triggers | 10+ | Auto journal entries, stock updates |
-| Views | 5+ | Stock summary, party balances, profit views |
-
-> 📖 See the **ERP-System (Database)** repository for complete schema documentation.
-
----
-
-## ☁️ Deployment
-
-```
-AWS EC2 Instance
-│
-├── Ubuntu Server
-│   ├── Nginx             → Port 80/443, static files, reverse proxy
-│   ├── Gunicorn          → WSGI server, Unix socket
-│   ├── Django App        → Application code
-│   └── PostgreSQL        → Database server
-│
-└── Security Group        → Inbound: 22 (SSH), 80 (HTTP), 443 (HTTPS)
-```
-
-**Nginx → Gunicorn communication** is handled via Unix socket for optimal performance.
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Python 3.x
-- PostgreSQL 14+
-- pip
-
-### Installation
-
-```bash
-# 1. Clone the repository
-git clone <repo-url>
-cd Accounting-Plus-Inventory-System
-
-# 2. Create virtual environment
+```powershell
 python -m venv venv
-source venv/bin/activate    # Windows: venv\Scripts\activate
+.\venv\Scripts\Activate.ps1
+```
 
-# 3. Install dependencies
+2. Install dependencies.
+
+```powershell
 pip install -r requirements.txt
+```
 
-# 4. Configure environment
-cp .env.example .env
-# Edit .env with your PostgreSQL credentials and Django secret key
+3. Create a `.env` file with the required values.
 
-# 5. Set up the database
-# Run the SQL schema from the ERP-System (Database) repo first
-# Then apply Django migrations
-python manage.py migrate
+```env
+SECRET_KEY=your-secret-key
+DEBUG=True
+DB_NAME=your_database_name
+DB_USER=your_database_user
+DB_PASSWORD=your_database_password
+DB_HOST=localhost
+DB_PORT=5432
+```
 
-# 6. Run the development server
+4. Restore the PostgreSQL backup into the configured database.
+
+```powershell
+psql -U your_database_user -d your_database_name -f db_backup_20260703_0000.sql
+```
+
+5. Run Django checks and start the development server.
+
+```powershell
+python manage.py check
 python manage.py runserver
 ```
 
-### Environment Variables (`.env`)
+## Development Notes
 
-```env
-SECRET_KEY=your_django secret key
-DEBUG=True
+- The Django model files are mostly empty placeholders. Do not assume Django ORM models represent the database.
+- Most business logic is in PostgreSQL functions and triggers. When changing invoice, stock, ledger, payment, receipt, contra, or report behavior, inspect both the Django view and the matching SQL function.
+- The JavaScript files in `static/js/` drive AJAX form submission, navigation, and report rendering.
+- The smart description feature is intentionally frontend-only. Do not add database columns for it; it stores synchronized plain text in the existing `description` fields.
+- If purchase previous/next navigation fails with `column pi.is_opening does not exist`, the live database has a function/schema mismatch. Ensure the column exists.
 
-# Database
-DB_NAME=db_name
-DB_USER=db_user
-DB_PASSWORD=db_password
-DB_HOST=localhost
-DB_PORT=5432
+Windows:
 
+```powershell
+.\venv\Scripts\python.exe manage.py shell -c "from django.db import connection; cursor=connection.cursor(); cursor.execute('ALTER TABLE public.purchaseinvoices ADD COLUMN IF NOT EXISTS is_opening boolean NOT NULL DEFAULT false;'); print('is_opening column ensured')"
+.\venv\Scripts\python.exe manage.py shell -c "from django.db import connection; cursor=connection.cursor(); cursor.execute(\"SELECT column_name, data_type, column_default FROM information_schema.columns WHERE table_schema='public' AND table_name='purchaseinvoices' AND column_name='is_opening';\"); print(cursor.fetchall())"
 ```
 
----
+Linux/EC2:
 
-## 🔗 Related Repository
+```bash
+./myvenv/bin/python manage.py shell -c "from django.db import connection; cursor=connection.cursor(); cursor.execute('ALTER TABLE public.purchaseinvoices ADD COLUMN IF NOT EXISTS is_opening boolean NOT NULL DEFAULT false;'); print('is_opening column ensured')"
+./myvenv/bin/python manage.py shell -c "from django.db import connection; cursor=connection.cursor(); cursor.execute(\"SELECT column_name, data_type, column_default FROM information_schema.columns WHERE table_schema='public' AND table_name='purchaseinvoices' AND column_name='is_opening';\"); print(cursor.fetchall())"
+```
 
-> 📦 **[ERP-System (Database)](../ERP-System)** — Contains the complete PostgreSQL schema, stored functions, triggers, ER diagrams, execution flow diagrams, and database documentation.
+- Existing source files contain some mojibake/encoding damage in comments and old documentation. Keep new documentation and code ASCII unless there is a clear reason to use Unicode.
+- `.env` is ignored by git and should not be committed.
 
----
-
-<div align="center">
-
-**Built with ❤️ using Django & PostgreSQL**
-
-</div>
+See `CONTEXT.md` for a deeper technical map of the repository and database backup.

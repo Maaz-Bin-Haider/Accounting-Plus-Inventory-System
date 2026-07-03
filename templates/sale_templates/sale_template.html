@@ -5,6 +5,7 @@
 
 {% block SeperateCssFile %}
 <link rel="stylesheet" href="{% static 'css/purchasing_styling.css' %}">
+<link rel="stylesheet" href="{% static 'css/smart_description.css' %}">
 {% endblock SeperateCssFile %}
 
 {% block body %}
@@ -165,5 +166,6 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <!-- jsPDF for PDF export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="{% static 'js/smart_description.js' %}"></script>
 <script src="{% static 'js/sales_script.js' %}"></script>
 {% endblock body %}

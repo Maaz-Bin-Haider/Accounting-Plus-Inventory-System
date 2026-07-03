@@ -5,6 +5,7 @@
 
 {% block SeperateCssFile %}
 <link rel="stylesheet" href="{% static 'css/purchasing_styling.css' %}">
+<link rel="stylesheet" href="{% static 'css/smart_description.css' %}">
 <style>
   /* ── Return-page accent: amber/orange header to visually distinguish from Sale ── */
   .sale-card-header {
@@ -262,5 +263,6 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="{% static 'js/smart_description.js' %}"></script>
 <script src="{% static 'js/sale_return_script.js' %}"></script>
 {% endblock body %}
