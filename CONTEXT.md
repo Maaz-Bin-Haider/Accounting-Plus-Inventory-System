@@ -823,6 +823,38 @@ This is a schema compatibility fix. Existing normal purchase invoices default to
 6. Validate permission checks.
 7. Test the full browser flow and database side effects.
 
+## Disposable System Test Suite
+
+The repository includes a production-independent PostgreSQL integration suite:
+
+- Runner: `system_tests/run_system_tests.py`
+- Usage: `system_tests/README.md`
+- Latest detailed output: `system_tests/RESULTS.md`
+- Confirmed failure backlog: `system_tests/FAILED_TESTS.md`
+
+The runner creates a temporary database named with the `financee_test_` prefix,
+restores `db_backup_20260703_0000.sql`, creates uniquely named fixtures, runs the
+database workflows and report/integrity checkpoints, writes `RESULTS.md`, and drops
+the temporary database by default. It does not use Django's configured production
+database.
+
+The July 17, 2026 local run completed 60 tests: 52 passed and 8 failed. The confirmed
+open defects are:
+
+1. A serial can be sale-returned more than once without an intervening resale.
+2. A sale invoice update is permitted after a partial sale return exists.
+3. An old sale return can be deleted after its serial has been resold.
+4. An old sale return can be updated after its serial has been resold.
+5. A duplicate mixed-item sale return is accepted.
+6. A multi-item sale invoice update is permitted after a return exists.
+7. A sale accepts quantity greater than its supplied serial count.
+8. A sale accepts quantity less than its supplied serial count.
+
+Treat `system_tests/FAILED_TESTS.md` as the remediation backlog. After changing the
+stored procedures, rerun the complete suite rather than testing only the affected
+case, because sale returns and invoice mutations also affect stock, journals,
+reports, and profit calculations.
+
 ## Known Documentation Corrections
 
 The previous `README.md` had encoding damage and some stale claims. This documentation reflects the files observed in this repository and the included SQL backup as of July 3, 2026.
