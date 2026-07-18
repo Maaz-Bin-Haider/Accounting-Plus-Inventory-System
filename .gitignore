@@ -14,3 +14,6 @@ backups/
 
 # Collected static files (generated inside the container)
 staticfiles/
+
+# TLS origin certificates (created on the server, never in git)
+docker/certs/
