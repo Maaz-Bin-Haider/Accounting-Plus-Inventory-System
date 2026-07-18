@@ -694,6 +694,7 @@ import json
 from datetime import datetime, date
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from financee.db_errors import user_db_error
 
 # Create your views here.
 
@@ -802,9 +803,10 @@ def createSaleReturn(request):
                                 "UPDATE salesreturns SET description=%s WHERE sales_return_id=%s",
                                 [(data.get("description") or "").strip() or None, new_return_id],
                             )
-                        return JsonResponse({"success": True, "message": "Sale Return Sucessfull"}) 
+                        return JsonResponse({"success": True, "message": "Sale Return Sucessfull"})
                     except Exception as e:
-                        return JsonResponse({"success": False, "message": f"Unable to Sale Return, Try Again!"}) 
+                        logger.exception('swallowed exception in %s', __name__)
+                        return JsonResponse({"success": False, "message": user_db_error(e, "Unable to Sale Return, Try Again!")})
                 else:
                     # Executing update_sale_ return function
                     try:
@@ -828,9 +830,10 @@ def createSaleReturn(request):
                                 "UPDATE salesreturns SET description=%s WHERE sales_return_id=%s",
                                 [(data.get("description") or "").strip() or None, sale_return_ID],
                             )
-                        return JsonResponse({"success": True, "message": "Sale-Return Updated Sucessfully"}) 
+                        return JsonResponse({"success": True, "message": "Sale-Return Updated Sucessfully"})
                     except Exception as e:
-                        return JsonResponse({"success": False, "message": f"Unable to Update Sale-Return, Try Again!"})
+                        logger.exception('swallowed exception in %s', __name__)
+                        return JsonResponse({"success": False, "message": user_db_error(e, "Unable to Update Sale-Return, Try Again!")})
             except Exception as e:
                 logger.exception('swallowed exception in %s', __name__)
                 return JsonResponse({"success": False, "message": f"Invalid Sale-Return Data!"})
@@ -857,8 +860,9 @@ def createSaleReturn(request):
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_sale_return(%s)",[sale_return_ID])
                     return JsonResponse({"success": True, "message": "Deleted Successfully"})
-            except Exception:
-                return JsonResponse({"success": False, "message": "Unable to delete this Sale-Return! Try Again.."})
+            except Exception as e:
+                logger.exception('swallowed exception in %s', __name__)
+                return JsonResponse({"success": False, "message": user_db_error(e, "Unable to delete this Sale-Return! Try Again..")})
 
 
     return render(request,'sale_return_templates/sale_return_template.html')

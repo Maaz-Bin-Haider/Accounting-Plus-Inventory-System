@@ -26,7 +26,9 @@ except ImportError:
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BACKUP = ROOT / "db_backup_20260703_0000.sql"
+_BACKUPS = sorted(ROOT.glob("db_backup_*.sql"))
+BACKUP = _BACKUPS[-1] if _BACKUPS else ROOT / "db_backup_missing.sql"
+FIXES = ROOT / "production_fixes.sql"
 RESULTS = Path(__file__).resolve().parent / "RESULTS.md"
 DB_PREFIX = "financee_test_"
 
@@ -422,6 +424,13 @@ def restore(kwargs, name: str):
     completed = subprocess.run(command, env=env, text=True, input=dump_sql, capture_output=True)
     if completed.returncode:
         raise RuntimeError(f"Backup restore failed:\n{completed.stderr[-4000:]}")
+    # Apply the production fix patch on top of the restored backup so the
+    # suite validates exactly what production will run after deployment.
+    if FIXES.exists():
+        fixes_sql = FIXES.read_text(encoding="utf-8")
+        completed = subprocess.run(command, env=env, text=True, input=fixes_sql, capture_output=True)
+        if completed.returncode:
+            raise RuntimeError(f"Applying {FIXES.name} failed:\n{completed.stderr[-4000:]}")
 
 
 def write_report(db_name: str, suite: Suite | None, fatal: str | None, kept: bool):

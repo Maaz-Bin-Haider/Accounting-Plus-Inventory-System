@@ -6,6 +6,7 @@ from django.http import JsonResponse
 import json
 from psycopg2.extras import Json
 from django.contrib.auth.decorators import login_required
+from financee.db_errors import user_db_error
 
 
 @login_required
@@ -96,7 +97,7 @@ def make_contra(request):
                         messages.success(request, f"Transfer recorded: {amount} from {from_name} to {to_name}.")
                         return redirect("contra:contra")
                     except Exception as e:
-                        messages.error(request, f"An unexpected error occurred. {e}")
+                        messages.error(request, user_db_error(e, "Unable to save this contra entry. Please try again."))
                 else:  # update
                     if not request.user.has_perm("auth.update_contra_entry"):
                         messages.error(request, "You do not have permission to update contra entries.")
@@ -106,7 +107,7 @@ def make_contra(request):
                         messages.success(request, f"Transfer updated: {amount} from {from_name} to {to_name}.")
                         return redirect("contra:contra")
                     except Exception as e:
-                        messages.error(request, f"An unexpected error occurred. {e}")
+                        messages.error(request, user_db_error(e, "Unable to update this contra entry. Please try again."))
 
         if action == "delete":
             if not contra_id:
@@ -129,8 +130,8 @@ def make_contra(request):
                     cursor.execute("SELECT delete_contra(%s)", [contra_id])
                 messages.success(request, "Contra entry deleted successfully.")
                 return redirect("contra:contra")
-            except Exception:
-                messages.error(request, "Unable to delete this contra entry! Try again.")
+            except Exception as e:
+                messages.error(request, user_db_error(e, "Unable to delete this contra entry! Try again."))
                 return render(request, "contra_templates/contra.html")
 
     return render(request, "contra_templates/contra.html")

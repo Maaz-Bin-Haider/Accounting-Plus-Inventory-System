@@ -618,6 +618,7 @@ from django.db import connection
 from datetime import datetime, date
 import json
 from django.contrib.auth.decorators import login_required
+from financee.db_errors import user_db_error
 
 # Create your views here.
 
@@ -824,7 +825,8 @@ def purchasing(request):
                             )
                             return JsonResponse({"success": True, "message": "Purchase Successfull"})
                     except Exception as e:
-                        return JsonResponse({"success": False, "message": f"Failed to make Purchase, try again! {e}"})  
+                        logger.exception('swallowed exception in %s', __name__)
+                        return JsonResponse({"success": False, "message": user_db_error(e, "Failed to make Purchase, try again!")})
                 else: # if purchase ID Exists Means we have to update
                     # Validating If any serial number is removed from updated invoice which is already sold or purchases Returned
                     try:
@@ -871,7 +873,7 @@ def purchasing(request):
                                 })
                     except Exception as e:
                         logger.exception('swallowed exception in %s', __name__)
-                        return JsonResponse({"success": False, "message": "Update Failed Try Again!"})
+                        return JsonResponse({"success": False, "message": user_db_error(e, "Unable to update this purchase. Please try again.")})
                     try:
                         if request.user.groups.filter(name="view_only_users").exists():
                             return JsonResponse({
@@ -923,7 +925,7 @@ def purchasing(request):
 
                     except Exception as e:
                         logger.exception('swallowed exception in %s', __name__)
-                        return JsonResponse({"success": False, "message": "Failed to Update Purchase, try again!"})  
+                        return JsonResponse({"success": False, "message": user_db_error(e, "Failed to Update Purchase, try again!")})
 
                     
 
@@ -965,7 +967,7 @@ def purchasing(request):
                         })
             except Exception as e:
                 logger.exception('swallowed exception in %s', __name__)
-                return JsonResponse({"success": False, "message": "Failed to Delete Purchase, try again!"})  
+                return JsonResponse({"success": False, "message": user_db_error(e, "Failed to Delete Purchase, try again!")})
             
             # Executing Delete
             try:
@@ -985,8 +987,9 @@ def purchasing(request):
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_purchase(%s)",[purchase_id])
                     return JsonResponse({"success": True, "message": "Deleted Successfully"})
-            except Exception:
-                return JsonResponse({"success": False, "message": "Unable to delete this Purchase! Try Again.."})
+            except Exception as e:
+                logger.exception('swallowed exception in %s', __name__)
+                return JsonResponse({"success": False, "message": user_db_error(e, "Unable to delete this Purchase! Try Again..")})
     return render(request, "purchase_templates/purchasing_template.html")
 
 

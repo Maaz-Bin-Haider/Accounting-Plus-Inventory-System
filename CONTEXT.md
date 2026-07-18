@@ -10,7 +10,7 @@ The system is a Django web application backed by a PostgreSQL database. The desi
 - PostgreSQL owns most accounting and inventory behavior through stored functions, views, and triggers.
 - Frontend JavaScript calls Django endpoints for create/update/delete, record navigation, lookup, summaries, and reporting.
 
-The local backup `db_backup_20260703_0000.sql` is a complete PostgreSQL dump containing schema and data. It is the authoritative source for table structure, function signatures, triggers, views, and current data shape.
+The local backup (`db_backup_20260718_0000.sql` at the time of writing; the latest `db_backup_*.sql` in the project root) is a complete PostgreSQL dump containing schema and data. It is the authoritative source for table structure, function signatures, triggers, views, and current data shape. Note: `production_fixes.sql` (July 18, 2026) supersedes several stored procedures in that dump; apply it on top when restoring.
 
 ## Django Project
 
@@ -833,27 +833,24 @@ The repository includes a production-independent PostgreSQL integration suite:
 - Confirmed failure backlog: `system_tests/FAILED_TESTS.md`
 
 The runner creates a temporary database named with the `financee_test_` prefix,
-restores `db_backup_20260703_0000.sql`, creates uniquely named fixtures, runs the
+restores the latest `db_backup_*.sql` found in the project root, applies
+`production_fixes.sql` on top, creates uniquely named fixtures, runs the
 database workflows and report/integrity checkpoints, writes `RESULTS.md`, and drops
 the temporary database by default. It does not use Django's configured production
 database.
 
-The July 17, 2026 local run completed 60 tests: 52 passed and 8 failed. The confirmed
-open defects are:
+The July 17, 2026 run found 8 defects (duplicate sale returns, sale updates
+allowed while returns existed, sale-return delete/update after resale, and
+qty/serial-count mismatches in create_sale). All 8 were fixed on July 18, 2026
+in `production_fixes.sql`, together with additional hardening of the purchase
+and return functions and user-friendly error messages surfaced through
+`financee/db_errors.py`. See `FIXES.md` for root causes, fixes, and EC2
+deployment steps. The July 18, 2026 run passes 60 of 60 tests.
 
-1. A serial can be sale-returned more than once without an intervening resale.
-2. A sale invoice update is permitted after a partial sale return exists.
-3. An old sale return can be deleted after its serial has been resold.
-4. An old sale return can be updated after its serial has been resold.
-5. A duplicate mixed-item sale return is accepted.
-6. A multi-item sale invoice update is permitted after a return exists.
-7. A sale accepts quantity greater than its supplied serial count.
-8. A sale accepts quantity less than its supplied serial count.
-
-Treat `system_tests/FAILED_TESTS.md` as the remediation backlog. After changing the
-stored procedures, rerun the complete suite rather than testing only the affected
-case, because sale returns and invoice mutations also affect stock, journals,
-reports, and profit calculations.
+If new failures appear, treat `system_tests/FAILED_TESTS.md` as the remediation
+backlog. After changing the stored procedures, rerun the complete suite rather
+than testing only the affected case, because sale returns and invoice mutations
+also affect stock, journals, reports, and profit calculations.
 
 ## Known Documentation Corrections
 

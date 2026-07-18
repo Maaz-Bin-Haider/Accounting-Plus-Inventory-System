@@ -650,6 +650,7 @@ from django.http import JsonResponse
 import json
 from psycopg2.extras import Json
 from django.contrib.auth.decorators import login_required
+from financee.db_errors import user_db_error
 
 # Create your views here.
 
@@ -740,7 +741,7 @@ def make_payment(request):
                             messages.success(request, f"Transaction completed: {amount} paid to {party_name}.")
                             return redirect("payments:payment")
                         except Exception as e:
-                            messages.error(request,f"An Unexpected Error occured Please Try Again! {e}")
+                            messages.error(request, user_db_error(e, "Unable to save this payment. Please try again."))
                     else:   # Means we have to update payment 
                         try:
                             # Condition Check for view_only_user group
@@ -757,7 +758,7 @@ def make_payment(request):
                             messages.success(request, f"Transaction Updated: {amount} paid to {party_name}.")
                             return redirect("payments:payment")
                         except Exception as e:
-                            messages.error(request,f"An Unexpected Error occured Please Try Again! {e}")
+                            messages.error(request, user_db_error(e, "Unable to update this payment. Please try again."))
                 else:
                     messages.error(request,f"No such Party exists with name '{party_name}'!")
                     return render(request,"payments_templates/payment.html",data)
@@ -788,8 +789,8 @@ def make_payment(request):
                     cursor.execute("SELECT delete_payment(%s)",[payment_id])
                     messages.success(request,"Payment delete Sucessfully.")
                     return redirect("payments:payment")
-            except Exception:
-                messages.error(request,"Unable to delete this Payment! Try Again..")
+            except Exception as e:
+                messages.error(request, user_db_error(e, "Unable to delete this Payment! Try Again.."))
                 return render(request,"payments_templates/payment.html")
             
     return render(request,"payments_templates/payment.html")

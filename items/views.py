@@ -491,6 +491,7 @@ from django.http import JsonResponse
 from django.contrib import messages
 import json
 from django.contrib.auth.decorators import login_required
+from financee.db_errors import user_db_error
 
 @login_required
 def create_new_item(request):
@@ -552,6 +553,11 @@ def create_new_item(request):
                 return JsonResponse({
                     "status": "error",
                     "message": f"Item '{item_name}' already exists!"
+                })
+            except Exception as e:
+                return JsonResponse({
+                    "status": "error",
+                    "message": user_db_error(e, "Unable to create this item. Please check the entries and try again.")
                 })
 
     return render(request, "items_templates/add_new_item.html")
@@ -636,7 +642,7 @@ def update_item_view(request):
             except Exception as e:
                 return JsonResponse({
                     "status": "error",
-                    "message": f"An unexpected error occurred! {e}"
+                    "message": user_db_error(e, "Unable to update this item. Please check the entries and try again.")
                 })
 
     # ──────────────────────────────────────────────────────────────────
@@ -684,7 +690,7 @@ def update_item_view(request):
                     cursor.execute("SELECT update_item_from_json(%s)",[json_data])
                     messages.success(request, f"Item '{data['item_name']}' Updated successfully!")
                 except Exception as e:
-                    messages.error(request, f"An Unexpected Error Occured! {e}")
+                    messages.error(request, user_db_error(e, "Unable to update this item. Please check the entries and try again."))
             else: # means adding new item
 
                 try:
@@ -697,6 +703,8 @@ def update_item_view(request):
                     messages.success(request, f"Item '{data['item_name']}' Added successfully!")
                 except IntegrityError:
                     messages.error(request, f"Item '{data['item_name']}' already exists!")
+                except Exception as e:
+                    messages.error(request, user_db_error(e, "Unable to create this item. Please check the entries and try again."))
 
 
     return render(request, "items_templates/update_item.html",context)

@@ -510,6 +510,7 @@ from django.http import JsonResponse
 import json
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from financee.db_errors import user_db_error
 
 @login_required
 def create_new_party(request):
@@ -571,6 +572,11 @@ def create_new_party(request):
                 return JsonResponse({
                     "status": "error",
                     "message": f"Party '{party_name}' already exists!"
+                })
+            except Exception as e:
+                return JsonResponse({
+                    "status": "error",
+                    "message": user_db_error(e, "Unable to create this party. Please check the entries and try again.")
                 })
 
     return render(request, "parties_templates/add_new_party.html")
@@ -668,7 +674,7 @@ def update_party(request):
             except Exception as e:
                 return JsonResponse({
                     "status": "error",
-                    "message": f"An unexpected error occurred! {e}"
+                    "message": user_db_error(e, "Unable to update this party. Please check the entries and try again.")
                 })
 
     # ──────────────────────────────────────────────────────────────────
@@ -718,7 +724,7 @@ def update_party(request):
                     cursor.execute("SELECT update_party_from_json(%s,%s)",[int(party_id),json_data])
                     messages.success(request,f"Updated '{data['party_name']}' Sucessfully!")
                 except Exception as e:
-                    messages.error(request, f"An Unexpected Error Occured! {e}")
+                    messages.error(request, user_db_error(e, "Unable to update this party. Please check the entries and try again."))
             else:
                 try:
                     if request.user.groups.filter(name="view_only_users").exists():
@@ -732,6 +738,8 @@ def update_party(request):
                     messages.success(request, f"Party '{data['party_name']}' created successfully!")
                 except IntegrityError:
                     messages.error(request, f"Party '{data['party_name']}' already exists!")
+                except Exception as e:
+                    messages.error(request, user_db_error(e, "Unable to create this party. Please check the entries and try again."))
 
 
     return render(request,"parties_templates/update_party.html",context)

@@ -5,6 +5,7 @@ from django.db import connection
 from datetime import datetime, date
 import json
 from django.contrib.auth.decorators import login_required
+from financee.db_errors import user_db_error
 
 import logging
 logger = logging.getLogger(__name__)
@@ -223,7 +224,7 @@ def sales(request):
                             return JsonResponse({"success": True, "message": "Sale Successfull"})
                     except Exception as e:
                         logger.exception('swallowed exception in %s', __name__)
-                        return JsonResponse({"success": False, "message": "Failed to make Sale, try again!"})  
+                        return JsonResponse({"success": False, "message": user_db_error(e, "Failed to make Sale, try again!")})
                 else: # if sale ID Exists Means we have to update
                     try:
                         # Prepare your sale items data
@@ -245,23 +246,19 @@ def sales(request):
                             if not result["is_valid"]:
                                 returned_serials = result.get("returned_serials", [])
 
-                                # Build detailed message lines
-                                details = []
+                                # Use the database's own explanation and list
+                                # the affected serials for the user.
+                                message = result.get("message") or "This sale invoice cannot be updated."
                                 if returned_serials:
-                                    details.append(f"• Returned Serials: {', '.join(returned_serials)}")
-
-                                message = (
-                                    "Update blocked: some serial numbers you are trying to remove "
-                                    "have already been returned from Customer.\n\n"
-                                    + "\n".join(details)
-                                )
+                                    message += f"\n\n• Returned Serials: {', '.join(returned_serials)}"
 
                                 return JsonResponse({
                                     "success": False,
                                     "message": message
                                 })
                     except Exception as e:
-                        return JsonResponse({"success": False, "message": f"Unable to update sale: {e}"})
+                        logger.exception('swallowed exception in %s', __name__)
+                        return JsonResponse({"success": False, "message": user_db_error(e, "Unable to update this sale. Please try again.")})
 
                     try:
                         if request.user.groups.filter(name="view_only_users").exists():
@@ -315,7 +312,7 @@ def sales(request):
 
                     except Exception as e:
                         logger.exception('swallowed exception in %s', __name__)
-                        return JsonResponse({"success": False, "message": "Failed to Update Sale, try again!"})  
+                        return JsonResponse({"success": False, "message": user_db_error(e, "Failed to Update Sale, try again!")})
 
                     
 
@@ -336,16 +333,9 @@ def sales(request):
                     if not result["is_valid"]:
                         returned_serials = result.get("returned_serials", [])
 
-                        # Build detailed message lines
-                        details = []
+                        message = result.get("message") or "This sale invoice cannot be deleted."
                         if returned_serials:
-                            details.append(f"• Returned Serials: {', '.join(returned_serials)}")
-
-                        message = (
-                            "Delete blocked: some serial numbers you are trying to remove "
-                            "have already been returned from the Customer.\n\n"
-                            + "\n".join(details)
-                        )
+                            message += f"\n\n• Returned Serials: {', '.join(returned_serials)}"
 
                         return JsonResponse({
                             "success": False,
@@ -353,7 +343,7 @@ def sales(request):
                         })
             except Exception as e:
                 logger.exception('swallowed exception in %s', __name__)
-                return JsonResponse({"success": False, "message": "Failed to Delete Sale, try again!"})
+                return JsonResponse({"success": False, "message": user_db_error(e, "Failed to Delete Sale, try again!")})
             
             # Executing Delete
             try:
@@ -373,8 +363,9 @@ def sales(request):
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_sale(%s)",[sale_id])
                     return JsonResponse({"success": True, "message": "Deleted Successfully"})
-            except Exception:
-                return JsonResponse({"success": False, "message": "Unable to delete this Sale! Try Again.."})
+            except Exception as e:
+                logger.exception('swallowed exception in %s', __name__)
+                return JsonResponse({"success": False, "message": user_db_error(e, "Unable to delete this Sale! Try Again..")})
     return render(request, "sale_templates/sale_template.html")
 
 @login_required

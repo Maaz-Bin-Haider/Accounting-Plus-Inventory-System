@@ -650,6 +650,7 @@ from django.http import JsonResponse
 import json
 from psycopg2.extras import Json
 from django.contrib.auth.decorators import login_required
+from financee.db_errors import user_db_error
 
 # Create your views here.
 
@@ -742,7 +743,7 @@ def make_receipt(request):
                             messages.success(request, f"Transaction completed: {amount} received from {party_name}.")
                             return redirect("receipts:receipt")
                         except Exception as e:
-                            messages.error(request,f"An Unexpected Error occured Please Try Again! {e}")
+                            messages.error(request, user_db_error(e, "Unable to save this receipt. Please try again."))
                     else:   # Means we have to update receipt 
                         try:
                             # Condition Check for view_only_user group
@@ -759,7 +760,7 @@ def make_receipt(request):
                             messages.success(request, f"Transaction Updated: {amount} received from {party_name}.")
                             return redirect("receipts:receipt")
                         except Exception as e:
-                            messages.error(request,f"An Unexpected Error occured Please Try Again! {e}")
+                            messages.error(request, user_db_error(e, "Unable to update this receipt. Please try again."))
                 else:
                     messages.error(request,f"No such Party exists with name '{party_name}'!")
                     return render(request,"receipts_templates/receipt.html",data)
@@ -789,8 +790,8 @@ def make_receipt(request):
                     cursor.execute("SELECT delete_receipt(%s)",[receipt_id])
                     messages.success(request,"Receipt delete Sucessfully.")
                     return redirect("receipts:receipt")
-            except Exception:
-                messages.error(request,"Unable to delete this Receipt! Try Again..")
+            except Exception as e:
+                messages.error(request, user_db_error(e, "Unable to delete this Receipt! Try Again.."))
                 return render(request,"receipts_templates/receipt.html")
             
     return render(request,"receipts_templates/receipt.html")

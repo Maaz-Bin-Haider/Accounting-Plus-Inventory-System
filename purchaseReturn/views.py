@@ -699,6 +699,7 @@ import json
 from django.contrib import messages
 from datetime import datetime, date
 from django.contrib.auth.decorators import login_required
+from financee.db_errors import user_db_error
 
 # Create your views here.
 
@@ -807,9 +808,10 @@ def createPurchaseReturn(request):
                                 "UPDATE purchasereturns SET description=%s WHERE purchase_return_id=%s",
                                 [(data.get("description") or "").strip() or None, new_return_id],
                             )
-                        return JsonResponse({"success": True, "message": "Purchase Return Sucessfull"}) 
+                        return JsonResponse({"success": True, "message": "Purchase Return Sucessfull"})
                     except Exception as e:
-                        return JsonResponse({"success": False, "message": f"Unable to Purchase Return, Try Again!"}) 
+                        logger.exception('swallowed exception in %s', __name__)
+                        return JsonResponse({"success": False, "message": user_db_error(e, "Unable to Purchase Return, Try Again!")})
                 else:
                     # Executing update_purchase_ return function
                     try:
@@ -833,13 +835,13 @@ def createPurchaseReturn(request):
                                 "UPDATE purchasereturns SET description=%s WHERE purchase_return_id=%s",
                                 [(data.get("description") or "").strip() or None, purchase_return_ID],
                             )
-                        return JsonResponse({"success": True, "message": "Purchase-Return Updated Sucessfully"}) 
+                        return JsonResponse({"success": True, "message": "Purchase-Return Updated Sucessfully"})
                     except Exception as e:
-                        
-                        return JsonResponse({"success": False, "message": f"Unable to Update Purchase-Return, Try Again! {e}"})
+                        logger.exception('swallowed exception in %s', __name__)
+                        return JsonResponse({"success": False, "message": user_db_error(e, "Unable to Update Purchase-Return, Try Again!")})
             except Exception as e:
                 logger.exception('swallowed exception in %s', __name__)
-                pass
+                return JsonResponse({"success": False, "message": "Invalid Purchase-Return data. Please check your entries and try again."})
 
         # Delete Purchase Return
         if action == "delete":
@@ -863,8 +865,9 @@ def createPurchaseReturn(request):
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT delete_purchase_return(%s)",[purchase_return_ID])
                     return JsonResponse({"success": True, "message": "Deleted Successfully"})
-            except Exception:
-                return JsonResponse({"success": False, "message": "Unable to delete this Purchase-Return! Try Again.."})
+            except Exception as e:
+                logger.exception('swallowed exception in %s', __name__)
+                return JsonResponse({"success": False, "message": user_db_error(e, "Unable to delete this Purchase-Return! Try Again..")})
 
 
     return render(request,'purchase_return_templates/purchase_return_template.html')
