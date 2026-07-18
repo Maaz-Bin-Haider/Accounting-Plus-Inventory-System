@@ -6,3 +6,11 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Database dumps and backups (contain real company data - transfer with scp,
+# never through git)
+db_backup_*.sql
+backups/
+
+# Collected static files (generated inside the container)
+staticfiles/

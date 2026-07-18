@@ -35,7 +35,15 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG")
 
-ALLOWED_HOSTS = ['*']
+# Comma-separated list in the environment, e.g. "13.232.33.250,localhost".
+# Defaults to '*' so existing non-docker setups keep working unchanged.
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
+
+# Needed for POST forms when the site is reached through the elastic IP.
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=[f"http://{h}" for h in ALLOWED_HOSTS if h not in ("*", "localhost", "127.0.0.1")],
+)
 
 
 # Application definition
@@ -102,8 +110,42 @@ DATABASES = {
         'PASSWORD': env('DB_PASSWORD'),
         'HOST': env('DB_HOST'),
         'PORT': env('DB_PORT'),
+        'CONN_MAX_AGE': 60,
     }
 }
+
+
+# Caching
+# When REDIS_URL is set (docker compose sets redis://redis:6379/1) Django
+# uses Redis; otherwise it falls back to a per-process in-memory cache so
+# the project still runs without a Redis server.
+
+REDIS_URL = env("REDIS_URL", default="")
+
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+            "TIMEOUT": 300,
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "financee-local",
+        }
+    }
+
+# Sessions: reads come from the cache (Redis), writes persist to the
+# existing django_session table, so restored sessions keep working and a
+# Redis flush never logs users out.
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
+
+# Seconds to cache dashboard API responses (0 disables it). The dashboard
+# is the read-heaviest part of the app; accounting screens are never cached.
+DASHBOARD_CACHE_SECONDS = env.int("DASHBOARD_CACHE_SECONDS", default=60)
 
 
 # Password validation

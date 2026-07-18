@@ -1,0 +1,15 @@
+.git
+.gitignore
+.env
+.venv-tests
+__pycache__
+**/__pycache__
+*.pyc
+.DS_Store
+db_backup_*.sql
+staticfiles
+backups
+system_tests/__pycache__
+CONTEXT.md
+FIXES.md
+README.md

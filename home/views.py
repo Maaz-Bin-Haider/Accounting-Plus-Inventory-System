@@ -449,8 +449,11 @@ Accounting + Inventory Management System — Redesigned Dashboard
 """
 
 import json
+import hashlib
 from django.http import JsonResponse
 from django.db import connection
+from django.conf import settings
+from django.core.cache import cache
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required, permission_required
@@ -462,6 +465,9 @@ from datetime import date, timedelta
 # Helpers
 # ---------------------------------------------------------------------------
 
+_CACHE_MISS = object()
+
+
 def _run_pg_function(sql, params=None):
     """
     Execute a PostgreSQL function and return its JSON result as a Python object.
@@ -469,11 +475,28 @@ def _run_pg_function(sql, params=None):
     psycopg2 automatically deserializes PostgreSQL JSON/JSONB columns into
     Python dict/list — so row[0] is already a native Python object.
     Calling json.loads() on it would raise TypeError. We return it directly.
+
+    Results are cached (Redis when configured) for DASHBOARD_CACHE_SECONDS,
+    because this helper only serves the read-only dashboard widgets. Set
+    DASHBOARD_CACHE_SECONDS=0 to disable caching completely.
     """
+    ttl = getattr(settings, "DASHBOARD_CACHE_SECONDS", 0)
+    cache_key = None
+    if ttl:
+        digest = hashlib.md5(f"{sql}|{params or []}".encode()).hexdigest()
+        cache_key = f"dash:{digest}"
+        cached = cache.get(cache_key, _CACHE_MISS)
+        if cached is not _CACHE_MISS:
+            return cached
+
     with connection.cursor() as cursor:
         cursor.execute(sql, params or [])
         row = cursor.fetchone()
-    return row[0] if row and row[0] is not None else None
+    result = row[0] if row and row[0] is not None else None
+
+    if cache_key is not None:
+        cache.set(cache_key, result, ttl)
+    return result
 
 
 def _json_ok(data):
