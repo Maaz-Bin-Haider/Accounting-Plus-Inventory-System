@@ -7,9 +7,9 @@ from financee.db_errors import user_db_error
 
 class UserDatabaseErrorTests(SimpleTestCase):
     def test_curated_postgres_exception_is_safe_to_display(self):
-        cause = Mock()
+        cause = RuntimeError("database exception")
         cause.pgcode = "P0001"
-        cause.diag.message_primary = "  Serial is already sold.  "
+        cause.diag = Mock(message_primary="  Serial is already sold.  ")
         wrapper = Exception("internal wrapper details")
         wrapper.__cause__ = cause
         self.assertEqual(user_db_error(wrapper), "Serial is already sold.")
@@ -28,4 +28,3 @@ class UserDatabaseErrorTests(SimpleTestCase):
             user_db_error(RuntimeError("connection details")),
             "Something went wrong. Please try again.",
         )
-

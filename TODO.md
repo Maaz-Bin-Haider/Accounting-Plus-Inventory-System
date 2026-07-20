@@ -51,9 +51,10 @@ intentionally placed after tests and image creation.
 ## 2. Make tests CI-ready
 
 - [ ] Pin production and test dependencies reproducibly.
-- [ ] Add an isolated Docker Compose test stack with PostgreSQL and Redis.
+- [x] Add an isolated Docker Compose test stack with ephemeral PostgreSQL.
+- [ ] Add Redis integration tests and enable Redis in the test stack when needed.
 - [ ] Restore schema into a disposable DB and apply required SQL patches once.
-- [ ] Reject production-like database names and hosts before tests start.
+- [x] Reject production-like database names and hosts before tests start.
 - [ ] Run Django system/deployment checks, endpoint tests, and system tests.
 - [ ] Publish test results and coverage as GitHub Actions artifacts.
 - [ ] Cache dependencies and image layers, never test database state.

@@ -45,7 +45,9 @@ class AuthenticationViewTests(TestCase):
     def test_authenticated_user_is_redirected_away_from_login(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("authentication:login"))
-        self.assertRedirects(response, reverse("home:home"))
+        self.assertRedirects(
+            response, reverse("home:home"), fetch_redirect_response=False
+        )
 
     def test_current_user_requires_login(self):
         response = self.client.get(reverse("authentication:current_user"))
@@ -62,7 +64,11 @@ class AuthenticationViewTests(TestCase):
     def test_logout_clears_session(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("authentication:logout"))
-        self.assertRedirects(response, reverse("authentication:login"))
+        self.assertRedirects(
+            response,
+            reverse("authentication:login"),
+            fetch_redirect_response=False,
+        )
         self.assertNotIn("_auth_user_id", self.client.session)
 
     def test_login_post_requires_csrf_token(self):

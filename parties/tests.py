@@ -28,7 +28,9 @@ class PartyEndpointTests(UserPermissionTestMixin, TestCase):
 
     def test_parties_hub_redirects_user_without_view_permission(self):
         response = self.client.get(reverse("parties:partiesDash"))
-        self.assertRedirects(response, reverse("home:home"))
+        self.assertRedirects(
+            response, reverse("home:home"), fetch_redirect_response=False
+        )
 
     def test_parties_hub_renders_for_authorized_user(self):
         self.grant_permissions(self.user, "view_party")
@@ -36,9 +38,9 @@ class PartyEndpointTests(UserPermissionTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "parties_templates/parties.html")
 
-    @patch("parties.views.connection.cursor")
-    def test_autocomplete_returns_database_suggestions(self, cursor_factory):
-        cursor = cursor_factory.return_value.__enter__.return_value
+    @patch("parties.views.connection")
+    def test_autocomplete_returns_database_suggestions(self, view_connection):
+        cursor = view_connection.cursor.return_value.__enter__.return_value
         cursor.fetchall.return_value = [("ALPHA TRADERS",), ("BETA ALPHA",)]
 
         response = self.client.get(
@@ -50,22 +52,22 @@ class PartyEndpointTests(UserPermissionTestMixin, TestCase):
         parameters = cursor.execute.call_args.args[1]
         self.assertEqual(parameters, ["%ALPHA%", "ALPHA%"])
 
-    @patch("parties.views.connection.cursor")
-    def test_autocomplete_without_term_does_not_query_database(self, cursor_factory):
+    @patch("parties.views.connection")
+    def test_autocomplete_without_term_does_not_query_database(self, view_connection):
         response = self.client.get(reverse("parties:autocomplete_party"))
         self.assertEqual(response.status_code, 200)
         self.assertJSONEqual(response.content, [])
-        cursor_factory.assert_not_called()
+        view_connection.cursor.assert_not_called()
 
     def test_parties_list_rejects_user_without_view_permission(self):
         response = self.client.get(reverse("parties:parties_list"))
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.json()["status"], "error")
 
-    @patch("parties.views.connection.cursor")
-    def test_parties_list_serializes_authorized_database_rows(self, cursor_factory):
+    @patch("parties.views.connection")
+    def test_parties_list_serializes_authorized_database_rows(self, view_connection):
         self.grant_permissions(self.user, "view_party")
-        cursor = cursor_factory.return_value.__enter__.return_value
+        cursor = view_connection.cursor.return_value.__enter__.return_value
         cursor.fetchall.return_value = [
             (
                 42,
@@ -98,10 +100,10 @@ class PartyEndpointTests(UserPermissionTestMixin, TestCase):
         )
         self.assertEqual(response.status_code, 403)
 
-    @patch("parties.views.connection.cursor")
-    def test_create_party_rejects_missing_create_permission(self, cursor_factory):
+    @patch("parties.views.connection")
+    def test_create_party_rejects_missing_create_permission(self, view_connection):
         self.grant_permissions(self.user, "view_party")
-        cursor = cursor_factory.return_value.__enter__.return_value
+        cursor = view_connection.cursor.return_value.__enter__.return_value
         cursor.fetchone.return_value = None
 
         response = self.client.post(reverse("parties:add_new_party"), {
@@ -115,11 +117,11 @@ class PartyEndpointTests(UserPermissionTestMixin, TestCase):
         self.assertEqual(response.json()["status"], "error")
         self.assertIn("permission", response.json()["message"].lower())
 
-    @patch("parties.views.connection.cursor")
-    def test_create_party_rejects_view_only_group(self, cursor_factory):
+    @patch("parties.views.connection")
+    def test_create_party_rejects_view_only_group(self, view_connection):
         self.grant_permissions(self.user, "view_party", "create_party")
         self.user.groups.add(Group.objects.create(name="view_only_users"))
-        cursor = cursor_factory.return_value.__enter__.return_value
+        cursor = view_connection.cursor.return_value.__enter__.return_value
         cursor.fetchone.return_value = None
 
         response = self.client.post(reverse("parties:add_new_party"), {
@@ -133,10 +135,10 @@ class PartyEndpointTests(UserPermissionTestMixin, TestCase):
         self.assertEqual(response.json()["status"], "error")
         self.assertIn("permission", response.json()["message"].lower())
 
-    @patch("parties.views.connection.cursor")
-    def test_create_party_rejects_duplicate_name(self, cursor_factory):
+    @patch("parties.views.connection")
+    def test_create_party_rejects_duplicate_name(self, view_connection):
         self.grant_permissions(self.user, "view_party", "create_party")
-        cursor = cursor_factory.return_value.__enter__.return_value
+        cursor = view_connection.cursor.return_value.__enter__.return_value
         cursor.fetchone.return_value = (1,)
 
         response = self.client.post(reverse("parties:add_new_party"), {
@@ -150,10 +152,10 @@ class PartyEndpointTests(UserPermissionTestMixin, TestCase):
         self.assertEqual(response.json()["status"], "error")
         self.assertIn("already exists", response.json()["message"])
 
-    @patch("parties.views.connection.cursor")
-    def test_create_party_passes_normalized_payload_to_database(self, cursor_factory):
+    @patch("parties.views.connection")
+    def test_create_party_passes_normalized_payload_to_database(self, view_connection):
         self.grant_permissions(self.user, "view_party", "create_party")
-        cursor = cursor_factory.return_value.__enter__.return_value
+        cursor = view_connection.cursor.return_value.__enter__.return_value
         cursor.fetchone.return_value = None
 
         response = self.client.post(reverse("parties:add_new_party"), {
@@ -186,10 +188,10 @@ class PartyEndpointTests(UserPermissionTestMixin, TestCase):
         self.assertEqual(response.json()["status"], "error")
         self.assertIn("No party selected", response.json()["message"])
 
-    @patch("parties.views.connection.cursor")
-    def test_ajax_update_passes_normalized_payload_to_database(self, cursor_factory):
+    @patch("parties.views.connection")
+    def test_ajax_update_passes_normalized_payload_to_database(self, view_connection):
         self.grant_permissions(self.user, "update_party")
-        cursor = cursor_factory.return_value.__enter__.return_value
+        cursor = view_connection.cursor.return_value.__enter__.return_value
 
         response = self.client.post(
             reverse("parties:update_party"),

@@ -881,6 +881,33 @@ hashing. `.env.test.example` documents safe non-production variables.
 permission helpers. Business endpoint test modules should reuse these helpers
 instead of duplicating permission setup.
 
+`docker-compose.test.yml` runs Django tests against PostgreSQL 16 in a `tmpfs`
+data directory. It has a separate Compose project name, no host ports, no named
+production volume, test-only credentials, and no dependency on production
+`.env` values. The container connects through PostgreSQL's `postgres`
+maintenance database and Django creates/destroys the guarded
+`financee_test_ci` database. Run it with:
+
+```bash
+docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test
+docker compose -f docker-compose.test.yml down --remove-orphans
+```
+
+Test settings use plain static-file storage so template tests do not require a
+production `collectstatic` manifest. Endpoint tests replace only the connection
+reference inside the view module; patching `django.db.connection.cursor`
+directly is forbidden because it also intercepts authentication, sessions, and
+test transaction management.
+
+The PostgreSQL error-helper tests use exception-derived cause objects with
+`pgcode` and `diag.message_primary` attributes, matching Python's exception
+chaining rules and the relevant psycopg2 interface.
+
+Verified baseline on July 20, 2026: the Docker test stack created
+`financee_test_ci`, applied Django migrations, reported zero system-check
+issues, passed all 26 authentication/party/error-helper tests, and destroyed the
+test database successfully.
+
 The first business endpoint slice is in `parties/tests.py`. It covers login and
 `view_party` enforcement, authorized template rendering, autocomplete query
 parameters and JSON results, list endpoint authorization and serialization, and
