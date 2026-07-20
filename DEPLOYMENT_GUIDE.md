@@ -96,6 +96,27 @@ RELEASE_IMAGE=financee:<40-character-commit-SHA> \
 The deployment command must use the same two files and `--no-build`. A missing
 `RELEASE_IMAGE` is an error, and no deployment code may supply `latest`.
 
+### Commit-specific release staging
+
+After approval and the read-only preflight, the workflow checks that EC2 has at
+least twice the image archive size available. It creates this private directory:
+
+```text
+<PRODUCTION_PATH>/releases/<full-commit-SHA>/
+```
+
+The workflow copies only `production-image.tar`, `image-metadata.txt`, and the
+deployment Compose override into it. EC2 recomputes the archive checksum before
+loading the image, checks its ARM64 architecture and embedded revision, and
+renders the merged Compose configuration. The success message is:
+
+```text
+Release <commit SHA> staged and verified; running containers were not changed.
+```
+
+Staging adds the image to Docker's local image store but does not recreate,
+restart, stop, or otherwise modify the running production containers.
+
 ---
 
 ## Part 0 - Before you start (checklist)

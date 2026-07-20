@@ -1451,3 +1451,30 @@ configuration. Future deployment commands must use both files plus
 This milestone changes no workflow deployment behavior and no EC2 state. Local
 validation renders the merged Compose model using a representative 40-character
 commit tag and checks that the web image is exact and the build field is absent.
+
+GitHub commit `64e8c06` subsequently passed all three jobs, confirming the
+immutable Compose override did not regress the established CI and approval
+path.
+
+## Commit-Specific EC2 Release Staging
+
+The approved job now checks out only the deployment configuration in addition
+to downloading the already-built artifact. After the proven read-only
+preflight, it requires free EC2 disk space equal to at least twice the archive
+size and creates a mode-0700 directory at
+`<PRODUCTION_PATH>/releases/<full commit SHA>`. The SHA is checked as exactly 40
+lowercase hexadecimal characters before it becomes part of a server path.
+
+SCP uses the same pinned host key and explicit deployment identity to transfer
+the image archive, its metadata, and `docker-compose.deploy.yml`. EC2 repeats
+the commit/tag/platform assertions and archive SHA-256 verification before
+loading the image. It then independently inspects ARM64 architecture and the
+embedded revision label and renders the merged deployment Compose model with
+the exact `financee:<commit SHA>` image.
+
+This stage deliberately stops before `docker compose up`: it writes the
+commit-specific release directory and loads an unused image into Docker, but
+does not change any running container or database. The next pushed approved run
+must end with `Release <commit SHA> staged and verified; running containers were
+not changed.` before backup, SQL-patch, health-check, and rollback automation is
+allowed to proceed.

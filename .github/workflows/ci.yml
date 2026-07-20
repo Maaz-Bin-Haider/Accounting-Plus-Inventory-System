@@ -128,7 +128,7 @@ jobs:
     name: Approve and verify production release
     needs: build-production-image
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     environment:
       name: production
     concurrency:
@@ -136,6 +136,9 @@ jobs:
       cancel-in-progress: false
 
     steps:
+      - name: Check out deployment configuration
+        uses: actions/checkout@v6
+
       - name: Download the tested production image
         uses: actions/download-artifact@v6
         with:
@@ -206,4 +209,87 @@ jobs:
           cd "${PRODUCTION_PATH}"
           docker compose config --quiet
           echo "Production preflight passed without changing the host."
+          REMOTE
+
+      - name: Prepare commit-specific release directory
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          PRODUCTION_PATH: ${{ vars.PRODUCTION_PATH }}
+        run: |
+          set -eu
+          ARCHIVE_BYTES="$(wc -c < deployment-artifact/production-image.tar)"
+          REQUIRED_BYTES="$((ARCHIVE_BYTES * 2))"
+          ssh -i "${HOME}/.ssh/production_key" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "${PRODUCTION_USER}@${PRODUCTION_HOST}" \
+            sh -s -- "${PRODUCTION_PATH}" "${COMMIT_SHA}" "${REQUIRED_BYTES}" <<'REMOTE'
+          set -eu
+          PRODUCTION_PATH=$1
+          COMMIT_SHA=$2
+          REQUIRED_BYTES=$3
+          test "$(printf '%s' "${COMMIT_SHA}" | wc -c)" -eq 40
+          case "${COMMIT_SHA}" in *[!0-9a-f]*) exit 1 ;; esac
+          AVAILABLE_KB="$(df -Pk "${PRODUCTION_PATH}" | awk 'NR == 2 {print $4}')"
+          test "$((AVAILABLE_KB * 1024))" -ge "${REQUIRED_BYTES}"
+          install -d -m 700 "${PRODUCTION_PATH}/releases/${COMMIT_SHA}"
+          REMOTE
+
+      - name: Transfer approved image to its release directory
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          PRODUCTION_PATH: ${{ vars.PRODUCTION_PATH }}
+        run: |
+          set -eu
+          scp -i "${HOME}/.ssh/production_key" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            deployment-artifact/production-image.tar \
+            deployment-artifact/image-metadata.txt \
+            docker-compose.deploy.yml \
+            "${PRODUCTION_USER}@${PRODUCTION_HOST}:${PRODUCTION_PATH}/releases/${COMMIT_SHA}/"
+
+      - name: Verify and load the staged image on EC2
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          PRODUCTION_PATH: ${{ vars.PRODUCTION_PATH }}
+        run: |
+          set -eu
+          ssh -i "${HOME}/.ssh/production_key" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "${PRODUCTION_USER}@${PRODUCTION_HOST}" \
+            sh -s -- "${PRODUCTION_PATH}" "${COMMIT_SHA}" <<'REMOTE'
+          set -eu
+          PRODUCTION_PATH=$1
+          COMMIT_SHA=$2
+          RELEASE_DIR="${PRODUCTION_PATH}/releases/${COMMIT_SHA}"
+          METADATA="${RELEASE_DIR}/image-metadata.txt"
+          ARCHIVE="${RELEASE_DIR}/production-image.tar"
+          chmod 600 "${ARCHIVE}" "${METADATA}" "${RELEASE_DIR}/docker-compose.deploy.yml"
+          grep -Fx "commit_sha=${COMMIT_SHA}" "${METADATA}"
+          grep -Fx "image_tag=financee:${COMMIT_SHA}" "${METADATA}"
+          grep -Fx "platform=linux/arm64" "${METADATA}"
+          ARCHIVE_SHA256="$(sed -n 's/^archive_sha256=//p' "${METADATA}")"
+          test "$(printf '%s' "${ARCHIVE_SHA256}" | wc -c)" -eq 64
+          case "${ARCHIVE_SHA256}" in *[!0-9a-f]*) exit 1 ;; esac
+          printf '%s  %s\n' "${ARCHIVE_SHA256}" "${ARCHIVE}" | sha256sum --check
+          docker load --input "${ARCHIVE}"
+          test "$(docker image inspect "financee:${COMMIT_SHA}" --format '{{.Architecture}}')" = arm64
+          test "$(docker image inspect "financee:${COMMIT_SHA}" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "${COMMIT_SHA}"
+          cd "${PRODUCTION_PATH}"
+          RELEASE_IMAGE="financee:${COMMIT_SHA}" docker compose \
+            -f docker-compose.yml \
+            -f "${RELEASE_DIR}/docker-compose.deploy.yml" \
+            config --quiet
+          echo "Release ${COMMIT_SHA} staged and verified; running containers were not changed."
           REMOTE

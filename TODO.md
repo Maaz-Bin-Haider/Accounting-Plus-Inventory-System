@@ -158,7 +158,9 @@ intentionally placed after tests and image creation.
 - [ ] Deploy the already-tested commit-tagged image to EC2.
   - [x] Add a production Compose override that requires `RELEASE_IMAGE` and
         removes the source-build configuration.
-  - [ ] Transfer, load, and start the approved artifact through the deployment job.
+  - [x] Stage, checksum, load, and inspect the approved image on EC2 without
+        changing running containers.
+  - [ ] Start the staged approved image through the deployment job.
 - [ ] Verify a PostgreSQL backup before changing the running release.
 - [ ] Lock deployments so two releases cannot overlap.
 - [ ] Preserve the previously working image tag for rollback.
