@@ -54,6 +54,33 @@ verifies its SHA-256 checksum and metadata, loads it, and confirms both ARM64
 architecture and the embedded commit revision. At this stage it performs no
 EC2 connection and changes no production state.
 
+### Configure production connection values
+
+Add these under **Settings -> Environments -> production**. Use environment
+secrets—not repository variables or committed files—for sensitive values:
+
+| Type | Name | Value |
+| --- | --- | --- |
+| Secret | `PRODUCTION_HOST` | EC2 hostname or Elastic IP |
+| Secret | `PRODUCTION_USER` | SSH account, normally `ubuntu` |
+| Secret | `PRODUCTION_SSH_KEY` | Complete private key, including header/footer |
+| Secret | `PRODUCTION_KNOWN_HOSTS` | Verified SSH known-hosts entry for the EC2 host |
+| Variable | `PRODUCTION_PATH` | Absolute existing project path on EC2 |
+
+Obtain the host public key from a trusted source and compare its fingerprint
+with the key presented during an already trusted SSH connection. Do not disable
+strict host-key checking and do not generate `known_hosts` blindly inside CI.
+For the layout in this guide, `PRODUCTION_PATH` is:
+
+```text
+/home/ubuntu/Accounting-Plus-Inventory-System
+```
+
+The next workflow run performs a read-only SSH preflight after approval. It
+requires an ARM64 host, a working Docker daemon and Compose plugin, a readable
+production `.env`, and a valid existing Compose configuration. It neither
+uploads files nor starts, stops, or modifies containers.
+
 ---
 
 ## Part 0 - Before you start (checklist)

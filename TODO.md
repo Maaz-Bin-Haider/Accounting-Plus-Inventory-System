@@ -146,11 +146,15 @@ intentionally placed after tests and image creation.
 - [ ] Create a protected GitHub Environment named `production` with the solo
       developer as required reviewer.
   - [x] Bind the production authorization job to that environment.
-  - [ ] Configure the environment and required reviewer in GitHub repository settings.
-- [ ] Request approval only after successful CI and image creation.
+  - [x] Configure the environment and required reviewer in GitHub repository settings.
+- [x] Request approval only after successful CI and image creation.
   - [x] Add the environment-gated release validation job after both prerequisites.
-  - [ ] Confirm on GitHub that the job pauses for approval before it starts.
+  - [x] Confirm on GitHub that the job pauses for approval before it starts.
 - [ ] Keep secrets in the GitHub Environment and/or AWS Systems Manager, never Git.
+  - [x] Define a least-privilege environment secret/variable contract for SSH.
+  - [ ] Configure and prove the production SSH secrets in GitHub.
+- [ ] Verify EC2 Docker, Compose, ARM64, `.env`, and Compose configuration through
+      a read-only post-approval preflight.
 - [ ] Deploy the already-tested commit-tagged image to EC2.
 - [ ] Verify a PostgreSQL backup before changing the running release.
 - [ ] Lock deployments so two releases cannot overlap.

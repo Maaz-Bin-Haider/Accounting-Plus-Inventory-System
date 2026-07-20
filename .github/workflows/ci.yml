@@ -160,3 +160,50 @@ jobs:
           docker load --input "${ARCHIVE}"
           test "$(docker image inspect "financee:${COMMIT_SHA}" --format '{{.Architecture}}')" = arm64
           test "$(docker image inspect "financee:${COMMIT_SHA}" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "${COMMIT_SHA}"
+
+      - name: Configure trusted production SSH access
+        env:
+          PRODUCTION_SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+          PRODUCTION_KNOWN_HOSTS: ${{ secrets.PRODUCTION_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          test -n "${PRODUCTION_SSH_KEY}"
+          test -n "${PRODUCTION_KNOWN_HOSTS}"
+          install -m 700 -d "${HOME}/.ssh"
+          printf '%s\n' "${PRODUCTION_SSH_KEY}" > "${HOME}/.ssh/production_key"
+          printf '%s\n' "${PRODUCTION_KNOWN_HOSTS}" > "${HOME}/.ssh/known_hosts"
+          chmod 600 "${HOME}/.ssh/production_key" "${HOME}/.ssh/known_hosts"
+
+      - name: Verify production host prerequisites without changing it
+        env:
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          PRODUCTION_PATH: ${{ vars.PRODUCTION_PATH }}
+        run: |
+          set -eu
+          test -n "${PRODUCTION_HOST}"
+          test -n "${PRODUCTION_USER}"
+          test -n "${PRODUCTION_PATH}"
+          ssh -i "${HOME}/.ssh/production_key" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "${PRODUCTION_USER}@${PRODUCTION_HOST}" \
+            sh -s -- "${PRODUCTION_PATH}" <<'REMOTE'
+          set -eu
+          PRODUCTION_PATH=$1
+          case "$(uname -m)" in
+            aarch64|arm64) ;;
+            *) echo "Production host is not ARM64." >&2; exit 1 ;;
+          esac
+          command -v docker >/dev/null
+          docker version --format 'Docker server {{.Server.Version}}'
+          docker compose version
+          test -d "${PRODUCTION_PATH}"
+          test -f "${PRODUCTION_PATH}/.env"
+          test -f "${PRODUCTION_PATH}/docker-compose.yml"
+          test -r "${PRODUCTION_PATH}/.env"
+          cd "${PRODUCTION_PATH}"
+          docker compose config --quiet
+          echo "Production preflight passed without changing the host."
+          REMOTE

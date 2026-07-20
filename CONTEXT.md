@@ -1404,3 +1404,30 @@ GitHub Environment protection is repository configuration and cannot be
 enforced by workflow YAML alone. `DEPLOYMENT_GUIDE.md` records the one-time UI
 steps. The next pushed run must demonstrate that `authorize-production` pauses
 for review and passes artifact validation only after approval.
+
+The workflow at commit `f8b9555` subsequently paused at the protected
+`production` Environment as intended. After manual approval, all three jobs—
+tests, ARM64 artifact creation, and release authorization/validation—passed.
+This proves both the dependency chain and GitHub approval rule.
+
+## Read-Only EC2 Deployment Preflight
+
+The approved production job now establishes SSH using only environment-scoped
+values: `PRODUCTION_HOST`, `PRODUCTION_USER`, `PRODUCTION_SSH_KEY`, and a
+pre-verified `PRODUCTION_KNOWN_HOSTS` entry. The non-sensitive absolute project
+directory is supplied as the `PRODUCTION_PATH` Environment variable. Strict
+host-key checking, batch mode, and an explicitly selected key are mandatory;
+the workflow does not learn or trust a host key on first use.
+
+After the local release artifact passes checksum, architecture, tag, and
+revision validation, the workflow opens a read-only SSH session. It requires
+an ARM64 kernel, Docker Engine, the Compose plugin, the existing production
+directory, a readable `.env`, and a Compose configuration that renders
+successfully. This preflight does not copy artifacts, pull source, build an
+image, execute SQL, or change containers. Its purpose is to prove the secret
+contract and server prerequisites before deployment automation is introduced.
+
+`DEPLOYMENT_GUIDE.md` documents the four environment secrets and one variable.
+The next pushed run will fail safely unless those values have first been added
+to the protected `production` Environment; after approval it must report
+`Production preflight passed without changing the host.`
