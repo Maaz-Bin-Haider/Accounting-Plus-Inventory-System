@@ -90,7 +90,7 @@ intentionally placed after tests and image creation.
   - [x] Isolated tmpfs database/Redis stack, application readiness probe, nginx
         config/proxy validation, collected static response, and cache headers.
 - [x] Report coverage, agree a threshold, then enforce it.
-  - [x] Branch-aware baseline: 57.4% across 3,379 production Python statements.
+  - [x] Branch-aware baseline: 57.4% across 3,387 production Python statements.
   - [x] Initial enforced floor: 55%, allowing only rounding/tool-version margin.
 - [x] Provide separate fast-test and full-system-test commands.
   - [x] `scripts/run_fast_tests.sh`: Django endpoint tests plus coverage gate.
@@ -112,7 +112,9 @@ intentionally placed after tests and image creation.
   - [x] Ordered restore, fixture reset, checksum reservation, patch, verification.
   - [x] Reject duplicate patch application and incomplete ledger finalization.
 - [x] Reject production-like database names and hosts before tests start.
-- [ ] Run Django system/deployment checks, endpoint tests, and system tests.
+- [x] Run Django system/deployment checks, endpoint tests, and system tests.
+  - [x] Shell/Python syntax and all isolated Compose configurations.
+  - [x] Warning-failing Django checks under test and hardened deployment profiles.
 - [ ] Publish test results and coverage as GitHub Actions artifacts.
 - [ ] Cache dependencies and image layers, never test database state.
 

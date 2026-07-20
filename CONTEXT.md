@@ -1270,3 +1270,29 @@ row for `production_fixes.sql`, with the SHA-256 calculated from the file being
 tested and status `applied`. Verified July 20, 2026: the ordered pipeline and
 all 101 PostgreSQL system scenarios pass, and the disposable database is
 removed afterward.
+
+## CI-Ready Quality Gate
+
+`scripts/run_quality_checks.sh` validates every maintained shell script with
+`sh -n`, parses the test/system/smoke Compose definitions, builds the pinned
+test image, byte-compiles all Python project/test packages, and runs Django's
+normal system checks with warnings treated as failures. It then runs
+`manage.py check --deploy` under an explicit hardened production profile and
+also fails on any deployment warning. Every temporary Compose resource is
+removed by a cleanup trap.
+
+The production settings now expose environment-controlled SSL redirect,
+secure-cookie, HSTS, and trusted-forwarded-protocol controls. Their defaults
+remain off because the current production origin-TLS state has not yet been
+verified; this deliberately preserves current production behavior. The quality
+gate supplies secure values to prove the deployment configuration is valid.
+Those production variables must be enabled only after Cloudflare Full (strict)
+and the nginx origin certificate are confirmed, as tracked separately in
+`TODO.md`.
+
+`scripts/run_full_tests.sh` now runs the quality gate before any test suite, then
+executes the Redis-enabled Django/endpoint suite, restored-schema PostgreSQL
+system suite, and production-shaped smoke suite. Verified July 20, 2026: both
+Django check modes reported zero issues, all 143 Django tests passed at 57.4%
+branch-aware coverage over 3,387 statements, all 101 PostgreSQL scenarios
+passed, and the final nginx/Redis/PostgreSQL/Gunicorn smoke checks passed.
