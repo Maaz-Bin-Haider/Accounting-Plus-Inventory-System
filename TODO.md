@@ -62,7 +62,9 @@ intentionally placed after tests and image creation.
 - [x] Smoke-test every HTML page, template, and required static asset.
   - [x] Compile every project template and resolve every declared static
         dependency; reject empty custom CSS and JavaScript assets.
-- [ ] Verify CSRF on every state-changing endpoint and prevent SQL error leakage.
+- [x] Verify CSRF on every state-changing endpoint and prevent SQL error leakage.
+  - [x] Runtime-check login and all business mutation routes with enforced CSRF;
+        centralize opaque JSON 500 responses with server-side logging.
 - [ ] Expand PostgreSQL system tests for payment/receipt/contra accounting, party
       openings, concurrency, duplicate serials, numeric/date boundaries, return
       mutation, and report-to-journal reconciliation.

@@ -5,6 +5,7 @@ import json
 from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from financee.http_errors import internal_server_error
 
 @login_required
 def detailed_ledger_view(request):
@@ -40,9 +41,9 @@ def detailed_ledger_view(request):
             return JsonResponse(result, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -96,9 +97,9 @@ def detailed_ledger2_view(request):
             return JsonResponse(result, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -135,9 +136,9 @@ def cash_ledger_view(request):
             return JsonResponse(result, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -163,9 +164,9 @@ def trial_balance_view(request):
             return JsonResponse(result, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -189,9 +190,9 @@ def receivable(request):
     #         return JsonResponse(result, safe=False)
 
     #     except IntegrityError as e:
-    #         return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+    #         return internal_server_error(e)
     #     except Exception as e:
-    #         return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+    #         return internal_server_error(e)
     elif request.method == "POST":
         try:
             with connection.cursor() as cursor:
@@ -200,10 +201,10 @@ def receivable(request):
             return JsonResponse(data, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
             
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -227,9 +228,9 @@ def payable(request):
     #         return JsonResponse(result, safe=False)
 
     #     except IntegrityError as e:
-    #         return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+    #         return internal_server_error(e)
     #     except Exception as e:
-    #         return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+    #         return internal_server_error(e)
     elif request.method == "POST":
         try:
             with connection.cursor() as cursor:
@@ -239,10 +240,10 @@ def payable(request):
             return JsonResponse(data, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
             
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -269,9 +270,9 @@ def stock_report_view(request):
             return JsonResponse(result, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -298,9 +299,9 @@ def stock_summary(request):
             return JsonResponse(result, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -326,9 +327,9 @@ def stock__worth_report_view(request):
             return JsonResponse(result, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -367,9 +368,9 @@ def item_history_view(request):
             return JsonResponse(result, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -401,9 +402,9 @@ def item_detail_view(request):
             return JsonResponse(result, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -439,7 +440,7 @@ def serial_ledger_view(request):
             return JsonResponse(result, safe=False)
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -475,7 +476,7 @@ def serial_ledger_purchase_only_view(request):
             return JsonResponse(result, safe=False)
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -512,7 +513,7 @@ def serial_ledger_view_sale_price_hidden(request):
             return JsonResponse(result, safe=False)
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -548,7 +549,7 @@ def serial_ledger_sale_only_view(request):
             return JsonResponse(result, safe=False)
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -573,9 +574,9 @@ def items_last_purchasing(request):
             return JsonResponse(result, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -600,9 +601,9 @@ def items_last_sale(request):
             return JsonResponse(result, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -630,9 +631,9 @@ def company_valuation_report(request):
             return JsonResponse(result_json, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -668,9 +669,9 @@ def sale_wise_report(request):
             return JsonResponse(result, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -712,9 +713,9 @@ def sale_wise_report(request):
 #             return JsonResponse(result, safe=False)
  
 #         except IntegrityError as e:
-#             return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+#             return internal_server_error(e)
 #         except Exception as e:
-#             return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+#             return internal_server_error(e)
  
 #     return JsonResponse({"error": "Method not allowed"}, status=405)
  
@@ -759,9 +760,9 @@ def sale_wise_report(request):
 #             return JsonResponse(result, safe=False)
  
 #         except IntegrityError as e:
-#             return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+#             return internal_server_error(e)
 #         except Exception as e:
-#             return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+#             return internal_server_error(e)
  
 #     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -817,9 +818,9 @@ def monthly_position_report(request):
             return JsonResponse(result, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -876,9 +877,9 @@ def monthly_income_report(request):
             return JsonResponse(result, safe=False)
 
         except IntegrityError as e:
-            return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+            return internal_server_error(e)
         except Exception as e:
-            return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+            return internal_server_error(e)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -908,8 +909,8 @@ def monthly_income_report(request):
 #             return JsonResponse(result_json, safe=False)
 
 #         except IntegrityError as e:
-#             return JsonResponse({"error": f"Database error: {str(e)}"}, status=500)
+#             return internal_server_error(e)
 #         except Exception as e:
-#             return JsonResponse({"error": f"Unexpected error: {str(e)}"}, status=500)
+#             return internal_server_error(e)
 
 #     return JsonResponse({"error": "Method not allowed"}, status=405)

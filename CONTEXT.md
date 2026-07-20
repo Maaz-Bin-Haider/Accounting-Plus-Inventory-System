@@ -973,6 +973,20 @@ Verified after presentation smoke coverage on July 20, 2026: all 134 Django
 tests pass against ephemeral PostgreSQL 16 with zero system-check issues and
 successful destruction of the guarded test database.
 
+`financee/test_security.py` centrally enforces CSRF rejection for login and all
+11 business mutation routes (party/item creation and update, payment, receipt,
+contra, purchase, sale, and both return directions). `financee/http_errors.py`
+provides the shared JSON 500 boundary: unexpected details are logged server-side
+while clients receive only a fixed generic message. Report and cash-flow JSON
+exception paths use this boundary so SQL text, schema details, credentials, and
+internal hostnames cannot be reflected in HTTP responses.
+
+Verified after centralized CSRF and error-disclosure coverage on July 20, 2026:
+all 138 Django tests pass against ephemeral PostgreSQL 16 with zero system-check
+issues and successful destruction of the guarded test database. The deliberate
+report exception is logged with its traceback while the HTTP response remains
+generic.
+
 Sales coverage now includes the fully validated mutation branches. Tests verify
 create/update/delete permissions, the view-only group, stored-function argument
 contracts, JSON item/serial payloads, creator IDs, trimmed description writes,

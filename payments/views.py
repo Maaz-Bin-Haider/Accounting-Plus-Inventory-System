@@ -321,7 +321,7 @@
 #         return JsonResponse(data, safe=False)
 
 #     except Exception as e:
-#         return JsonResponse({"error": str(e)}, status=500)
+#         return internal_server_error(e)
     
 
 # from django.shortcuts import render,redirect
@@ -639,12 +639,13 @@
 #         return JsonResponse(data, safe=False)
 
 #     except Exception as e:
-#         return JsonResponse({"error": str(e)}, status=500)
+#         return internal_server_error(e)
 
 
 from django.shortcuts import render,redirect
 from django.db import connection,DatabaseError
 from django.contrib import messages
+from financee.http_errors import internal_server_error
 from datetime import datetime, date
 from django.http import JsonResponse
 import json
@@ -958,7 +959,7 @@ def get_payments_date_wise(request):
         return JsonResponse(data, safe=False)
 
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        return internal_server_error(e)
     
 
 @login_required
@@ -992,6 +993,6 @@ def get_party_balance(request):
         return JsonResponse(data)
  
     except DatabaseError as e:
-        return JsonResponse({"error": "Database error.", "details": str(e)}, status=500)
+        return internal_server_error(e)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        return internal_server_error(e)

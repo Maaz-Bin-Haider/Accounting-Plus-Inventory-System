@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.db import connection, DatabaseError, IntegrityError
 from django.contrib import messages
+from financee.http_errors import internal_server_error
 from datetime import datetime, date
 from django.http import JsonResponse
 import json
@@ -201,7 +202,7 @@ def get_old_contras(request):
         data = json.loads(data[0]) if isinstance(data[0], str) else data[0]
         return JsonResponse(data, safe=False)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        return internal_server_error(e)
 
 
 @login_required
@@ -228,7 +229,7 @@ def get_contras_date_wise(request):
         data = json.loads(data[0]) if isinstance(data[0], str) else data[0]
         return JsonResponse(data, safe=False)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        return internal_server_error(e)
 
 
 @login_required
@@ -245,6 +246,6 @@ def get_party_balance(request):
         data = json.loads(row[0]) if isinstance(row[0], str) else row[0]
         return JsonResponse(data)
     except DatabaseError as e:
-        return JsonResponse({"error": "Database error.", "details": str(e)}, status=500)
+        return internal_server_error(e)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        return internal_server_error(e)
