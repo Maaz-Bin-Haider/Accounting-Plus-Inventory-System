@@ -948,6 +948,19 @@ Verified after dashboard coverage on July 20, 2026: all 116 Django tests pass
 against ephemeral PostgreSQL 16 with zero system-check issues and successful
 test-database destruction.
 
+`accountsReports/tests.py` covers every account, cash, stock, item, serial,
+profit, valuation, and monthly report route. It verifies authentication and
+the custom permission combinations, each template family, date/number/required
+field validation, item/serial normalization, exact PostgreSQL function/view
+contracts, row and JSON response shaping, no-data responses, and HTTP method
+handling. Database calls are mocked at the report view module boundary; report
+calculation correctness remains part of the PostgreSQL system-test layer.
+
+Verified after report coverage on July 20, 2026: all 131 Django tests pass
+against ephemeral PostgreSQL 16 with zero system-check issues and successful
+destruction of the guarded test database. The receivables report's leftover
+response-type debug print was removed after it appeared in the test output.
+
 Sales coverage now includes the fully validated mutation branches. Tests verify
 create/update/delete permissions, the view-only group, stored-function argument
 contracts, JSON item/serial payloads, creator IDs, trimmed description writes,

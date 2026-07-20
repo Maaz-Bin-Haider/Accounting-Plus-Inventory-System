@@ -55,7 +55,10 @@ intentionally placed after tests and image creation.
         parameter contracts, GET enforcement, cache enabled/disabled behavior,
         and legacy financial-data hiding.
   - [ ] Dashboard invalid numeric/date parameters and database failure responses.
-- [ ] Test all account, stock, serial, profit, valuation, and monthly reports.
+- [x] Test all account, stock, serial, profit, valuation, and monthly reports.
+  - [x] Report login and permission gates, template families, validation,
+        normalization, PostgreSQL query contracts, JSON shaping, empty results,
+        and unsupported methods.
 - [ ] Smoke-test every HTML page, template, and required static asset.
 - [ ] Verify CSRF on every state-changing endpoint and prevent SQL error leakage.
 - [ ] Expand PostgreSQL system tests for payment/receipt/contra accounting, party
