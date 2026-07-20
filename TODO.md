@@ -1,9 +1,10 @@
 # Testing and CI/CD Roadmap
 
-> **Required production action:** Before the next production deployment, take
-> a verified PostgreSQL backup and reapply the updated `production_fixes.sql`.
-> The concurrency fix has only been validated in disposable test databases;
-> no production database was changed during this work.
+> **Completed production action (July 20, 2026):** A commit-specific PostgreSQL
+> custom-format backup was checksum/manifest verified, then the updated
+> `production_fixes.sql` was applied transactionally and recorded in
+> `deployment_meta.sql_patches` with SHA-256
+> `dd9d152e6d808bd658be51fbe3db042a0519449084ba60e617c1494cc288e189`.
 
 > **Required repository security action:** `db_backup_20260718_0000.sql` is
 > currently tracked even though it contains production-origin data. Replace it
@@ -169,7 +170,7 @@ intentionally placed after tests and image creation.
   - [x] Capture the running web image ID, assign a commit-specific rollback tag,
         and persist its container/revision metadata before live changes.
   - [x] Confirm the rollback anchor on EC2 through GitHub Actions.
-- [ ] Apply the checksum-verified `production_fixes.sql` transactionally and
+- [x] Apply the checksum-verified `production_fixes.sql` transactionally and
       record its checksum, source commit, backup, and timestamp in PostgreSQL.
 - [ ] Wait for container and HTTP health checks after deployment.
 - [ ] Run post-deployment smoke tests and roll back automatically on failure.

@@ -171,6 +171,23 @@ the SHA-256, source commit, backup filename, and application time in PostgreSQL.
 If that checksum is already recorded, the patch is not reapplied. A failure
 stops the workflow before any container restart.
 
+### Live release, health checks, and rollback
+
+The final approved step uses the merged Compose files with `--no-build` to
+recreate only `web` and `nginx`; PostgreSQL and Redis remain running. For up to
+three minutes it requires all of the following:
+
+- the web container is running and Docker reports it healthy;
+- the container's immutable image ID equals the approved commit image;
+- `http://127.0.0.1/health/` returns exactly `{"status": "ok"}`.
+
+Success writes mode-0600 `deployment-result.txt` in the release directory and
+atomically updates `<PRODUCTION_PATH>/.deployed-commit`. If startup or health
+fails, Compose immediately recreates `web` and `nginx` using the preserved
+rollback tag and applies the same checks. A healthy rollback still fails the
+GitHub job so the bad release cannot appear successful. If rollback also fails,
+the workflow prints a critical error and current Compose status for recovery.
+
 ---
 
 ## Part 0 - Before you start (checklist)

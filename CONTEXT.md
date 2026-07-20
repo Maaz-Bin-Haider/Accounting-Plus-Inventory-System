@@ -1563,3 +1563,29 @@ indented `RECORD_SQL` terminator as heredoc content and ended with
 container was changed. The terminator is now aligned at column zero in the
 rendered remote script, and that remote body is validated directly with
 Ubuntu-compatible `dash -n` in addition to whole-workflow YAML/shell checks.
+
+The corrected run at commit `42db5e2` verified its backup, applied the patch
+successfully, inserted one ledger row, and reported checksum
+`dd9d152e6d808bd658be51fbe3db042a0519449084ba60e617c1494cc288e189`.
+The required production SQL action is therefore complete and recorded.
+
+## Live Image Switch and Automatic Rollback
+
+The approved job now reaches `docker compose up` only after every preceding
+test, artifact, approval, remote checksum, backup, rollback-image, and SQL-ledger
+gate succeeds. It combines the base and deployment override, supplies only
+`financee:<current commit SHA>`, passes `--no-build`, and recreates the web and
+nginx services while leaving PostgreSQL and Redis running.
+
+The remote verifier allows three minutes for the web container to become
+running and healthy. It also requires the container image ID to equal the
+approved image and requires the nginx-served loopback health endpoint to return
+exactly `{"status": "ok"}`. A successful release atomically records
+`deployment-result.txt` and `.deployed-commit` with image and UTC timing data.
+
+Any startup, image-identity, container-health, or HTTP-health failure triggers
+an immediate Compose recreation with the previously captured rollback tag. The
+same health checks must pass for rollback; even a successful rollback leaves
+the GitHub job failed so the release cannot be mistaken for success. Failure of
+both release and rollback is reported as critical with Compose status. This is
+the first milestone that intentionally changes running production containers.

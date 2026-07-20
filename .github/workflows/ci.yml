@@ -479,3 +479,106 @@ jobs:
           )"
           test "$(printf '%s' "${VERIFIED_COUNT}" | tr -d '[:space:]')" = 1
           REMOTE
+
+      - name: Deploy release and automatically roll back if unhealthy
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          PRODUCTION_PATH: ${{ vars.PRODUCTION_PATH }}
+        run: |
+          set -eu
+          ssh -i "${HOME}/.ssh/production_key" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "${PRODUCTION_USER}@${PRODUCTION_HOST}" \
+            sh -s -- "${PRODUCTION_PATH}" "${COMMIT_SHA}" <<'REMOTE'
+          set -eu
+          PRODUCTION_PATH=$1
+          COMMIT_SHA=$2
+          RELEASE_DIR="${PRODUCTION_PATH}/releases/${COMMIT_SHA}"
+          OVERRIDE="${RELEASE_DIR}/docker-compose.deploy.yml"
+          ROLLBACK_METADATA="${RELEASE_DIR}/rollback-metadata.txt"
+          RELEASE_IMAGE="financee:${COMMIT_SHA}"
+          ROLLBACK_IMAGE="$(sed -n 's/^rollback_tag=//p' "${ROLLBACK_METADATA}")"
+          RESULT_FILE="${RELEASE_DIR}/deployment-result.txt"
+          STARTED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+          cd "${PRODUCTION_PATH}"
+          command -v curl >/dev/null
+          test "${ROLLBACK_IMAGE}" = "financee:rollback-before-${COMMIT_SHA}"
+          docker image inspect "${RELEASE_IMAGE}" >/dev/null
+          docker image inspect "${ROLLBACK_IMAGE}" >/dev/null
+
+          compose_up() {
+            target_image=$1
+            RELEASE_IMAGE="${target_image}" docker compose \
+              -f docker-compose.yml -f "${OVERRIDE}" \
+              up -d --no-build web nginx
+          }
+
+          wait_until_healthy() {
+            expected_image=$1
+            attempts=0
+            while [ "${attempts}" -lt 36 ]; do
+              container_id="$(RELEASE_IMAGE="${expected_image}" docker compose \
+                -f docker-compose.yml -f "${OVERRIDE}" ps -q web)"
+              if [ -n "${container_id}" ]; then
+                running="$(docker inspect "${container_id}" --format '{{.State.Running}}')"
+                health="$(docker inspect "${container_id}" --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}')"
+                actual_image="$(docker inspect "${container_id}" --format '{{.Image}}')"
+                expected_id="$(docker image inspect "${expected_image}" --format '{{.Id}}')"
+                if [ "${running}" = true ] && [ "${health}" = healthy ] && \
+                   [ "${actual_image}" = "${expected_id}" ]; then
+                  health_body="$(curl --fail --silent --show-error --max-time 10 http://127.0.0.1/health/)" || return 1
+                  [ "${health_body}" = '{"status": "ok"}' ] && return 0
+                fi
+                [ "${running}" = false ] && return 1
+                [ "${health}" = unhealthy ] && return 1
+              fi
+              attempts=$((attempts + 1))
+              sleep 5
+            done
+            return 1
+          }
+
+          if compose_up "${RELEASE_IMAGE}" && wait_until_healthy "${RELEASE_IMAGE}"; then
+            FINISHED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+            {
+              echo "status=deployed"
+              echo "commit_sha=${COMMIT_SHA}"
+              echo "image=${RELEASE_IMAGE}"
+              echo "rollback_image=${ROLLBACK_IMAGE}"
+              echo "started_at=${STARTED_AT}"
+              echo "finished_at=${FINISHED_AT}"
+            } > "${RESULT_FILE}.tmp"
+            chmod 600 "${RESULT_FILE}.tmp"
+            mv "${RESULT_FILE}.tmp" "${RESULT_FILE}"
+            printf '%s\n' "${COMMIT_SHA}" > .deployed-commit.tmp
+            chmod 600 .deployed-commit.tmp
+            mv .deployed-commit.tmp .deployed-commit
+            echo "Deployed ${RELEASE_IMAGE}; container and HTTP health checks passed."
+            exit 0
+          fi
+
+          echo "Release ${RELEASE_IMAGE} failed health checks; rolling back to ${ROLLBACK_IMAGE}." >&2
+          compose_up "${ROLLBACK_IMAGE}"
+          if wait_until_healthy "${ROLLBACK_IMAGE}"; then
+            FINISHED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+            {
+              echo "status=rolled_back"
+              echo "commit_sha=${COMMIT_SHA}"
+              echo "failed_image=${RELEASE_IMAGE}"
+              echo "restored_image=${ROLLBACK_IMAGE}"
+              echo "started_at=${STARTED_AT}"
+              echo "finished_at=${FINISHED_AT}"
+            } > "${RESULT_FILE}.tmp"
+            chmod 600 "${RESULT_FILE}.tmp"
+            mv "${RESULT_FILE}.tmp" "${RESULT_FILE}"
+            echo "Rollback health checks passed; previous production image was restored." >&2
+            exit 1
+          fi
+          echo "CRITICAL: release and rollback health checks both failed." >&2
+          docker compose -f docker-compose.yml -f "${OVERRIDE}" ps >&2
+          exit 1
+          REMOTE
