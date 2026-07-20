@@ -133,8 +133,10 @@ intentionally placed after tests and image creation.
 
 - [x] Trigger GitHub Actions on pushes to `main` and manual dispatch.
 - [x] Run syntax, configuration, Django, endpoint, database, and system checks.
-- [ ] Build the same ARM64-compatible Docker image used in production.
-- [ ] Tag the image with the Git commit SHA; never deploy implicit `latest`.
+- [x] Build the same ARM64-compatible Docker image used in production.
+  - [x] Export a loadable `linux/arm64` archive only after the full test job passes.
+- [x] Tag the image with the Git commit SHA; never deploy implicit `latest`.
+  - [x] Embed the SHA as the OCI revision label and publish digest/checksum metadata.
 - [ ] Prevent the deployment job unless every required check passes.
 
 ## 4. Approval-gated Continuous Deployment

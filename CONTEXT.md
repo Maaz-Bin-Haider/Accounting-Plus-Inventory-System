@@ -1352,3 +1352,27 @@ networks, and volumes. Verified locally July 20, 2026: the full suite passes in
 prebuilt-image reuse mode without any Docker build step—143 Django tests at
 57.4% coverage, 101 PostgreSQL scenarios, and the production-stack smoke suite.
 GitHub cache import/export will be confirmed by the next pushed workflow run.
+
+## Commit-Tagged ARM64 Production Artifact
+
+The CI workflow now has a `build-production-image` job with an explicit
+dependency on the complete `test` job. GitHub therefore cannot build or publish
+a deployable artifact when any quality, Django, PostgreSQL, Redis, or stack
+smoke check fails. The job uses QEMU and Buildx to build the production
+`Dockerfile` specifically for `linux/arm64`, matching the AWS Graviton
+architecture of the EC2 `t4g.large` host.
+
+The image has exactly one workflow tag, `financee:<full Git commit SHA>`; no
+deployable `latest` tag is produced. The same SHA is embedded in the image's
+`org.opencontainers.image.revision` label through the `VCS_REF` build argument.
+Buildx exports a Docker-loadable `production-image.tar`, and the workflow saves
+the BuildKit image digest, archive SHA-256, platform, tag, and source commit in
+`image-metadata.txt`. Both files are published together as the short-lived
+`production-image-<commit SHA>` GitHub artifact with seven-day retention and no
+additional compression. This creates the immutable handoff for the later
+approval-gated deployment job without granting CI production access or changing
+the EC2 instance.
+
+Local verification covers workflow syntax, image architecture, revision label,
+archive loading, and metadata consistency. The GitHub-hosted ARM64 export and
+artifact publication must be confirmed by the next pushed workflow run.
