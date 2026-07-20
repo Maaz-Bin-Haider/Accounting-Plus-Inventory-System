@@ -861,6 +861,20 @@ Verified on July 20, 2026 against a newly restored, production-independent
 72 system tests pass and the temporary database is removed. The generated
 details are recorded in `system_tests/RESULTS.md`.
 
+Party opening-balance system coverage verifies all supported posting shapes:
+customer debit openings post to the party AR side, vendor credit openings post
+to the party AP side, and expense openings debit the generated expense account;
+each balances against Owner's Capital. Updating an opening must replace the old
+journal at the new amount, while setting it to zero must remove the opening
+journal completely. Every party-opening slice ends with report and integrity
+checks.
+
+Verified after party-opening coverage on July 20, 2026: all 78 PostgreSQL
+system tests pass after restoring the latest backup and applying
+`production_fixes.sql`; the uniquely prefixed temporary database is removed.
+Failed system cases now retain their traceback in `RESULTS.md` so CI failures
+identify the exact runner location instead of reporting only an exception type.
+
 If new failures appear, treat `system_tests/FAILED_TESTS.md` as the remediation
 backlog. After changing the stored procedures, rerun the complete suite rather
 than testing only the affected case, because sale returns and invoice mutations

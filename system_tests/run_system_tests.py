@@ -98,7 +98,7 @@ class Suite:
         except Exception as exc:
             self.conn.rollback()
             passed = False
-            detail = f"{type(exc).__name__}: {exc}"
+            detail = f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}"
         self.results.append(Result(group, name, expected, passed, detail, time.monotonic() - started))
         return passed
 
@@ -124,6 +124,49 @@ class Suite:
         self.query("SELECT add_party_from_json(%s::jsonb)", (json.dumps(payload),))
         row = self.query("SELECT party_id FROM parties WHERE party_name=%s", (self.names[key],), one=True)
         self.ids[key] = row[0]
+
+    def opening_party(self, label: str, party_type: str, amount: float,
+                      balance_type: str) -> tuple[int, str]:
+        name = f"TEST_{self.run_id}_OPENING_{label}"
+        payload = {"party_name": name, "party_type": party_type,
+                   "opening_balance": amount, "balance_type": balance_type}
+        self.query("SELECT add_party_from_json(%s::jsonb)", (json.dumps(payload),))
+        row = self.query(
+            "SELECT party_id FROM parties WHERE party_name=%s", (name,), one=True
+        )
+        self.assert_true(row is not None, f"opening party was not inserted: {name}")
+        party_id = row[0]
+        return party_id, name
+
+    def opening_journal(self, party_id: int):
+        rows = self.query(
+            """SELECT je.journal_id,jl.party_id,jl.debit,jl.credit
+               FROM journalentries je JOIN journallines jl USING (journal_id)
+               WHERE je.description ILIKE 'Opening Balance for%%'
+                 AND je.journal_id IN (
+                     SELECT journal_id FROM journallines WHERE party_id=%s)
+               ORDER BY je.journal_id,jl.line_id""",
+            (party_id,),
+        )
+        journal_ids = {row[0] for row in rows}
+        self.assert_true(len(journal_ids) == 1,
+                         f"opening journals={sorted(journal_ids)}")
+        return next(iter(journal_ids)), [row[1:] for row in rows]
+
+    def assert_opening_journal(self, party_id: int, amount: float,
+                               party_on_debit: bool):
+        journal_id, lines = self.opening_journal(party_id)
+        expected = (
+            {(party_id, float(amount), 0.0), (None, 0.0, float(amount))}
+            if party_on_debit
+            else {(None, float(amount), 0.0), (party_id, 0.0, float(amount))}
+        )
+        actual = {(party, float(debit), float(credit))
+                  for party, debit, credit in lines}
+        return self.assert_true(
+            len(lines) == 2 and actual == expected,
+            f"journal={journal_id}, lines={actual}",
+        )
 
     def item(self, key: str, price: float):
         payload = {"item_name": self.names[key], "storage": "Test Warehouse",
@@ -493,6 +536,49 @@ class Suite:
         )
         self.case("Continuous Integrity and Reporting", "Cash-flow checkpoint", "All reports and integrity checks pass", lambda: self.checkpoint("cash flow"))
 
+        G = "Party Opening Balance Accounting"
+        openings: dict[str, Any] = {}
+        self.case(
+            G, "Customer debit opening", "Debit customer AR and credit capital",
+            lambda: (
+                openings.setdefault(
+                    "customer", self.opening_party("CUSTOMER", "Customer", 300, "Debit")
+                ),
+                self.assert_opening_journal(openings["customer"][0], 300, True),
+            )[1],
+        )
+        self.case(
+            G, "Vendor credit opening", "Debit capital and credit vendor AP",
+            lambda: (
+                openings.setdefault(
+                    "vendor", self.opening_party("VENDOR", "Vendor", 400, "Credit")
+                ),
+                self.assert_opening_journal(openings["vendor"][0], 400, False),
+            )[1],
+        )
+        self.case(
+            G, "Expense debit opening", "Debit expense party and credit capital",
+            lambda: (
+                openings.setdefault(
+                    "expense", self.opening_party("EXPENSE", "Expense", 500, "Debit")
+                ),
+                self.assert_opening_journal(openings["expense"][0], 500, True),
+            )[1],
+        )
+        self.case(
+            G, "Update customer opening", "Original journal replaced at new amount",
+            lambda: self._update_opening_balance(
+                openings["customer"][0], openings["customer"][1], 450, True
+            ),
+        )
+        self.case(
+            G, "Remove customer opening", "Setting zero removes the opening journal",
+            lambda: self._remove_opening_balance(
+                openings["customer"][0], openings["customer"][1]
+            ),
+        )
+        self.case("Continuous Integrity and Reporting", "Opening-balance checkpoint", "All reports and integrity checks pass", lambda: self.checkpoint("party openings"))
+
         G = "Financial Invariant Tests"
         self.case(G, "Double-entry identity", "Debits equal credits", lambda: self._double_entry())
         self.case(G, "No orphaned journal lines", "No orphan exists", lambda: self.assert_true(self.query("SELECT count(*) FROM journallines jl LEFT JOIN journalentries je ON je.journal_id=jl.journal_id WHERE je.journal_id IS NULL", one=True)[0] == 0, "No orphaned lines"))
@@ -545,6 +631,39 @@ class Suite:
             record_count == 0 and journal_count == 0,
             f"record count={record_count}, journal count={journal_count}",
         )
+
+    def _update_opening_balance(self, party_id, party_name, amount,
+                                party_on_debit):
+        old_journal, _ = self.opening_journal(party_id)
+        payload = {"party_name": party_name, "opening_balance": amount}
+        self.query("SELECT update_party_from_json(%s,%s::jsonb)",
+                   (party_id, json.dumps(payload)))
+        new_journal, _ = self.opening_journal(party_id)
+        old_count = self.query(
+            "SELECT count(*) FROM journalentries WHERE journal_id=%s",
+            (old_journal,), one=True,
+        )[0]
+        self.assert_true(
+            new_journal != old_journal and old_count == 0,
+            f"opening journal replaced: {old_journal} -> {new_journal}",
+        )
+        return self.assert_opening_journal(party_id, amount, party_on_debit)
+
+    def _remove_opening_balance(self, party_id, party_name):
+        journal_id, _ = self.opening_journal(party_id)
+        payload = {"party_name": party_name, "opening_balance": 0}
+        self.query("SELECT update_party_from_json(%s,%s::jsonb)",
+                   (party_id, json.dumps(payload)))
+        remaining = self.query(
+            """SELECT count(*) FROM journalentries je
+               WHERE je.journal_id=%s OR (
+                   je.description ILIKE 'Opening Balance for%%'
+                   AND je.journal_id IN (
+                       SELECT journal_id FROM journallines WHERE party_id=%s))""",
+            (journal_id, party_id), one=True,
+        )[0]
+        return self.assert_true(remaining == 0,
+                                f"remaining opening journals={remaining}")
 
     def _double_entry(self):
         debit, credit = self.query("SELECT COALESCE(sum(debit),0),COALESCE(sum(credit),0) FROM journallines", one=True)

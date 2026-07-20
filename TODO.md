@@ -70,6 +70,8 @@ intentionally placed after tests and image creation.
       mutation, and report-to-journal reconciliation.
   - [x] Payment, receipt, and contra create/update/delete journal reconciliation,
         amount validation, same-party rejection, and continuous report checks.
+  - [x] Customer, vendor, and expense opening-balance journals, including
+        balance updates, zero removal, and continuous report checks.
 - [ ] Add regression coverage for every defect in `FIXES.md`.
 - [ ] Add Docker startup, health-check, static-file, and nginx proxy smoke tests.
 - [ ] Report coverage, agree a threshold, then enforce it.
