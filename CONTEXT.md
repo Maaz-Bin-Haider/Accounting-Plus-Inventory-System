@@ -855,3 +855,18 @@ also affect stock, journals, reports, and profit calculations.
 ## Known Documentation Corrections
 
 The previous `README.md` had encoding damage and some stale claims. This documentation reflects the files observed in this repository and the included SQL backup as of July 3, 2026.
+
+## Automated Testing and Delivery Roadmap
+
+`TODO.md` is the authoritative checklist for testing and CI/CD. The agreed
+solo-developer flow is `push to main -> CI tests/build -> GitHub production
+approval -> EC2 deploy`; pull requests and feature branches are not required.
+
+The first foundation slice adds authentication endpoint/session/CSRF tests in
+`authentication/tests.py` and safe PostgreSQL error translation tests in
+`financee/test_db_errors.py`. Only curated PostgreSQL `P0001` messages may reach
+users; other database failures must use a generic fallback.
+
+Full integration tests must use isolated PostgreSQL because the system depends
+on stored functions, triggers, views, JSONB, and PostgreSQL-specific SQL. SQLite
+is not a valid substitute. CI must refuse production database names and hosts.
