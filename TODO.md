@@ -173,15 +173,17 @@ intentionally placed after tests and image creation.
 - [x] Apply the checksum-verified `production_fixes.sql` transactionally and
       record its checksum, source commit, backup, and timestamp in PostgreSQL.
 - [x] Wait for container and HTTP health checks after deployment.
-- [ ] Run post-deployment smoke tests and roll back automatically on failure.
-  - [x] Add Cloudflare/domain health, login-page, and static-cache checks to the
-        same automatic rollback boundary.
-  - [ ] Configure `PRODUCTION_URL` and prove the public checks in GitHub Actions.
+- [x] Run post-deployment internal smoke tests and roll back automatically on failure.
+  - [x] Verify the exact image ID, Docker health, and nginx loopback health JSON.
+  - [x] Restore and health-check the preserved image when any internal check fails.
 - [x] Record the deployed commit, image tag, timestamps, and result.
-- [ ] Document approval, deploy, rollback, secrets, SQL patches, and recovery.
+- [x] Document approval, deploy, rollback, secrets, SQL patches, and recovery.
 
 ## 5. Production readiness
 
+- [ ] Reintroduce public Cloudflare smoke checks after creating a narrow rule
+      that permits CI monitoring of `/health/`; current EC2 and GitHub runner
+      requests receive Cloudflare 403 while normal external requests return 200.
 - [ ] Rotate the exposed Django secret key and PostgreSQL password.
 - [ ] Confirm Cloudflare SSL mode and the nginx origin-certificate configuration.
 - [ ] Enable Django proxy SSL and secure-cookie settings after HTTPS is verified.

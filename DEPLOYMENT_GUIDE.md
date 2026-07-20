@@ -66,7 +66,6 @@ secrets—not repository variables or committed files—for sensitive values:
 | Secret | `PRODUCTION_SSH_KEY` | Complete private key, including header/footer |
 | Secret | `PRODUCTION_KNOWN_HOSTS` | Verified SSH known-hosts entry for the EC2 host |
 | Variable | `PRODUCTION_PATH` | Absolute existing project path on EC2 |
-| Variable | `PRODUCTION_URL` | Public HTTPS origin without a trailing slash |
 
 Obtain the host public key from a trusted source and compare its fingerprint
 with the key presented during an already trusted SSH connection. Do not disable
@@ -75,12 +74,6 @@ For the layout in this guide, `PRODUCTION_PATH` is:
 
 ```text
 /home/ubuntu/Accounting-Plus-Inventory-System
-```
-
-Set `PRODUCTION_URL` to:
-
-```text
-https://swisstechfinance.com
 ```
 
 The next workflow run performs a read-only SSH preflight after approval. It
@@ -188,19 +181,18 @@ three minutes it requires all of the following:
 - the container's immutable image ID equals the approved commit image;
 - `http://127.0.0.1/health/` returns exactly `{"status": "ok"}`.
 
-The GitHub runner then checks the public HTTPS origin through Cloudflare three
-times: health JSON, an HTTP 200 login page, and the immutable cache header on
-`/static/css/login_styling.css`. Public-route failure enters the same rollback
-boundary and triggers a dedicated SSH rollback to the internally verified prior
-image. Public checks intentionally do not run from EC2 because Cloudflare may
-return 403 to origin-to-proxy traffic even while normal external clients succeed.
-
 Success writes mode-0600 `deployment-result.txt` in the release directory and
 atomically updates `<PRODUCTION_PATH>/.deployed-commit`. If startup or health
 fails, Compose immediately recreates `web` and `nginx` using the preserved
 rollback tag and applies the same checks. A healthy rollback still fails the
 GitHub job so the bad release cannot appear successful. If rollback also fails,
 the workflow prints a critical error and current Compose status for recovery.
+
+Public Cloudflare smoke checks are intentionally deferred. Cloudflare currently
+returns HTTP 403 to both EC2-originated and GitHub-hosted automated requests,
+while ordinary external requests return 200. Re-enable public monitoring only
+after adding a narrow Cloudflare rule for the health endpoint; do not weaken
+site-wide bot or security protections merely to satisfy CI.
 
 ---
 

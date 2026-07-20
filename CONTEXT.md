@@ -1628,3 +1628,18 @@ the captured rollback image and requires internal container/HTTP health. EC2
 continues to own the release and rollback health checks, while Cloudflare is no
 longer asked to proxy an origin-to-itself request. The diagnostic Compose call
 now also receives the required image variable.
+
+GitHub-hosted public checks at commit `1bb1f25` also received Cloudflare 403 on
+all retries. At the user's direction, Cloudflare automation is deferred so the
+site can remain accessible under its existing free security policy. The public
+smoke and conditional public-only rollback steps have been removed from the
+active workflow. Container image identity, Docker health, and nginx loopback
+health remain mandatory and retain automatic rollback.
+
+The core solo-developer CI/CD flow is complete: push to `main`, full isolated
+tests, immutable ARM64 artifact, protected approval, EC2 staging, verified
+backup, rollback anchor, idempotent SQL ledger, no-build deployment, internal
+health checks, automatic rollback, and deployment recording. `TODO.md` retains
+the deferred Cloudflare exception/monitoring work, repository dump remediation,
+credential rotation, TLS hardening, observability, restore/rollback drills, and
+remaining endpoint-test gaps for a future work session.
