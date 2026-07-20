@@ -83,7 +83,9 @@ intentionally placed after tests and image creation.
         invalid calendar dates, and leap-day report boundaries.
   - [x] Purchase-return update/delete atomicity and party balance reconciliation
         across raw journals, balance JSON, trial balance, and detailed ledger.
-- [ ] Add regression coverage for every defect in `FIXES.md`.
+- [x] Add regression coverage for every defect in `FIXES.md`.
+  - [x] Executable defect-to-test manifest for all eight original defects and
+        the concurrent duplicate-sale defect.
 - [ ] Add Docker startup, health-check, static-file, and nginx proxy smoke tests.
 - [ ] Report coverage, agree a threshold, then enforce it.
 - [ ] Provide separate fast-test and full-system-test commands.

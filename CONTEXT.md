@@ -920,6 +920,15 @@ all 98 system tests pass against the latest restored backup with
 payment/receipt/contra, party opening, concurrency, duplicate serial, boundary,
 return mutation, and report-to-journal roadmap item is complete.
 
+`REGRESSION_CASES` in the PostgreSQL runner maps confirmed defects 1-9 to their
+named behavioral cases. A dedicated manifest case inspects the accumulated
+results and fails if a mapped regression is missing or did not pass. The closed
+backlog in `system_tests/FAILED_TESTS.md` now includes the concurrency defect
+and the current defect-to-test mapping instead of the stale 60-test summary.
+
+Verified after enabling the executable regression manifest on July 20, 2026:
+all 99 PostgreSQL system tests pass and the disposable database is removed.
+
 If new failures appear, treat `system_tests/FAILED_TESTS.md` as the remediation
 backlog. After changing the stored procedures, rerun the complete suite rather
 than testing only the affected case, because sale returns and invoice mutations

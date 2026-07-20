@@ -33,6 +33,18 @@ FIXES = ROOT / "production_fixes.sql"
 RESULTS = Path(__file__).resolve().parent / "RESULTS.md"
 DB_PREFIX = "financee_test_"
 
+REGRESSION_CASES = {
+    1: "Attempt duplicate return",
+    2: "Update sale after return",
+    3: "Delete old return after resale",
+    4: "Update old return after resale",
+    5: "Duplicate mixed return",
+    6: "Update multi-item sale after return",
+    7: "Sale qty greater than serial count",
+    8: "Sale qty less than serial count",
+    9: "Race two sales for one serial",
+}
+
 
 @dataclass
 class Result:
@@ -699,6 +711,13 @@ class Suite:
         )
         self.case("Continuous Integrity and Reporting", "Return/report reconciliation checkpoint", "All reports and integrity checks pass", lambda: self.checkpoint("return and report reconciliation"))
 
+        self.case(
+            "Defect Regression Manifest",
+            "Every confirmed defect retains a passing regression",
+            "Defects 1 through 9 are mapped to passing behavioral cases",
+            self._regression_manifest,
+        )
+
         G = "Financial Invariant Tests"
         self.case(G, "Double-entry identity", "Debits equal credits", lambda: self._double_entry())
         self.case(G, "No orphaned journal lines", "No orphan exists", lambda: self.assert_true(self.query("SELECT count(*) FROM journallines jl LEFT JOIN journalentries je ON je.journal_id=jl.journal_id WHERE je.journal_id IS NULL", one=True)[0] == 0, "No orphaned lines"))
@@ -995,6 +1014,21 @@ class Suite:
             all(abs(actual - target) < 0.005
                 for actual, target in zip(values, expected)),
             f"{party_name}: debit={direct[0]}, credit={direct[1]}, balance={direct[2]}",
+        )
+
+    def _regression_manifest(self):
+        by_name = {result.name: result for result in self.results}
+        missing = {
+            defect: name for defect, name in REGRESSION_CASES.items()
+            if name not in by_name
+        }
+        failing = {
+            defect: name for defect, name in REGRESSION_CASES.items()
+            if name in by_name and not by_name[name].passed
+        }
+        return self.assert_true(
+            not missing and not failing,
+            f"mapped={len(REGRESSION_CASES)}, missing={missing}, failing={failing}",
         )
 
     def _double_entry(self):
