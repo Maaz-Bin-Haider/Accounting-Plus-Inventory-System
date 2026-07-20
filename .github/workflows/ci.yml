@@ -22,8 +22,43 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build cached Django test image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile.test
+          load: true
+          tags: financee-tests-test:latest
+          cache-from: type=gha,scope=django-test
+          cache-to: type=gha,mode=max,scope=django-test
+
+      - name: Build cached PostgreSQL system-test image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile.system-test
+          load: true
+          tags: financee-system-tests-system-test:latest
+          cache-from: type=gha,scope=postgres-system-test
+          cache-to: type=gha,mode=max,scope=postgres-system-test
+
+      - name: Build cached production image for smoke tests
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile
+          load: true
+          tags: financee-smoke-web:latest
+          cache-from: type=gha,scope=production
+          cache-to: type=gha,mode=max,scope=production
+
       - name: Run canonical full test suite
         run: scripts/run_full_tests.sh
+        env:
+          SKIP_DOCKER_BUILD: "1"
 
       - name: Publish test and coverage artifacts
         if: always()

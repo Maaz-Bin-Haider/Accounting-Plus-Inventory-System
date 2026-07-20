@@ -10,7 +10,14 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-docker compose -f "$COMPOSE_FILE" up --build --detach --wait
+build_option="--build"
+if [ "${SKIP_DOCKER_BUILD:-0}" = "1" ]; then
+    build_option=""
+fi
+
+# Intentional word splitting omits the optional flag when CI prebuilt images.
+# shellcheck disable=SC2086
+docker compose -f "$COMPOSE_FILE" up $build_option --detach --wait
 docker compose -f "$COMPOSE_FILE" exec -T nginx nginx -t
 
 health_body="$(curl --fail --silent --show-error "$BASE_URL/health/")"

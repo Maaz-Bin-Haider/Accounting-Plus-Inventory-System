@@ -18,7 +18,9 @@ docker compose -f docker-compose.test.yml config --quiet
 docker compose -f docker-compose.system-test.yml config --quiet
 docker compose -f docker-compose.smoke.yml config --quiet
 
-docker compose -f "$COMPOSE_FILE" build test
+if [ "${SKIP_DOCKER_BUILD:-0}" != "1" ]; then
+    docker compose -f "$COMPOSE_FILE" build test
+fi
 docker compose -f "$COMPOSE_FILE" run --rm --no-deps test \
     python -m compileall -q \
     accountsReports authentication contra financee home items parties \

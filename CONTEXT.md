@@ -1328,3 +1328,27 @@ it without a sanitized replacement would break CI. `TODO.md` now records the
 required remediation: create a sanitized schema fixture, switch tests to it,
 purge the production-origin dump from Git history, and audit/rotate any secrets
 that may have been committed. CI artifact paths explicitly exclude the dump.
+
+## GitHub Build Cache
+
+The CI workflow sets up Docker Buildx and prebuilds the Django test,
+PostgreSQL-system-test, and production-smoke application images before running
+the canonical suite. Each build imports and exports a separate GitHub Actions
+BuildKit cache scope (`django-test`, `postgres-system-test`, and `production`)
+with maximum layer retention, preventing the images from overwriting one
+another's cache. Python dependency installation layers are therefore reused
+when their pinned requirements and Dockerfile inputs have not changed.
+
+The three prebuilt images are loaded under the exact Compose-generated local
+tags. CI sets `SKIP_DOCKER_BUILD=1`, causing quality, fast, system, and smoke
+scripts to reuse those images; ordinary local execution still builds by
+default. This avoids the former duplicate builds while preserving one set of
+canonical scripts for both environments.
+
+Only immutable build inputs and image layers enter the cache. PostgreSQL test
+data remains in `tmpfs`, Redis snapshots/AOF remain disabled, Django's test
+database is destroyed, and every Compose cleanup still removes containers,
+networks, and volumes. Verified locally July 20, 2026: the full suite passes in
+prebuilt-image reuse mode without any Docker build step—143 Django tests at
+57.4% coverage, 101 PostgreSQL scenarios, and the production-stack smoke suite.
+GitHub cache import/export will be confirmed by the next pushed workflow run.

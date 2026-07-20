@@ -124,7 +124,10 @@ intentionally placed after tests and image creation.
 - [x] Publish test results and coverage as GitHub Actions artifacts.
   - [x] Django log plus coverage text, XML, and JSON generated outside containers.
   - [x] PostgreSQL Markdown report copied on success or failure; 14-day CI retention.
-- [ ] Cache dependencies and image layers, never test database state.
+- [x] Cache dependencies and image layers, never test database state.
+  - [x] Separate GitHub BuildKit cache scopes for all three application images.
+  - [x] Preload cached images and skip redundant Compose builds in CI only.
+  - [x] Keep PostgreSQL on `tmpfs` and Redis persistence disabled.
 
 ## 3. Continuous Integration for `main`
 
