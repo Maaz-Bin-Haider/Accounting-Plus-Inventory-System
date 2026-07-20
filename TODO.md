@@ -51,6 +51,10 @@ intentionally placed after tests and image creation.
         entry lists, successful date queries, and safe database failures.
 - [ ] Test every dashboard API, permission-controlled section, parameter rule,
       cache hit/miss path, and failure response.
+  - [x] Dashboard login, all section permission denials, primary function and
+        parameter contracts, GET enforcement, cache enabled/disabled behavior,
+        and legacy financial-data hiding.
+  - [ ] Dashboard invalid numeric/date parameters and database failure responses.
 - [ ] Test all account, stock, serial, profit, valuation, and monthly reports.
 - [ ] Smoke-test every HTML page, template, and required static asset.
 - [ ] Verify CSRF on every state-changing endpoint and prevent SQL error leakage.

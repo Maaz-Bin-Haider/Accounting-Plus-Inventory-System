@@ -939,6 +939,15 @@ Verified after the first cash-flow endpoint slice on July 20, 2026: all 105
 Django tests pass against ephemeral PostgreSQL 16 with zero system-check issues
 and successful destruction of the guarded test database.
 
+`home/tests.py` covers dashboard authentication, every widget permission,
+PostgreSQL function and parameter contracts for sales/stock/parties/transactions/
+expenses/alerts, GET-only enforcement, cache hits and disabled-cache behavior,
+and permission-based hiding on legacy financial endpoints.
+
+Verified after dashboard coverage on July 20, 2026: all 116 Django tests pass
+against ephemeral PostgreSQL 16 with zero system-check issues and successful
+test-database destruction.
+
 Sales coverage now includes the fully validated mutation branches. Tests verify
 create/update/delete permissions, the view-only group, stored-function argument
 contracts, JSON item/serial payloads, creator IDs, trimmed description writes,
