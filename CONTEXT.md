@@ -906,6 +906,20 @@ Verified after numeric/date boundary coverage on July 20, 2026: all 91
 PostgreSQL system tests pass against the restored backup plus
 `production_fixes.sql`, and the temporary database is removed.
 
+The final system-test expansion covers purchase-return mutation: updating a
+two-serial vendor return to one must restore only the removed serial, invalid
+empty/duplicate updates must be atomic, and deletion must restore stock while
+removing the return header and journal. Report reconciliation compares customer
+and vendor raw journal debit/credit/balance totals with
+`get_party_balance_by_name`, the party row in `vw_trial_balance`, and every row
+plus the ending running balance from `detailed_ledger`.
+
+Verified after completing the planned PostgreSQL expansion on July 20, 2026:
+all 98 system tests pass against the latest restored backup with
+`production_fixes.sql` applied, and the temporary database is removed. The
+payment/receipt/contra, party opening, concurrency, duplicate serial, boundary,
+return mutation, and report-to-journal roadmap item is complete.
+
 If new failures appear, treat `system_tests/FAILED_TESTS.md` as the remediation
 backlog. After changing the stored procedures, rerun the complete suite rather
 than testing only the affected case, because sale returns and invoice mutations

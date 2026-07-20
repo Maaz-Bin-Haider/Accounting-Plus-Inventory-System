@@ -70,7 +70,7 @@ intentionally placed after tests and image creation.
 - [x] Verify CSRF on every state-changing endpoint and prevent SQL error leakage.
   - [x] Runtime-check login and all business mutation routes with enforced CSRF;
         centralize opaque JSON 500 responses with server-side logging.
-- [ ] Expand PostgreSQL system tests for payment/receipt/contra accounting, party
+- [x] Expand PostgreSQL system tests for payment/receipt/contra accounting, party
       openings, concurrency, duplicate serials, numeric/date boundaries, return
       mutation, and report-to-journal reconciliation.
   - [x] Payment, receipt, and contra create/update/delete journal reconciliation,
@@ -81,6 +81,8 @@ intentionally placed after tests and image creation.
         race attempting to sell the same stocked serial.
   - [x] Invoice quantity/price/date validation, monetary precision/overflow,
         invalid calendar dates, and leap-day report boundaries.
+  - [x] Purchase-return update/delete atomicity and party balance reconciliation
+        across raw journals, balance JSON, trial balance, and detailed ledger.
 - [ ] Add regression coverage for every defect in `FIXES.md`.
 - [ ] Add Docker startup, health-check, static-file, and nginx proxy smoke tests.
 - [ ] Report coverage, agree a threshold, then enforce it.

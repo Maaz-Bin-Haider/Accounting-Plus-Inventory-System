@@ -650,6 +650,55 @@ class Suite:
         )
         self.case("Continuous Integrity and Reporting", "Boundary checkpoint", "All reports and integrity checks pass", lambda: self.checkpoint("numeric and date boundaries"))
 
+        G = "Return Mutation and Report Reconciliation"
+        return_serials = self.serials("PRETURN-MUTATE", 2)
+        return_state: dict[str, Any] = {}
+        self.case(
+            G, "Create two-serial purchase return", "Both serials leave stock",
+            lambda: (
+                self.purchase(return_serials),
+                return_state.setdefault("id", self.purchase_return(return_serials)),
+                self.assert_true(
+                    all(not self.stock(value) for value in return_serials),
+                    "Both serials returned to vendor",
+                ),
+            )[2],
+        )
+        self.case(
+            G, "Update purchase return to one serial", "Removed serial returns to stock",
+            lambda: (
+                self.query(
+                    "SELECT update_purchase_return(%s::bigint,%s::jsonb,%s::integer)",
+                    (return_state["id"], json.dumps([return_serials[0]]), None),
+                ),
+                self.assert_true(
+                    not self.stock(return_serials[0]) and self.stock(return_serials[1]),
+                    "Retained serial is out; removed serial is stocked",
+                ),
+            )[1],
+        )
+        self.case(
+            G, "Reject invalid purchase-return updates", "Empty and duplicate lists fail atomically",
+            lambda: self._reject_purchase_return_updates(
+                return_state["id"], return_serials[0]
+            ),
+        )
+        self.case(
+            G, "Delete purchase return", "Header/journal removed and serial restored",
+            lambda: self._delete_purchase_return_and_reconcile(
+                return_state["id"], return_serials[0]
+            ),
+        )
+        self.case(
+            G, "Customer report-to-journal reconciliation", "All balance representations agree",
+            lambda: self._reconcile_party_reports("customer"),
+        )
+        self.case(
+            G, "Vendor report-to-journal reconciliation", "All balance representations agree",
+            lambda: self._reconcile_party_reports("vendor"),
+        )
+        self.case("Continuous Integrity and Reporting", "Return/report reconciliation checkpoint", "All reports and integrity checks pass", lambda: self.checkpoint("return and report reconciliation"))
+
         G = "Financial Invariant Tests"
         self.case(G, "Double-entry identity", "Debits equal credits", lambda: self._double_entry())
         self.case(G, "No orphaned journal lines", "No orphan exists", lambda: self.assert_true(self.query("SELECT count(*) FROM journallines jl LEFT JOIN journalentries je ON je.journal_id=jl.journal_id WHERE je.journal_id IS NULL", one=True)[0] == 0, "No orphaned lines"))
@@ -864,6 +913,89 @@ class Suite:
         for statement, params in calls:
             self.query(statement, params)
         return f"{len(calls)} report functions accepted {leap_day}"
+
+    def _reject_purchase_return_updates(self, return_id, serial):
+        empty = self.expect_blocked(
+            lambda: self.query(
+                "SELECT update_purchase_return(%s::bigint,%s::jsonb,%s::integer)",
+                (return_id, json.dumps([]), None),
+            ),
+            "At least one",
+        )
+        duplicate = self.expect_blocked(
+            lambda: self.query(
+                "SELECT update_purchase_return(%s::bigint,%s::jsonb,%s::integer)",
+                (return_id, json.dumps([serial, serial]), None),
+            ),
+            "more than once",
+        )
+        rows = self.query(
+            "SELECT serial_number FROM purchasereturnitems WHERE purchase_return_id=%s",
+            (return_id,),
+        )
+        return self.assert_true(
+            rows == [(serial,)] and not self.stock(serial),
+            f"{empty}; {duplicate}; retained rows={rows}",
+        )
+
+    def _delete_purchase_return_and_reconcile(self, return_id, serial):
+        journal_id = self.query(
+            "SELECT journal_id FROM purchasereturns WHERE purchase_return_id=%s",
+            (return_id,), one=True,
+        )[0]
+        self.query("SELECT delete_purchase_return(%s)", (return_id,))
+        header = self.query(
+            "SELECT count(*) FROM purchasereturns WHERE purchase_return_id=%s",
+            (return_id,), one=True,
+        )[0]
+        journal = self.query(
+            "SELECT count(*) FROM journalentries WHERE journal_id=%s",
+            (journal_id,), one=True,
+        )[0]
+        return self.assert_true(
+            header == 0 and journal == 0 and self.stock(serial),
+            f"header={header}, journal={journal}, serial restored",
+        )
+
+    def _reconcile_party_reports(self, key):
+        party_id, party_name = self.ids[key], self.names[key]
+        direct = self.query(
+            """SELECT COALESCE(sum(debit),0),COALESCE(sum(credit),0),
+                      COALESCE(sum(debit-credit),0)
+               FROM journallines WHERE party_id=%s""",
+            (party_id,), one=True,
+        )
+        balance_json = self.query(
+            "SELECT get_party_balance_by_name(%s)", (party_name,), one=True
+        )[0]
+        trial = self.query(
+            """SELECT total_debit,total_credit,balance FROM vw_trial_balance
+               WHERE code IS NULL AND name=%s""",
+            (party_name,), one=True,
+        )
+        ledger = self.query(
+            "SELECT debit,credit,running_balance FROM detailed_ledger(%s,%s,%s)",
+            (party_name, date(1900, 1, 1), date.today()),
+        )
+        self.assert_true(trial is not None and ledger,
+                         f"Missing trial/ledger rows for {party_name}")
+        ledger_debit = sum(row[0] for row in ledger)
+        ledger_credit = sum(row[1] for row in ledger)
+        values = [
+            float(direct[0]), float(direct[1]), float(direct[2]),
+            float(balance_json["balance"]),
+            float(trial[0]), float(trial[1]), float(trial[2]),
+            float(ledger_debit), float(ledger_credit), float(ledger[-1][2]),
+        ]
+        expected = [
+            values[0], values[1], values[2], values[2],
+            values[0], values[1], values[2], values[0], values[1], values[2],
+        ]
+        return self.assert_true(
+            all(abs(actual - target) < 0.005
+                for actual, target in zip(values, expected)),
+            f"{party_name}: debit={direct[0]}, credit={direct[1]}, balance={direct[2]}",
+        )
 
     def _double_entry(self):
         debit, credit = self.query("SELECT COALESCE(sum(debit),0),COALESCE(sum(credit),0) FROM journallines", one=True)
