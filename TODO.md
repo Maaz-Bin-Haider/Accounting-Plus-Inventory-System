@@ -32,6 +32,10 @@ intentionally placed after tests and image creation.
   - [ ] Items malformed numeric/text payload validation.
 - [ ] Test sales and purchases: permissions, CRUD, navigation, summaries, serial
       lookup/validation, malformed requests, and safe database failures.
+  - [x] Sales page access, request validation, CSRF, navigation, serial lookup,
+        bulk grouping/deduplication, and summary contracts.
+  - [ ] Sales validated create/update/delete database execution and permissions.
+  - [ ] Purchases permissions, CRUD, navigation, summaries, and serial checks.
 - [ ] Test sale and purchase returns: permissions, lifecycle rules, CRUD,
       navigation, summaries, and safe failures.
 - [ ] Test payments, receipts, and contra entries: permissions, CRUD, navigation,

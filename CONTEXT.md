@@ -920,6 +920,16 @@ Verified after adding item coverage on July 20, 2026: all 41 Django tests pass
 against the ephemeral PostgreSQL 16 stack with zero system-check issues, and the
 guarded test database is destroyed successfully.
 
+`sale/tests.py` starts transaction endpoint coverage with sale-page access,
+malformed submit/delete requests, CSRF, individual serial lookup state, pasted
+bulk-serial parsing/deduplication/grouping, invalid serial reporting, invoice
+navigation validation/payloads, and summary date/default-result contracts.
+Database-facing endpoint tests replace only the sale view module's connection.
+
+Verified after the first sales slice on July 20, 2026: all 57 Django tests pass
+against ephemeral PostgreSQL 16 with zero system-check issues, followed by
+successful destruction of the guarded test database.
+
 The first business endpoint slice is in `parties/tests.py`. It covers login and
 `view_party` enforcement, authorized template rendering, autocomplete query
 parameters and JSON results, list endpoint authorization and serialization, and
