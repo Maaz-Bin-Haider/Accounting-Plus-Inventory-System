@@ -140,6 +140,22 @@ this milestone does not execute the patch. The expected backup success line is:
 Verified PostgreSQL backup predeploy-<commit SHA>.dump (... manifest lines); production was not changed.
 ```
 
+### Preserve the running rollback image
+
+After backup verification, the workflow resolves the actual image ID of the
+running Compose `web` container. It refuses to continue if the container is
+missing or stopped, then creates this Docker tag without restarting anything:
+
+```text
+financee:rollback-before-<new-release-commit-SHA>
+```
+
+The tag is verified against the original image ID. Container ID, image ID,
+existing revision label (if any), rollback tag, and UTC capture time are saved
+as mode-0600 `rollback-metadata.txt` inside the commit-specific release
+directory. This remains the rollback target even when the original image had
+only a Compose-generated name or no Git revision label.
+
 ---
 
 ## Part 0 - Before you start (checklist)

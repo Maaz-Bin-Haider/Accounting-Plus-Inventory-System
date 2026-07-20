@@ -166,6 +166,9 @@ intentionally placed after tests and image creation.
   - [ ] Confirm the verified pre-deployment backup on EC2 through GitHub Actions.
 - [x] Lock deployments so two releases cannot overlap.
 - [ ] Preserve the previously working image tag for rollback.
+  - [x] Capture the running web image ID, assign a commit-specific rollback tag,
+        and persist its container/revision metadata before live changes.
+  - [ ] Confirm the rollback anchor on EC2 through GitHub Actions.
 - [ ] Wait for container and HTTP health checks after deployment.
 - [ ] Run post-deployment smoke tests and roll back automatically on failure.
 - [ ] Record the deployed commit, image tag, timestamps, and result.

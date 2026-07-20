@@ -341,3 +341,48 @@ jobs:
           test "${MANIFEST_LINES}" -gt 10
           echo "Verified PostgreSQL backup ${BACKUP_NAME} (${MANIFEST_LINES} manifest lines); production was not changed."
           REMOTE
+
+      - name: Preserve the currently running image for rollback
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          PRODUCTION_PATH: ${{ vars.PRODUCTION_PATH }}
+        run: |
+          set -eu
+          ssh -i "${HOME}/.ssh/production_key" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "${PRODUCTION_USER}@${PRODUCTION_HOST}" \
+            sh -s -- "${PRODUCTION_PATH}" "${COMMIT_SHA}" <<'REMOTE'
+          set -eu
+          PRODUCTION_PATH=$1
+          COMMIT_SHA=$2
+          RELEASE_DIR="${PRODUCTION_PATH}/releases/${COMMIT_SHA}"
+          METADATA="${RELEASE_DIR}/rollback-metadata.txt"
+          TEMP_METADATA="${METADATA}.tmp"
+          ROLLBACK_TAG="financee:rollback-before-${COMMIT_SHA}"
+          cd "${PRODUCTION_PATH}"
+          CONTAINER_ID="$(docker compose ps -q web)"
+          test -n "${CONTAINER_ID}"
+          test "$(docker inspect "${CONTAINER_ID}" --format '{{.State.Running}}')" = true
+          PREVIOUS_IMAGE_ID="$(docker inspect "${CONTAINER_ID}" --format '{{.Image}}')"
+          test -n "${PREVIOUS_IMAGE_ID}"
+          docker image inspect "${PREVIOUS_IMAGE_ID}" >/dev/null
+          docker image tag "${PREVIOUS_IMAGE_ID}" "${ROLLBACK_TAG}"
+          PREVIOUS_REVISION="$(docker image inspect "${PREVIOUS_IMAGE_ID}" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' 2>/dev/null || true)"
+          CAPTURED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+          {
+            echo "release_commit=${COMMIT_SHA}"
+            echo "previous_container_id=${CONTAINER_ID}"
+            echo "previous_image_id=${PREVIOUS_IMAGE_ID}"
+            echo "previous_revision=${PREVIOUS_REVISION}"
+            echo "rollback_tag=${ROLLBACK_TAG}"
+            echo "captured_at=${CAPTURED_AT}"
+          } > "${TEMP_METADATA}"
+          chmod 600 "${TEMP_METADATA}"
+          mv "${TEMP_METADATA}" "${METADATA}"
+          test "$(docker image inspect "${ROLLBACK_TAG}" --format '{{.Id}}')" = "${PREVIOUS_IMAGE_ID}"
+          echo "Preserved running image as ${ROLLBACK_TAG}; running containers were not changed."
+          REMOTE

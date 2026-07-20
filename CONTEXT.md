@@ -1505,3 +1505,25 @@ The backup remains only on EC2 and is never returned as a GitHub artifact. This
 step takes a consistent database snapshot but does not execute SQL or change
 running containers. The next approved run must confirm the checksum and
 manifest before live deployment and patch application can be implemented.
+
+GitHub commit `82869fa` subsequently created and verified
+`predeploy-82869fa5f103d5792a75ccb54ae7f1070ba829cc.dump` on EC2. Its SHA-256
+check passed and the matching PostgreSQL `pg_restore` reported 440 manifest
+lines. No production data or running container was changed.
+
+## Running-Image Rollback Anchor
+
+The approved workflow now resolves the running Compose web container before
+any live release change, requires it to be in the running state, and obtains
+its immutable Docker image ID. That exact image ID is tagged as
+`financee:rollback-before-<new commit SHA>`. This works for the existing
+manually built production image even when it has no commit tag or OCI revision
+label.
+
+The workflow atomically writes mode-0600 `rollback-metadata.txt` into the new
+release directory with the previous container ID, image ID, optional revision,
+rollback tag, and UTC capture timestamp. It then proves the rollback tag still
+resolves to the captured image ID. Tagging an existing image changes only
+Docker image metadata; the running application and database are untouched. The
+next approved run must confirm this rollback anchor before SQL or container
+changes are introduced.
