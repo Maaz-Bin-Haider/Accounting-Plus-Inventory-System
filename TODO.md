@@ -1,5 +1,10 @@
 # Testing and CI/CD Roadmap
 
+> **Required production action:** Before the next production deployment, take
+> a verified PostgreSQL backup and reapply the updated `production_fixes.sql`.
+> The concurrency fix has only been validated in disposable test databases;
+> no production database was changed during this work.
+
 Target solo-developer flow:
 
 ```text
@@ -72,6 +77,8 @@ intentionally placed after tests and image creation.
         amount validation, same-party rejection, and continuous report checks.
   - [x] Customer, vendor, and expense opening-balance journals, including
         balance updates, zero removal, and continuous report checks.
+  - [x] Duplicate purchase serials within/across invoices and a two-connection
+        race attempting to sell the same stocked serial.
 - [ ] Add regression coverage for every defect in `FIXES.md`.
 - [ ] Add Docker startup, health-check, static-file, and nginx proxy smoke tests.
 - [ ] Report coverage, agree a threshold, then enforce it.

@@ -171,6 +171,21 @@ Example of what users see now:
 
 ---
 
+## Part 4.1 - Concurrent sale protection (July 20, 2026)
+
+The two-connection system test proved that two simultaneous `create_sale`
+transactions could both read one serial as stocked and both commit active sold
+rows. `create_sale` now locks the selected `PurchaseUnits` row with
+`FOR UPDATE`, forcing the second transaction to re-check availability after the
+first commits. A partial unique index on `SoldUnits(unit_id)` where status is
+`Sold` was evaluated as a second guard, but the production-origin backup already
+contains historical duplicate active rows, so creating it would abort the
+deployment patch. Those rows must be reviewed and repaired deliberately before
+adding the index; the patch does not auto-delete accounting history. The
+regression test requires one commit and one rejection through `create_sale`.
+
+---
+
 ## Part 5 - Deployment steps (EC2)
 
 1. **Push/pull the code** (done by you):

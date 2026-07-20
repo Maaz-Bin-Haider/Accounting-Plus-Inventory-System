@@ -3,7 +3,7 @@
 -- Accounting Plus Inventory System
 -- Date: 2026-07-18
 --
--- Fixes the 8 confirmed defects from system_tests/FAILED_TESTS.md and hardens
+-- Fixes the confirmed defects from system tests and hardens
 -- related stored procedures against invalid entries, with clear user-facing
 -- error messages.
 --
@@ -232,7 +232,8 @@ BEGIN
             FROM PurchaseUnits pu
             JOIN PurchaseItems pi ON pi.purchase_item_id = pu.purchase_item_id
             WHERE pu.serial_number = v_serial AND pu.in_stock = TRUE
-            LIMIT 1;
+            LIMIT 1
+            FOR UPDATE OF pu;
 
             IF v_unit_id IS NULL THEN
                 RAISE EXCEPTION 'Serial "%" is not available in stock. It may not exist, may already be sold, or may have been returned to the vendor.', v_serial;
@@ -1455,6 +1456,16 @@ BEGIN
     PERFORM rebuild_purchase_return_journal(p_return_id);
 END;
 $$;
+
+-- ============================================================================
+-- FIX 9: serialize sales of the same physical unit. The row lock above makes
+-- a concurrent loser re-check in_stock after the winner commits.
+--
+-- A partial unique index on SoldUnits(unit_id) WHERE status='Sold' would be a
+-- useful final guard, but the production-origin backup contains historical
+-- duplicate active rows. Do not auto-delete accounting history. Add that index
+-- only after Diagnostic 1 has been reviewed and repaired deliberately.
+-- ============================================================================
 
 COMMIT;
 

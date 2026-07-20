@@ -875,6 +875,26 @@ system tests pass after restoring the latest backup and applying
 Failed system cases now retain their traceback in `RESULTS.md` so CI failures
 identify the exact runner location instead of reporting only an exception type.
 
+Duplicate/concurrency system coverage rejects repeated purchase serials both
+inside one invoice and across separate invoices, verifying the unique unit and
+source invoice remain intact. A real two-connection race synchronizes two
+transactions attempting to sell the same stocked serial; the required invariant
+is exactly one committed sale, one database rejection, one active sold-unit row,
+and an out-of-stock purchase unit, followed by the standard report checkpoint.
+
+The first concurrency run exposed a real race: both simultaneous sales could
+commit because `create_sale` read `in_stock` without locking the purchase unit.
+`production_fixes.sql` now uses `FOR UPDATE OF pu`. A partial unique index was
+evaluated but cannot yet be applied because the production-origin backup has
+historical duplicate active sold rows; they require deliberate review rather
+than automatic deletion. The row-lock SQL patch must be applied again to
+production during a controlled deployment after taking a backup.
+
+Verified after duplicate-serial and concurrency coverage on July 20, 2026: all
+83 PostgreSQL system tests pass with the latest backup plus the updated SQL
+patch, and the temporary database is removed. The race now produces exactly one
+commit and one stock-availability rejection.
+
 If new failures appear, treat `system_tests/FAILED_TESTS.md` as the remediation
 backlog. After changing the stored procedures, rerun the complete suite rather
 than testing only the affected case, because sale returns and invoice mutations
@@ -1056,3 +1076,8 @@ restrictions, duplicate-name behavior, normalization of create/update payloads,
 `created_by_id` propagation, and AJAX update selection validation. Test setup
 clears Django's permission caches between cases so authorization tests remain
 independent and order-agnostic.
+
+`TODO.md` begins with a prominent production action warning: take and verify a
+PostgreSQL backup, then reapply the updated `production_fixes.sql` before the
+next production deployment. The concurrency patch has only been exercised in
+disposable databases and has not changed production.

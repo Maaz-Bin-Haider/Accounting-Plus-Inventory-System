@@ -9,6 +9,7 @@ import os
 import socket
 import subprocess
 import sys
+import threading
 import time
 import traceback
 from contextlib import contextmanager
@@ -579,6 +580,33 @@ class Suite:
         )
         self.case("Continuous Integrity and Reporting", "Opening-balance checkpoint", "All reports and integrity checks pass", lambda: self.checkpoint("party openings"))
 
+        G = "Duplicate Serial and Concurrency Protection"
+        duplicates = self.serials("PURCHASE-DUP", 2)
+        self.case(
+            G, "Reject duplicate serial within purchase", "Whole invoice is rejected",
+            lambda: self.expect_blocked(
+                lambda: self.purchase([duplicates[0], duplicates[0]]),
+                "unique",
+            ),
+        )
+        self.case(
+            G, "Reject serial reused across purchases", "Only original unit remains",
+            lambda: self._duplicate_across_purchases(duplicates[1]),
+        )
+        race_serial = self.serials("SALE-RACE", 1)[0]
+        self.case(
+            G, "Prepare serial for concurrent sale", "One stocked unit exists",
+            lambda: (
+                self.purchase([race_serial]),
+                self.assert_true(self.stock(race_serial), "Race serial is in stock"),
+            )[1],
+        )
+        self.case(
+            G, "Race two sales for one serial", "Exactly one transaction commits",
+            lambda: self._concurrent_sale(race_serial),
+        )
+        self.case("Continuous Integrity and Reporting", "Concurrency checkpoint", "All reports and integrity checks pass", lambda: self.checkpoint("serial concurrency"))
+
         G = "Financial Invariant Tests"
         self.case(G, "Double-entry identity", "Debits equal credits", lambda: self._double_entry())
         self.case(G, "No orphaned journal lines", "No orphan exists", lambda: self.assert_true(self.query("SELECT count(*) FROM journallines jl LEFT JOIN journalentries je ON je.journal_id=jl.journal_id WHERE je.journal_id IS NULL", one=True)[0] == 0, "No orphaned lines"))
@@ -664,6 +692,72 @@ class Suite:
         )[0]
         return self.assert_true(remaining == 0,
                                 f"remaining opening journals={remaining}")
+
+    def _duplicate_across_purchases(self, serial):
+        original_invoice = self.purchase([serial])
+        blocked = self.expect_blocked(
+            lambda: self.purchase([serial]), "unique"
+        )
+        units = self.query(
+            "SELECT count(*) FROM purchaseunits WHERE serial_number=%s",
+            (serial,), one=True,
+        )[0]
+        invoices = self.query(
+            """SELECT count(DISTINCT pi.purchase_invoice_id)
+               FROM purchaseitems pi JOIN purchaseunits pu USING (purchase_item_id)
+               WHERE pu.serial_number=%s""",
+            (serial,), one=True,
+        )[0]
+        return self.assert_true(
+            units == 1 and invoices == 1 and bool(original_invoice),
+            f"{blocked}; units={units}, source invoices={invoices}",
+        )
+
+    def _concurrent_sale(self, serial):
+        barrier = threading.Barrier(2)
+        outcomes = []
+        outcome_lock = threading.Lock()
+        payload = json.dumps([{
+            "item_name": self.names["item_a"], "qty": 1,
+            "unit_price": 199, "serials": [serial],
+        }])
+
+        def worker():
+            conn = psycopg2.connect(self.conn.dsn)
+            try:
+                with conn.cursor() as cur:
+                    barrier.wait(timeout=10)
+                    cur.execute(
+                        "SELECT create_sale(%s::bigint,%s::date,%s::jsonb,%s::integer)",
+                        (self.ids["customer"], date.today(), payload, None),
+                    )
+                    sale_id = cur.fetchone()[0]
+                conn.commit()
+                result = ("committed", sale_id)
+            except Exception as exc:
+                conn.rollback()
+                result = ("blocked", str(exc).splitlines()[0])
+            finally:
+                conn.close()
+            with outcome_lock:
+                outcomes.append(result)
+
+        threads = [threading.Thread(target=worker, daemon=True) for _ in range(2)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=20)
+        self.assert_true(
+            all(not thread.is_alive() for thread in threads),
+            "Concurrent sale workers did not finish",
+        )
+        committed = [value for status, value in outcomes if status == "committed"]
+        blocked = [value for status, value in outcomes if status == "blocked"]
+        return self.assert_true(
+            len(committed) == 1 and len(blocked) == 1
+            and self.active_sales(serial) == 1 and not self.stock(serial),
+            f"committed={committed}, blocked={blocked}",
+        )
 
     def _double_entry(self):
         debit, credit = self.query("SELECT COALESCE(sum(debit),0),COALESCE(sum(credit),0) FROM journallines", one=True)
