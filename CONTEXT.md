@@ -929,6 +929,22 @@ and the current defect-to-test mapping instead of the stale 60-test summary.
 Verified after enabling the executable regression manifest on July 20, 2026:
 all 99 PostgreSQL system tests pass and the disposable database is removed.
 
+Production-stack smoke coverage uses `docker-compose.smoke.yml`, which contains
+only smoke credentials, a tmpfs PostgreSQL database, disposable Redis/static
+storage, and a localhost-only nginx port. `scripts/smoke_production_stack.sh`
+builds and waits for the stack, checks nginx syntax, proxies `/health/` and the
+login page, verifies a collected CSS asset plus immutable cache headers, and
+always removes containers, networks, and volumes. `/health/` reports ready only
+after both PostgreSQL `SELECT 1` and a cache write/read succeed; failures return
+a generic 503 without internal details. The production web health check now
+uses this readiness endpoint instead of merely rendering the login page.
+
+Verified on July 20, 2026: all 141 Django tests pass with zero system-check
+issues, and the isolated production-stack smoke script passes PostgreSQL/Redis/
+Gunicorn/nginx startup, readiness, proxy, static-file, and cache-header checks.
+Both test stacks removed their disposable containers, networks, databases, and
+volumes after execution.
+
 If new failures appear, treat `system_tests/FAILED_TESTS.md` as the remediation
 backlog. After changing the stored procedures, rerun the complete suite rather
 than testing only the affected case, because sale returns and invoice mutations

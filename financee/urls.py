@@ -32,6 +32,7 @@ from saleReturn import urls as sale_return_urls
 from accountsReports import urls as account_reports_urls
 from authentication import urls as authentication_urls
 from contra import urls as contra_urls
+from financee.health import health_check
 
 
 def redirect_to_home(request):
@@ -41,6 +42,7 @@ def redirect_to_home(request):
         return redirect('authentication:login')
 
 urlpatterns = [
+    path('health/', health_check, name='health'),
     path('', redirect_to_home, name='home_redirect'),
     path('admin/', financee_admin_site.urls),
     path('parties/', include(parties_urls,namespace='parties')),

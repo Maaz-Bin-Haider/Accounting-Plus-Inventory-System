@@ -86,7 +86,9 @@ intentionally placed after tests and image creation.
 - [x] Add regression coverage for every defect in `FIXES.md`.
   - [x] Executable defect-to-test manifest for all eight original defects and
         the concurrent duplicate-sale defect.
-- [ ] Add Docker startup, health-check, static-file, and nginx proxy smoke tests.
+- [x] Add Docker startup, health-check, static-file, and nginx proxy smoke tests.
+  - [x] Isolated tmpfs database/Redis stack, application readiness probe, nginx
+        config/proxy validation, collected static response, and cache headers.
 - [ ] Report coverage, agree a threshold, then enforce it.
 - [ ] Provide separate fast-test and full-system-test commands.
 - [ ] Keep all fixtures deterministic and independent of production data.
