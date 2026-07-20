@@ -870,3 +870,26 @@ users; other database failures must use a generic fallback.
 Full integration tests must use isolated PostgreSQL because the system depends
 on stored functions, triggers, views, JSONB, and PostgreSQL-specific SQL. SQLite
 is not a valid substitute. CI must refuse production database names and hosts.
+
+The isolated Django test configuration is `financee/test_settings.py`. It
+requires an explicit `TEST_DB_NAME` beginning with `financee_test_`, rejects the
+known production hosts and the configured production database name, disables
+persistent connections and external Redis, and uses faster test-only password
+hashing. `.env.test.example` documents safe non-production variables.
+
+`financee/test_support.py` provides shared user creation and custom `auth`
+permission helpers. Business endpoint test modules should reuse these helpers
+instead of duplicating permission setup.
+
+The first business endpoint slice is in `parties/tests.py`. It covers login and
+`view_party` enforcement, authorized template rendering, autocomplete query
+parameters and JSON results, list endpoint authorization and serialization, and
+CSRF rejection for party creation. Database reads are mocked in these endpoint
+contract tests; stored-procedure behavior remains the responsibility of the
+isolated PostgreSQL integration suite.
+
+Party endpoint coverage now also verifies create permission and view-only-group
+restrictions, duplicate-name behavior, normalization of create/update payloads,
+`created_by_id` propagation, and AJAX update selection validation. Test setup
+clears Django's permission caches between cases so authorization tests remain
+independent and order-agnostic.

@@ -19,10 +19,15 @@ intentionally placed after tests and image creation.
 - [x] Record the test and delivery roadmap.
 - [x] Establish authentication endpoint and CSRF tests.
 - [x] Establish tests for safe PostgreSQL error translation.
-- [ ] Add a dedicated PostgreSQL test configuration that cannot target production.
-- [ ] Add reusable helpers for users, permissions, JSON requests, and DB cursors.
+- [x] Add a dedicated PostgreSQL test configuration that cannot target production.
+- [x] Add initial reusable helpers for users and custom permissions.
+- [ ] Add reusable helpers for JSON requests and mocked DB cursors.
 - [ ] Test parties and items: access, permissions, view-only restrictions, CRUD,
       duplicates, invalid payloads, autocomplete, and list contracts.
+  - [x] Parties authentication, view permission, autocomplete, list, and CSRF.
+  - [x] Parties create/update permission contracts, view-only group, and duplicates.
+  - [ ] Parties malformed/invalid payload behavior and database error responses.
+  - [ ] Items authentication, permissions, CRUD, autocomplete, and list contracts.
 - [ ] Test sales and purchases: permissions, CRUD, navigation, summaries, serial
       lookup/validation, malformed requests, and safe database failures.
 - [ ] Test sale and purchase returns: permissions, lifecycle rules, CRUD,
@@ -83,4 +88,3 @@ intentionally placed after tests and image creation.
 - [ ] Enable Django proxy SSL and secure-cookie settings after HTTPS is verified.
 - [ ] Monitor uptime, container health, disk, backup age, errors, and PostgreSQL.
 - [ ] Prove a full database restore and application rollback before relying on CD.
-
