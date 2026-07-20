@@ -123,3 +123,40 @@ jobs:
           if-no-files-found: error
           retention-days: 7
           compression-level: 0
+
+  authorize-production:
+    name: Approve and verify production release
+    needs: build-production-image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+    concurrency:
+      group: production-deployment
+      cancel-in-progress: false
+
+    steps:
+      - name: Download the tested production image
+        uses: actions/download-artifact@v6
+        with:
+          name: production-image-${{ github.sha }}
+          path: deployment-artifact/
+
+      - name: Verify release identity and integrity
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          set -eu
+          METADATA=deployment-artifact/image-metadata.txt
+          ARCHIVE=deployment-artifact/production-image.tar
+          test -f "${METADATA}"
+          test -f "${ARCHIVE}"
+          grep -Fx "commit_sha=${COMMIT_SHA}" "${METADATA}"
+          grep -Fx "image_tag=financee:${COMMIT_SHA}" "${METADATA}"
+          grep -Fx "platform=linux/arm64" "${METADATA}"
+          ARCHIVE_SHA256="$(sed -n 's/^archive_sha256=//p' "${METADATA}")"
+          test "$(printf '%s' "${ARCHIVE_SHA256}" | wc -c)" -eq 64
+          printf '%s  %s\n' "${ARCHIVE_SHA256}" "${ARCHIVE}" | sha256sum --check
+          docker load --input "${ARCHIVE}"
+          test "$(docker image inspect "financee:${COMMIT_SHA}" --format '{{.Architecture}}')" = arm64
+          test "$(docker image inspect "financee:${COMMIT_SHA}" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "${COMMIT_SHA}"

@@ -1376,3 +1376,31 @@ the EC2 instance.
 Local verification covers workflow syntax, image architecture, revision label,
 archive loading, and metadata consistency. The GitHub-hosted ARM64 export and
 artifact publication must be confirmed by the next pushed workflow run.
+
+GitHub run `1ed4cb097d458357436ae0e2e2fef953a0ced4f3` subsequently passed both
+the complete test job and ARM64 image-build job and published the expected
+`production-image-1ed4cb097d458357436ae0e2e2fef953a0ced4f3` artifact. This
+confirms the hosted runner can create the intended deployment handoff.
+
+## Production Approval Boundary
+
+The workflow now contains an `authorize-production` job chained through
+`needs: build-production-image`; that build is itself chained through
+`needs: test`. The job targets the GitHub Environment named `production` and
+uses a non-cancelling `production-deployment` concurrency group. Once the
+environment has a required-reviewer protection rule, a push cannot enter this
+job until every test and image-build requirement passes and the solo developer
+approves it in GitHub.
+
+After approval, the job downloads only the artifact whose name contains the
+current workflow commit. Before any future deployment step can use it, the job
+requires matching commit, image tag, and ARM64 platform metadata; recomputes
+and verifies the archive SHA-256; loads the Docker archive; and inspects its
+architecture and embedded OCI revision label. A mismatch stops the job. No EC2
+credentials, secrets, network connection, or production mutation are part of
+this milestone.
+
+GitHub Environment protection is repository configuration and cannot be
+enforced by workflow YAML alone. `DEPLOYMENT_GUIDE.md` records the one-time UI
+steps. The next pushed run must demonstrate that `authorize-production` pauses
+for review and passes artifact validation only after approval.

@@ -29,6 +29,31 @@ production dump before writing this guide: restore works, `production_fixes.sql`
 applies cleanly, the app serves pages through nginx, and Redis caching is
 active (dashboard queries drop from ~45 ms to ~0.1 ms on cache hits).
 
+> **CI/CD transition:** Parts 4 and 6 document the original manual deployment
+> process. Do not use them for a new release once the approval-gated workflow is
+> complete; the server will load the already-tested, commit-tagged image instead
+> of pulling source and rebuilding it. The database backup and SQL-patch safety
+> requirements remain mandatory.
+
+## Configure the GitHub production approval gate
+
+This one-time repository setting cannot be created by the workflow itself:
+
+1. Open the GitHub repository and select **Settings -> Environments**.
+2. Create an environment named exactly `production`.
+3. Under deployment protection rules, enable **Required reviewers** and select
+   your own GitHub account. Do not enable self-review prevention for this
+   solo-developer workflow.
+4. Save the protection rules. Do not add EC2 credentials yet.
+
+After the workflow commit is pushed, the `test` and
+`build-production-image` jobs must finish before `authorize-production` asks
+for approval. Approve the pending deployment from the workflow run. The job
+then downloads that run's exact `production-image-<commit SHA>` artifact,
+verifies its SHA-256 checksum and metadata, loads it, and confirms both ARM64
+architecture and the embedded commit revision. At this stage it performs no
+EC2 connection and changes no production state.
+
 ---
 
 ## Part 0 - Before you start (checklist)

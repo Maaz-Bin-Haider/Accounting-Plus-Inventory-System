@@ -138,12 +138,18 @@ intentionally placed after tests and image creation.
 - [x] Tag the image with the Git commit SHA; never deploy implicit `latest`.
   - [x] Embed the SHA as the OCI revision label and publish digest/checksum metadata.
 - [ ] Prevent the deployment job unless every required check passes.
+  - [x] Chain the production authorization job behind tests and image creation.
+  - [ ] Preserve this dependency when the EC2 deployment steps are added.
 
 ## 4. Approval-gated Continuous Deployment
 
 - [ ] Create a protected GitHub Environment named `production` with the solo
       developer as required reviewer.
+  - [x] Bind the production authorization job to that environment.
+  - [ ] Configure the environment and required reviewer in GitHub repository settings.
 - [ ] Request approval only after successful CI and image creation.
+  - [x] Add the environment-gated release validation job after both prerequisites.
+  - [ ] Confirm on GitHub that the job pauses for approval before it starts.
 - [ ] Keep secrets in the GitHub Environment and/or AWS Systems Manager, never Git.
 - [ ] Deploy the already-tested commit-tagged image to EC2.
 - [ ] Verify a PostgreSQL backup before changing the running release.
