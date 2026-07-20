@@ -1589,3 +1589,26 @@ same health checks must pass for rollback; even a successful rollback leaves
 the GitHub job failed so the release cannot be mistaken for success. Failure of
 both release and rollback is reported as critical with Compose status. This is
 the first milestone that intentionally changes running production containers.
+
+GitHub commit `7694a64` completed the first immutable deployment. Compose
+recreated the web container from
+`financee:7694a646bacb1d67fa8457f206764c1211f04901`, kept PostgreSQL and Redis
+healthy, and reported that both container and loopback HTTP health checks
+passed. The deployment, health, rollback preparation, and release-recording
+roadmap items are therefore proven.
+
+## Public Post-Deployment Smoke Gate
+
+The production Environment now also supplies non-sensitive `PRODUCTION_URL`,
+which must be an HTTPS origin without a trailing slash. After internal image,
+container, and nginx health succeeds, the EC2 host tests the public route
+through Cloudflare: exact `/health/` JSON, HTTP 200 from the login page, and the
+expected immutable cache header from the login stylesheet. Each public group is
+retried three times with bounded requests.
+
+Public smoke failure is inside the same rollback decision as internal health
+failure. The workflow restores the preserved image and requires both internal
+and public checks to pass; the GitHub run remains failed after a healthy
+rollback. The next approved run requires `PRODUCTION_URL` to be configured as
+`https://swisstechfinance.com` and must prove all three public routes before the
+post-deployment smoke roadmap item is complete.

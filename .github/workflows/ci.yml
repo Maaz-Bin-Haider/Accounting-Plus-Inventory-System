@@ -125,7 +125,7 @@ jobs:
           compression-level: 0
 
   authorize-production:
-    name: Approve and verify production release
+    name: Deploy approved production release
     needs: build-production-image
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -486,6 +486,7 @@ jobs:
           PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
           PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
           PRODUCTION_PATH: ${{ vars.PRODUCTION_PATH }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
         run: |
           set -eu
           ssh -i "${HOME}/.ssh/production_key" \
@@ -493,10 +494,11 @@ jobs:
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
             "${PRODUCTION_USER}@${PRODUCTION_HOST}" \
-            sh -s -- "${PRODUCTION_PATH}" "${COMMIT_SHA}" <<'REMOTE'
+            sh -s -- "${PRODUCTION_PATH}" "${COMMIT_SHA}" "${PRODUCTION_URL}" <<'REMOTE'
           set -eu
           PRODUCTION_PATH=$1
           COMMIT_SHA=$2
+          PRODUCTION_URL=$3
           RELEASE_DIR="${PRODUCTION_PATH}/releases/${COMMIT_SHA}"
           OVERRIDE="${RELEASE_DIR}/docker-compose.deploy.yml"
           ROLLBACK_METADATA="${RELEASE_DIR}/rollback-metadata.txt"
@@ -506,6 +508,11 @@ jobs:
           STARTED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
           cd "${PRODUCTION_PATH}"
           command -v curl >/dev/null
+          case "${PRODUCTION_URL}" in
+            https://*/) echo "PRODUCTION_URL must not end with a slash." >&2; exit 1 ;;
+            https://*) ;;
+            *) echo "PRODUCTION_URL must be an HTTPS origin." >&2; exit 1 ;;
+          esac
           test "${ROLLBACK_IMAGE}" = "financee:rollback-before-${COMMIT_SHA}"
           docker image inspect "${RELEASE_IMAGE}" >/dev/null
           docker image inspect "${ROLLBACK_IMAGE}" >/dev/null
@@ -542,7 +549,26 @@ jobs:
             return 1
           }
 
-          if compose_up "${RELEASE_IMAGE}" && wait_until_healthy "${RELEASE_IMAGE}"; then
+          verify_public_routes() {
+            attempts=0
+            while [ "${attempts}" -lt 3 ]; do
+              health_body="$(curl --fail --silent --show-error --max-time 15 "${PRODUCTION_URL}/health/")" || health_body=
+              login_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 15 "${PRODUCTION_URL}/authentication/login/")" || login_status=000
+              static_headers="$(curl --fail --silent --show-error --dump-header - --output /dev/null --max-time 15 "${PRODUCTION_URL}/static/css/login_styling.css")" || static_headers=
+              if [ "${health_body}" = '{"status": "ok"}' ] && \
+                 [ "${login_status}" = 200 ] && \
+                 printf '%s' "${static_headers}" | grep -qi 'cache-control: public, immutable'; then
+                return 0
+              fi
+              attempts=$((attempts + 1))
+              sleep 5
+            done
+            return 1
+          }
+
+          if compose_up "${RELEASE_IMAGE}" && \
+             wait_until_healthy "${RELEASE_IMAGE}" && \
+             verify_public_routes; then
             FINISHED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
             {
               echo "status=deployed"
@@ -563,7 +589,7 @@ jobs:
 
           echo "Release ${RELEASE_IMAGE} failed health checks; rolling back to ${ROLLBACK_IMAGE}." >&2
           compose_up "${ROLLBACK_IMAGE}"
-          if wait_until_healthy "${ROLLBACK_IMAGE}"; then
+          if wait_until_healthy "${ROLLBACK_IMAGE}" && verify_public_routes; then
             FINISHED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
             {
               echo "status=rolled_back"

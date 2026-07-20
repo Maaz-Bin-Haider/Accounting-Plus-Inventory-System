@@ -66,6 +66,7 @@ secrets—not repository variables or committed files—for sensitive values:
 | Secret | `PRODUCTION_SSH_KEY` | Complete private key, including header/footer |
 | Secret | `PRODUCTION_KNOWN_HOSTS` | Verified SSH known-hosts entry for the EC2 host |
 | Variable | `PRODUCTION_PATH` | Absolute existing project path on EC2 |
+| Variable | `PRODUCTION_URL` | Public HTTPS origin without a trailing slash |
 
 Obtain the host public key from a trusted source and compare its fingerprint
 with the key presented during an already trusted SSH connection. Do not disable
@@ -74,6 +75,12 @@ For the layout in this guide, `PRODUCTION_PATH` is:
 
 ```text
 /home/ubuntu/Accounting-Plus-Inventory-System
+```
+
+Set `PRODUCTION_URL` to:
+
+```text
+https://swisstechfinance.com
 ```
 
 The next workflow run performs a read-only SSH preflight after approval. It
@@ -180,6 +187,11 @@ three minutes it requires all of the following:
 - the web container is running and Docker reports it healthy;
 - the container's immutable image ID equals the approved commit image;
 - `http://127.0.0.1/health/` returns exactly `{"status": "ok"}`.
+
+It then checks the public HTTPS origin through Cloudflare three times: health
+JSON, an HTTP 200 login page, and the immutable cache header on
+`/static/css/login_styling.css`. Public-route failure enters the same rollback
+path as container or loopback-health failure.
 
 Success writes mode-0600 `deployment-result.txt` in the release directory and
 atomically updates `<PRODUCTION_PATH>/.deployed-commit`. If startup or health

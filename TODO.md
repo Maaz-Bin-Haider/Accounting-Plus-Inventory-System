@@ -138,9 +138,9 @@ intentionally placed after tests and image creation.
   - [x] Export a loadable `linux/arm64` archive only after the full test job passes.
 - [x] Tag the image with the Git commit SHA; never deploy implicit `latest`.
   - [x] Embed the SHA as the OCI revision label and publish digest/checksum metadata.
-- [ ] Prevent the deployment job unless every required check passes.
+- [x] Prevent the deployment job unless every required check passes.
   - [x] Chain the production authorization job behind tests and image creation.
-  - [ ] Preserve this dependency when the EC2 deployment steps are added.
+  - [x] Preserve this dependency when the EC2 deployment steps are added.
 
 ## 4. Approval-gated Continuous Deployment
 
@@ -156,12 +156,12 @@ intentionally placed after tests and image creation.
   - [x] Configure and prove the production SSH secrets in GitHub.
 - [x] Verify EC2 Docker, Compose, ARM64, `.env`, and Compose configuration through
       a read-only post-approval preflight.
-- [ ] Deploy the already-tested commit-tagged image to EC2.
+- [x] Deploy the already-tested commit-tagged image to EC2.
   - [x] Add a production Compose override that requires `RELEASE_IMAGE` and
         removes the source-build configuration.
   - [x] Stage, checksum, load, and inspect the approved image on EC2 without
         changing running containers.
-  - [ ] Start the staged approved image through the deployment job.
+  - [x] Start the staged approved image through the deployment job.
 - [x] Verify a PostgreSQL backup before changing the running release.
   - [x] Add an idempotent custom-format backup with checksum and restore-manifest validation.
   - [x] Confirm the verified pre-deployment backup on EC2 through GitHub Actions.
@@ -172,9 +172,12 @@ intentionally placed after tests and image creation.
   - [x] Confirm the rollback anchor on EC2 through GitHub Actions.
 - [x] Apply the checksum-verified `production_fixes.sql` transactionally and
       record its checksum, source commit, backup, and timestamp in PostgreSQL.
-- [ ] Wait for container and HTTP health checks after deployment.
+- [x] Wait for container and HTTP health checks after deployment.
 - [ ] Run post-deployment smoke tests and roll back automatically on failure.
-- [ ] Record the deployed commit, image tag, timestamps, and result.
+  - [x] Add Cloudflare/domain health, login-page, and static-cache checks to the
+        same automatic rollback boundary.
+  - [ ] Configure `PRODUCTION_URL` and prove the public checks in GitHub Actions.
+- [x] Record the deployed commit, image tag, timestamps, and result.
 - [ ] Document approval, deploy, rollback, secrets, SQL patches, and recovery.
 
 ## 5. Production readiness
