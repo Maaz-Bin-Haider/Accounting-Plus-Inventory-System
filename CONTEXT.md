@@ -847,6 +847,20 @@ and return functions and user-friendly error messages surfaced through
 `financee/db_errors.py`. See `FIXES.md` for root causes, fixes, and EC2
 deployment steps. The July 18, 2026 run passes 60 of 60 tests.
 
+The system runner now also exercises payment, receipt, and contra functions
+through their complete create/update/delete lifecycles. Each case inspects the
+linked journal: payments debit the vendor and credit cash, receipts debit cash
+and credit the customer, and contra entries debit the destination party and
+credit the source party without a cash line. Updates must replace the original
+journal at the new amount; deletes must remove both source record and journal.
+Zero amounts and same-party contra transfers are required to fail, followed by
+the standard report and global accounting integrity checkpoint.
+
+Verified on July 20, 2026 against a newly restored, production-independent
+`financee_test_` PostgreSQL database with `production_fixes.sql` applied: all
+72 system tests pass and the temporary database is removed. The generated
+details are recorded in `system_tests/RESULTS.md`.
+
 If new failures appear, treat `system_tests/FAILED_TESTS.md` as the remediation
 backlog. After changing the stored procedures, rerun the complete suite rather
 than testing only the affected case, because sale returns and invoice mutations

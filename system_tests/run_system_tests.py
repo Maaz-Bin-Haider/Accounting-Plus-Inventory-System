@@ -162,6 +162,62 @@ class Suite:
         return self.query("SELECT create_purchase_return(%s::text,%s::jsonb,%s::integer)",
                           (self.names[vendor], json.dumps(serials), None), one=True)[0]
 
+    def payment(self, amount=125.0) -> int:
+        payload = {"party_name": self.names["vendor"], "amount": amount,
+                   "payment_date": str(date.today()), "method": "Cash",
+                   "reference_no": f"TEST-PMT-{self.run_id}",
+                   "description": "System test payment"}
+        return self.query("SELECT make_payment(%s::jsonb)",
+                          (json.dumps(payload),), one=True)[0]["payment_id"]
+
+    def receipt(self, amount=175.0) -> int:
+        payload = {"party_name": self.names["customer"], "amount": amount,
+                   "receipt_date": str(date.today()), "method": "Cash",
+                   "reference_no": f"TEST-RCT-{self.run_id}",
+                   "description": "System test receipt"}
+        return self.query("SELECT make_receipt(%s::jsonb)",
+                          (json.dumps(payload),), one=True)[0]["receipt_id"]
+
+    def contra(self, amount=80.0) -> int:
+        payload = {"from_party_name": self.names["customer"],
+                   "to_party_name": self.names["vendor"], "amount": amount,
+                   "contra_date": str(date.today()),
+                   "reference_no": f"TEST-CON-{self.run_id}",
+                   "description": "System test contra"}
+        return self.query("SELECT make_contra(%s::jsonb)",
+                          (json.dumps(payload),), one=True)[0]["contra_id"]
+
+    def journal_for(self, table: str, id_column: str, record_id: int):
+        allowed = {("payments", "payment_id"), ("receipts", "receipt_id"),
+                   ("contra_entries", "contra_id")}
+        if (table, id_column) not in allowed:
+            raise AssertionError("Unsafe journal source requested")
+        journal_id = self.query(
+            f"SELECT journal_id FROM {table} WHERE {id_column}=%s",
+            (record_id,), one=True,
+        )[0]
+        lines = self.query(
+            "SELECT party_id,debit,credit FROM journallines WHERE journal_id=%s ORDER BY line_id",
+            (journal_id,),
+        )
+        return journal_id, lines
+
+    def assert_cashflow_journal(self, table, id_column, record_id, amount,
+                                debit_party, credit_party):
+        journal_id, lines = self.journal_for(table, id_column, record_id)
+        debit = sum(line[1] for line in lines)
+        credit = sum(line[2] for line in lines)
+        party_sides = {(line[0], float(line[1]), float(line[2])) for line in lines}
+        expected = {
+            (debit_party, float(amount), 0.0),
+            (credit_party, 0.0, float(amount)),
+        }
+        return self.assert_true(
+            len(lines) == 2 and float(debit) == float(amount)
+            and float(credit) == float(amount) and party_sides == expected,
+            f"journal={journal_id}, lines={party_sides}",
+        )
+
     def stock(self, serial: str) -> bool:
         row = self.query("SELECT in_stock FROM purchaseunits WHERE serial_number=%s", (serial,), one=True)
         if not row:
@@ -342,6 +398,101 @@ class Suite:
         self.case(G, "One return across two sale invoices", "Both return to stock", lambda: (self.purchase(cross1+cross2), self.sale([("item_a", cross1, 180)]), self.sale([("item_a", cross2, 185)]), self.sale_return(cross1+cross2), self.assert_true(self.stock(cross1[0]) and self.stock(cross2[0]), "Cross-invoice return succeeded"))[4])
         self.case("Continuous Integrity and Reporting", "Serious-scenarios checkpoint", "All reports and integrity checks pass", lambda: self.checkpoint("serious scenarios"))
 
+        G = "Payment, Receipt and Contra Accounting"
+        cashflow: dict[str, Any] = {}
+        self.case(
+            G, "Create payment", "Vendor debit and cash credit reconcile",
+            lambda: (
+                cashflow.setdefault("payment", self.payment()),
+                self.assert_cashflow_journal(
+                    "payments", "payment_id", cashflow["payment"], 125,
+                    self.ids["vendor"], None,
+                ),
+            )[1],
+        )
+        self.case(
+            G, "Update payment", "Old journal replaced at updated amount",
+            lambda: self._update_cashflow(
+                "payment", "payments", "payment_id", "update_payment",
+                cashflow["payment"], 225, self.ids["vendor"], None,
+            ),
+        )
+        self.case(
+            G, "Delete payment", "Payment and linked journal are removed",
+            lambda: self._delete_cashflow(
+                "payments", "payment_id", "delete_payment", cashflow["payment"]
+            ),
+        )
+        self.case(
+            G, "Create receipt", "Cash debit and customer credit reconcile",
+            lambda: (
+                cashflow.setdefault("receipt", self.receipt()),
+                self.assert_cashflow_journal(
+                    "receipts", "receipt_id", cashflow["receipt"], 175,
+                    None, self.ids["customer"],
+                ),
+            )[1],
+        )
+        self.case(
+            G, "Update receipt", "Old journal replaced at updated amount",
+            lambda: self._update_cashflow(
+                "receipt", "receipts", "receipt_id", "update_receipt",
+                cashflow["receipt"], 275, None, self.ids["customer"],
+            ),
+        )
+        self.case(
+            G, "Delete receipt", "Receipt and linked journal are removed",
+            lambda: self._delete_cashflow(
+                "receipts", "receipt_id", "delete_receipt", cashflow["receipt"]
+            ),
+        )
+        self.case(
+            G, "Create contra", "Destination debit and source credit reconcile without cash",
+            lambda: (
+                cashflow.setdefault("contra", self.contra()),
+                self.assert_cashflow_journal(
+                    "contra_entries", "contra_id", cashflow["contra"], 80,
+                    self.ids["vendor"], self.ids["customer"],
+                ),
+            )[1],
+        )
+        self.case(
+            G, "Update contra", "Old journal replaced at updated amount",
+            lambda: self._update_cashflow(
+                "contra", "contra_entries", "contra_id", "update_contra",
+                cashflow["contra"], 180, self.ids["vendor"], self.ids["customer"],
+            ),
+        )
+        self.case(
+            G, "Delete contra", "Contra and linked journal are removed",
+            lambda: self._delete_cashflow(
+                "contra_entries", "contra_id", "delete_contra", cashflow["contra"]
+            ),
+        )
+        self.case(
+            G, "Reject non-positive cash-flow amounts", "All three functions reject zero",
+            lambda: (
+                self.expect_blocked(lambda: self.payment(0), "amount"),
+                self.expect_blocked(lambda: self.receipt(0), "amount"),
+                self.expect_blocked(lambda: self.contra(0), "amount"),
+                "Payment, receipt, and contra rejected zero amounts",
+            )[3],
+        )
+        self.case(
+            G, "Reject same-party contra", "Database constraint rejects self-transfer",
+            lambda: self.expect_blocked(
+                lambda: self.query(
+                    "SELECT make_contra(%s::jsonb)",
+                    (json.dumps({
+                        "from_party_name": self.names["customer"],
+                        "to_party_name": self.names["customer"], "amount": 10,
+                    }),),
+                ),
+                "cannot be the same",
+            ),
+        )
+        self.case("Continuous Integrity and Reporting", "Cash-flow checkpoint", "All reports and integrity checks pass", lambda: self.checkpoint("cash flow"))
+
         G = "Financial Invariant Tests"
         self.case(G, "Double-entry identity", "Debits equal credits", lambda: self._double_entry())
         self.case(G, "No orphaned journal lines", "No orphan exists", lambda: self.assert_true(self.query("SELECT count(*) FROM journallines jl LEFT JOIN journalentries je ON je.journal_id=jl.journal_id WHERE je.journal_id IS NULL", one=True)[0] == 0, "No orphaned lines"))
@@ -358,6 +509,42 @@ class Suite:
         return_id = self.sale_return(values)
         cost = self.query("SELECT cost_price FROM salesreturnitems WHERE sales_return_id=%s", (return_id,), one=True)[0]
         return self.assert_true(float(cost) == 130.0, f"Return cost basis is {cost}")
+
+    def _update_cashflow(self, kind, table, id_column, function, record_id,
+                         amount, debit_party, credit_party):
+        old_journal, _ = self.journal_for(table, id_column, record_id)
+        date_key = {"payment": "payment_date", "receipt": "receipt_date",
+                    "contra": "contra_date"}[kind]
+        payload = {"amount": amount, date_key: str(date.today()),
+                   "description": f"Updated system test {kind}"}
+        self.query(f"SELECT {function}(%s,%s::jsonb)",
+                   (record_id, json.dumps(payload)))
+        new_journal, _ = self.journal_for(table, id_column, record_id)
+        old_exists = self.query(
+            "SELECT count(*) FROM journalentries WHERE journal_id=%s",
+            (old_journal,), one=True,
+        )[0]
+        self.assert_true(old_journal != new_journal and old_exists == 0,
+                         f"journal replaced: {old_journal} -> {new_journal}")
+        return self.assert_cashflow_journal(
+            table, id_column, record_id, amount, debit_party, credit_party
+        )
+
+    def _delete_cashflow(self, table, id_column, function, record_id):
+        journal_id, _ = self.journal_for(table, id_column, record_id)
+        self.query(f"SELECT {function}(%s)", (record_id,))
+        record_count = self.query(
+            f"SELECT count(*) FROM {table} WHERE {id_column}=%s",
+            (record_id,), one=True,
+        )[0]
+        journal_count = self.query(
+            "SELECT count(*) FROM journalentries WHERE journal_id=%s",
+            (journal_id,), one=True,
+        )[0]
+        return self.assert_true(
+            record_count == 0 and journal_count == 0,
+            f"record count={record_count}, journal count={journal_count}",
+        )
 
     def _double_entry(self):
         debit, credit = self.query("SELECT COALESCE(sum(debit),0),COALESCE(sum(credit),0) FROM journallines", one=True)

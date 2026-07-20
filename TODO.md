@@ -68,6 +68,8 @@ intentionally placed after tests and image creation.
 - [ ] Expand PostgreSQL system tests for payment/receipt/contra accounting, party
       openings, concurrency, duplicate serials, numeric/date boundaries, return
       mutation, and report-to-journal reconciliation.
+  - [x] Payment, receipt, and contra create/update/delete journal reconciliation,
+        amount validation, same-party rejection, and continuous report checks.
 - [ ] Add regression coverage for every defect in `FIXES.md`.
 - [ ] Add Docker startup, health-check, static-file, and nginx proxy smoke tests.
 - [ ] Report coverage, agree a threshold, then enforce it.
