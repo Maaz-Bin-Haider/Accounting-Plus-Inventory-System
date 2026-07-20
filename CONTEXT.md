@@ -1131,3 +1131,20 @@ independent and order-agnostic.
 PostgreSQL backup, then reapply the updated `production_fixes.sql` before the
 next production deployment. The concurrency patch has only been exercised in
 disposable databases and has not changed production.
+
+## Coverage Gate
+
+Coverage is measured with branch tracking across the 13 Django application and
+project packages. Migrations, tests, test settings/support, system tests, and
+the management launcher are excluded; production modules, including admin and
+WSGI/ASGI entry points, remain in scope. The July 20, 2026 baseline is 57.4% over
+3,379 production Python statements. The enforced initial floor is 55%, which
+prevents meaningful erosion while allowing a small margin for coverage-version
+rounding. Current priority gaps are `financee/admin_site.py` (13%), payments and
+receipts views (39%), and both return view modules (49%).
+
+`.coveragerc` owns the scope and threshold. `requirements-test.txt` and
+`Dockerfile.test` keep coverage tooling out of the production image, and
+`scripts/run_django_tests.sh` is the single container entry point for the
+branch-aware Django test run. `docker-compose.test.yml` builds that dedicated
+test image and runs the script against ephemeral PostgreSQL 16.

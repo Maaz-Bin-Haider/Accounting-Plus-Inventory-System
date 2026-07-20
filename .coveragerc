@@ -1,0 +1,31 @@
+[run]
+branch = True
+source =
+    accountsReports
+    authentication
+    contra
+    financee
+    home
+    items
+    parties
+    payments
+    purchase
+    purchaseReturn
+    receipts
+    sale
+    saleReturn
+omit =
+    */migrations/*
+    */tests.py
+    financee/test_*.py
+    system_tests/*
+    manage.py
+
+[report]
+fail_under = 55
+precision = 1
+show_missing = True
+skip_empty = True
+
+[xml]
+output = coverage.xml

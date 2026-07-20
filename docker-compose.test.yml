@@ -16,15 +16,11 @@ services:
       retries: 20
 
   test:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.test
     entrypoint: []
-    command:
-      - python
-      - manage.py
-      - test
-      - --settings=financee.test_settings
-      - --noinput
-      - --verbosity=2
+    command: ["scripts/run_django_tests.sh"]
     environment:
       SECRET_KEY: test-only-secret-key-not-for-production
       DEBUG: "False"
@@ -43,4 +39,3 @@ services:
     depends_on:
       test-db:
         condition: service_healthy
-

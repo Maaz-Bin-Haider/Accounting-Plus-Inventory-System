@@ -89,7 +89,9 @@ intentionally placed after tests and image creation.
 - [x] Add Docker startup, health-check, static-file, and nginx proxy smoke tests.
   - [x] Isolated tmpfs database/Redis stack, application readiness probe, nginx
         config/proxy validation, collected static response, and cache headers.
-- [ ] Report coverage, agree a threshold, then enforce it.
+- [x] Report coverage, agree a threshold, then enforce it.
+  - [x] Branch-aware baseline: 57.4% across 3,379 production Python statements.
+  - [x] Initial enforced floor: 55%, allowing only rounding/tool-version margin.
 - [ ] Provide separate fast-test and full-system-test commands.
 - [ ] Keep all fixtures deterministic and independent of production data.
 
