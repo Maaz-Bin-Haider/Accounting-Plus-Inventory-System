@@ -908,6 +908,18 @@ Verified baseline on July 20, 2026: the Docker test stack created
 issues, passed all 26 authentication/party/error-helper tests, and destroyed the
 test database successfully.
 
+`items/tests.py` now applies the same endpoint-contract strategy to item
+management: login and permission enforcement, view-only restrictions, template
+rendering, autocomplete parameters, list serialization, duplicate handling,
+normalized create/update procedure payloads, creator attribution, CSRF, and
+generic handling of non-curated database failures. The view module's connection
+reference is mocked while Django's real authentication/session connection stays
+untouched.
+
+Verified after adding item coverage on July 20, 2026: all 41 Django tests pass
+against the ephemeral PostgreSQL 16 stack with zero system-check issues, and the
+guarded test database is destroyed successfully.
+
 The first business endpoint slice is in `parties/tests.py`. It covers login and
 `view_party` enforcement, authorized template rendering, autocomplete query
 parameters and JSON results, list endpoint authorization and serialization, and

@@ -27,7 +27,9 @@ intentionally placed after tests and image creation.
   - [x] Parties authentication, view permission, autocomplete, list, and CSRF.
   - [x] Parties create/update permission contracts, view-only group, and duplicates.
   - [ ] Parties malformed/invalid payload behavior and database error responses.
-  - [ ] Items authentication, permissions, CRUD, autocomplete, and list contracts.
+  - [x] Items authentication, permissions, create/update contracts, autocomplete,
+        list serialization, CSRF, duplicates, and safe database failures.
+  - [ ] Items malformed numeric/text payload validation.
 - [ ] Test sales and purchases: permissions, CRUD, navigation, summaries, serial
       lookup/validation, malformed requests, and safe database failures.
 - [ ] Test sale and purchase returns: permissions, lifecycle rules, CRUD,
