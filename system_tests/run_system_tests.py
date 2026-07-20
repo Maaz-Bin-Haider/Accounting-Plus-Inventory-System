@@ -834,7 +834,12 @@ class Suite:
         }])
 
         def worker():
-            conn = psycopg2.connect(self.conn.dsn)
+            # libpq omits passwords when exposing an existing connection's DSN.
+            # Pass the isolated test credential again for concurrent workers.
+            conn = psycopg2.connect(
+                self.conn.dsn,
+                password=os.getenv("TEST_PGPASSWORD", ""),
+            )
             try:
                 with conn.cursor() as cur:
                     barrier.wait(timeout=10)
@@ -1046,7 +1051,7 @@ class Suite:
 
 
 def local_host(host: str) -> bool:
-    return host in ("", "localhost", "127.0.0.1", "::1") or host.startswith("/")
+    return host in ("", "localhost", "127.0.0.1", "::1", "system-test-db") or host.startswith("/")
 
 
 def admin_kwargs():

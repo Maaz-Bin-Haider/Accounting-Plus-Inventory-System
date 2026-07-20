@@ -1148,3 +1148,37 @@ receipts views (39%), and both return view modules (49%).
 `scripts/run_django_tests.sh` is the single container entry point for the
 branch-aware Django test run. `docker-compose.test.yml` builds that dedicated
 test image and runs the script against ephemeral PostgreSQL 16.
+
+## Canonical Test Commands
+
+Use `scripts/run_fast_tests.sh` during normal development. It builds the
+test-only image, runs all Django endpoint/security/presentation tests against
+ephemeral PostgreSQL, enforces the branch-coverage floor, propagates the test
+exit status, and removes its containers, network, and temporary storage.
+
+Use `scripts/run_full_tests.sh` before delivery and in the required CI check. It
+runs the fast suite first, then all restored-backup PostgreSQL procedure,
+accounting, concurrency, regression, and integrity scenarios, and finally the
+production-shaped PostgreSQL/Redis/Gunicorn/nginx smoke suite. Execution stops
+at the first failing stage. Every stage has its own cleanup trap.
+
+The database procedure stage is isolated by `docker-compose.system-test.yml`.
+It exposes no host port, stores PostgreSQL data in `tmpfs`, uses test-only
+credentials, and builds `Dockerfile.system-test` with the required `psql`
+client. Its Dockerfile-specific ignore rules include the repository's latest
+`db_backup_*.sql` in this test image while the production `.dockerignore`
+continues excluding database backups from the production image. The system
+runner accepts the fixed Compose hostname `system-test-db`
+in addition to loopback/Unix-socket connections; all arbitrary remote hosts and
+database names without the generated `financee_test_` prefix remain rejected.
+Concurrent-sale worker connections explicitly reuse `TEST_PGPASSWORD`, because
+libpq deliberately omits passwords from an established connection's exposed
+DSN; this keeps the race test portable between peer-authenticated local servers
+and the password-authenticated Compose database.
+
+Verified end to end on July 20, 2026 through
+`scripts/run_full_tests.sh`: 141 Django tests passed with 57.4% branch-aware
+coverage, all 99 restored-backup PostgreSQL system scenarios passed, and the
+production-shaped smoke checks passed. The command returned zero only after all
+three stages succeeded, and all disposable containers, networks, databases,
+volumes, and `tmpfs` storage were removed.

@@ -18,6 +18,17 @@ memory. It does not modify the backup or create server-wide roles.
 
 ## Run
 
+The supported, fully isolated command is:
+
+```bash
+scripts/run_system_tests.sh
+```
+
+It starts PostgreSQL 16 without a host port or persistent volume, runs the
+suite in a container with `psql`, and always removes the disposable stack.
+
+For development against an existing local PostgreSQL installation, run:
+
 ```bash
 python3 system_tests/run_system_tests.py
 ```
@@ -42,4 +53,6 @@ means at least one test failed or the test environment could not be created.
 
 The runner refuses non-local PostgreSQL hosts and refuses database names without
 the `financee_test_` prefix. It restores only into the database it created. It does
-not import or read Django production database settings.
+not import or read Django production database settings. The only non-loopback
+hostname accepted is the fixed `system-test-db` service in the isolated Compose
+stack.

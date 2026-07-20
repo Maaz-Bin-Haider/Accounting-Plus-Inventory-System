@@ -92,7 +92,9 @@ intentionally placed after tests and image creation.
 - [x] Report coverage, agree a threshold, then enforce it.
   - [x] Branch-aware baseline: 57.4% across 3,379 production Python statements.
   - [x] Initial enforced floor: 55%, allowing only rounding/tool-version margin.
-- [ ] Provide separate fast-test and full-system-test commands.
+- [x] Provide separate fast-test and full-system-test commands.
+  - [x] `scripts/run_fast_tests.sh`: Django endpoint tests plus coverage gate.
+  - [x] `scripts/run_full_tests.sh`: fast, PostgreSQL system, and stack smoke tests.
 - [ ] Keep all fixtures deterministic and independent of production data.
 
 ## 2. Make tests CI-ready

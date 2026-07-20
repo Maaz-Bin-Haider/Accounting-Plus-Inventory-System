@@ -1,0 +1,32 @@
+name: financee-system-tests
+
+services:
+  system-test-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: system-test-only-password
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  system-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.system-test
+    environment:
+      TEST_PGHOST: system-test-db
+      TEST_PGPORT: "5432"
+      TEST_PGUSER: postgres
+      TEST_PGPASSWORD: system-test-only-password
+      TEST_PGADMIN_DB: postgres
+    volumes:
+      - ./system_tests:/app/system_tests
+    depends_on:
+      system-test-db:
+        condition: service_healthy
