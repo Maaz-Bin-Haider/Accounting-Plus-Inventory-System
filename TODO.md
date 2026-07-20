@@ -45,6 +45,10 @@ intentionally placed after tests and image creation.
   - [ ] Return view-only restrictions and curated database lifecycle failures.
 - [ ] Test payments, receipts, and contra entries: permissions, CRUD, navigation,
       date lookup, balances, accounting side effects, and safe failures.
+  - [x] Access, CSRF, create/update payloads, navigation/date validation, balance
+        contracts, contra same-party validation, and contra deletion.
+  - [ ] Delete permissions for payments/receipts, view-only restrictions, old
+        entry lists, successful date queries, and safe database failures.
 - [ ] Test every dashboard API, permission-controlled section, parameter rule,
       cache hit/miss path, and failure response.
 - [ ] Test all account, stock, serial, profit, valuation, and monthly reports.

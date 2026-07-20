@@ -930,6 +930,15 @@ Verified after the first sales slice on July 20, 2026: all 57 Django tests pass
 against ephemeral PostgreSQL 16 with zero system-check issues, followed by
 successful destruction of the guarded test database.
 
+Payment, receipt, and contra endpoint tests now cover page access, CSRF,
+normalized create/update stored-function payloads, creator attribution,
+navigation/date/balance input validation, balance response contracts, contra
+same-party rejection, and contra deletion.
+
+Verified after the first cash-flow endpoint slice on July 20, 2026: all 105
+Django tests pass against ephemeral PostgreSQL 16 with zero system-check issues
+and successful destruction of the guarded test database.
+
 Sales coverage now includes the fully validated mutation branches. Tests verify
 create/update/delete permissions, the view-only group, stored-function argument
 contracts, JSON item/serial payloads, creator IDs, trimmed description writes,
