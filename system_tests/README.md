@@ -3,10 +3,16 @@
 This folder contains destructive integration tests for the accounting and inventory
 stored procedures. The runner never uses the Django `.env` database. It creates a
 new PostgreSQL database whose name starts with `financee_test_`, restores the
-repository SQL backup into it, applies `production_fixes.sql`, removes all restored
-business and user data, and retains only the seven named core ledger accounts.
-It then creates its own fixtures, runs the scenarios, and writes `RESULTS.md` in
-this folder.
+repository SQL backup into it, removes all restored business and user data,
+retains only the seven named core ledger accounts, and applies
+`production_fixes.sql` exactly once. It then creates its own fixtures, runs the
+scenarios, and writes `RESULTS.md` in this folder.
+
+The exact execution order is backup restore, production-data removal/reference
+reset, SHA-256 patch reservation, transactional patch execution, and ledger
+finalization. A duplicate patch filename is rejected. The first system-test
+preflight requires exactly one `applied` ledger row with the current patch
+checksum before any business scenario runs.
 
 ## Requirements
 

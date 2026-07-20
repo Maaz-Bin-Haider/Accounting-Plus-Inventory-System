@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import socket
@@ -32,6 +33,7 @@ BACKUP = _BACKUPS[-1] if _BACKUPS else ROOT / "db_backup_missing.sql"
 FIXES = ROOT / "production_fixes.sql"
 RESULTS = Path(__file__).resolve().parent / "RESULTS.md"
 DB_PREFIX = "financee_test_"
+FIXES_SHA256 = hashlib.sha256(FIXES.read_bytes()).hexdigest() if FIXES.exists() else ""
 FIXTURE_DATE = date(2026, 1, 15)
 REPORT_END_DATE = date(2099, 12, 31)
 CORE_ACCOUNTS = (
@@ -388,6 +390,15 @@ class Suite:
             f"business counts={business_counts}, accounts={accounts}",
         )
 
+    def patch_applied_once(self):
+        rows = self.query(
+            """SELECT patch_name, sha256, status
+               FROM system_test_meta.patch_history
+               ORDER BY patch_name"""
+        )
+        expected = [(FIXES.name, FIXES_SHA256, "applied")]
+        return self.assert_true(rows == expected, f"patch history={rows}")
+
     def run(self):
         G = "Master Data and Reports"
         self.case(
@@ -395,6 +406,12 @@ class Suite:
             "Start from deterministic fixture baseline",
             "No restored business rows and exactly seven core accounts",
             self.pristine_fixture,
+        )
+        self.case(
+            G,
+            "Apply required SQL patch exactly once",
+            "One applied production_fixes.sql row with the current SHA-256",
+            self.patch_applied_once,
         )
         self.case(G, "Create required master data", "All required parties and items are available", self.setup)
         self.case(G, "Run all report groups after setup", "Every report executes", lambda: (self.run_reports(), "All report calls executed")[1])
@@ -1122,30 +1139,33 @@ def drop_database(kwargs, name: str):
         admin.close()
 
 
-def restore(kwargs, name: str):
+def psql_command(kwargs, name: str):
+    return [
+        "psql", "--host", kwargs["host"], "--port", str(kwargs["port"]),
+        "--username", kwargs["user"], "--dbname", name,
+        "--set", "ON_ERROR_STOP=1", "--file", "-",
+    ]
+
+
+def psql_environment(kwargs):
     env = os.environ.copy()
     if kwargs["password"]:
         env["PGPASSWORD"] = kwargs["password"]
+    return env
+
+
+def restore_backup(kwargs, name: str):
+    env = psql_environment(kwargs)
     # The production-origin dump assigns every object to a role named
     # ``postgres``. Local Homebrew installations commonly use the macOS account
     # name instead, so remap ownership in-memory without modifying the backup or
     # creating a cluster-wide compatibility role.
     owner = '"' + str(kwargs["user"]).replace('"', '""') + '"'
     dump_sql = BACKUP.read_text(encoding="utf-8").replace("OWNER TO postgres", f"OWNER TO {owner}")
-    command = ["psql", "--host", kwargs["host"], "--port", str(kwargs["port"]),
-               "--username", kwargs["user"], "--dbname", name, "--set", "ON_ERROR_STOP=1",
-               "--file", "-"]
+    command = psql_command(kwargs, name)
     completed = subprocess.run(command, env=env, text=True, input=dump_sql, capture_output=True)
     if completed.returncode:
         raise RuntimeError(f"Backup restore failed:\n{completed.stderr[-4000:]}")
-    # Apply the production fix patch on top of the restored backup so the
-    # suite validates exactly what production will run after deployment.
-    if FIXES.exists():
-        fixes_sql = FIXES.read_text(encoding="utf-8")
-        completed = subprocess.run(command, env=env, text=True, input=fixes_sql, capture_output=True)
-        if completed.returncode:
-            raise RuntimeError(f"Applying {FIXES.name} failed:\n{completed.stderr[-4000:]}")
-    reset_fixture_data(kwargs, name)
 
 
 def reset_fixture_data(kwargs, name: str):
@@ -1177,6 +1197,60 @@ def reset_fixture_data(kwargs, name: str):
                        true
                    )"""
             )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def apply_required_patch(kwargs, name: str):
+    """Apply the exact required patch once and record its content checksum."""
+    if not FIXES.exists():
+        raise RuntimeError(f"Required SQL patch not found: {FIXES}")
+
+    fixture_kwargs = dict(kwargs, dbname=name)
+    conn = psycopg2.connect(**fixture_kwargs)
+    try:
+        with conn.cursor() as cur:
+            cur.execute("CREATE SCHEMA IF NOT EXISTS system_test_meta")
+            cur.execute(
+                """CREATE TABLE IF NOT EXISTS system_test_meta.patch_history (
+                       patch_name text PRIMARY KEY,
+                       sha256 text NOT NULL CHECK (length(sha256) = 64),
+                       status text NOT NULL CHECK (status IN ('applying', 'applied')),
+                       applied_at timestamptz
+                   )"""
+            )
+            cur.execute(
+                """INSERT INTO system_test_meta.patch_history
+                       (patch_name, sha256, status)
+                   VALUES (%s, %s, 'applying')
+                   ON CONFLICT (patch_name) DO NOTHING
+                   RETURNING patch_name""",
+                (FIXES.name, FIXES_SHA256),
+            )
+            if cur.fetchone() is None:
+                raise RuntimeError(f"Refusing to apply {FIXES.name} more than once")
+        conn.commit()
+
+        completed = subprocess.run(
+            psql_command(kwargs, name),
+            env=psql_environment(kwargs),
+            text=True,
+            input=FIXES.read_text(encoding="utf-8"),
+            capture_output=True,
+        )
+        if completed.returncode:
+            raise RuntimeError(f"Applying {FIXES.name} failed:\n{completed.stderr[-4000:]}")
+
+        with conn.cursor() as cur:
+            cur.execute(
+                """UPDATE system_test_meta.patch_history
+                   SET status = 'applied', applied_at = CURRENT_TIMESTAMP
+                   WHERE patch_name = %s AND sha256 = %s AND status = 'applying'""",
+                (FIXES.name, FIXES_SHA256),
+            )
+            if cur.rowcount != 1:
+                raise RuntimeError(f"Could not finalize patch ledger for {FIXES.name}")
         conn.commit()
     finally:
         conn.close()
@@ -1214,7 +1288,9 @@ def main():
         if not BACKUP.exists():
             raise RuntimeError(f"Backup not found: {BACKUP}")
         create_database(kwargs, db_name); created = True
-        restore(kwargs, db_name)
+        restore_backup(kwargs, db_name)
+        reset_fixture_data(kwargs, db_name)
+        apply_required_patch(kwargs, db_name)
         test_kwargs = dict(kwargs, dbname=db_name)
         conn = psycopg2.connect(**test_kwargs); conn.autocommit = False
         try:

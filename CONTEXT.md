@@ -1248,3 +1248,25 @@ and removes the container/network after the run.
 Verified July 20, 2026: all 143 Redis-enabled Django tests passed against
 ephemeral PostgreSQL and Redis with zero Django system-check issues; branch
 coverage remained 57.4%, and both disposable services were removed.
+
+## Disposable Schema and Patch Pipeline
+
+`system_tests/run_system_tests.py` exposes the database preparation stages
+explicitly and executes them in this order: create a guarded disposable
+database, restore the latest repository backup once, remove restored data and
+reset reference fixtures, reserve the required patch by filename and SHA-256,
+execute `production_fixes.sql` through `psql`, then mark the ledger row applied.
+
+The patch ledger exists only in the disposable `system_test_meta` schema. Its
+primary key prevents a patch filename from being reserved twice. A reservation
+is committed before patch execution, while `production_fixes.sql` supplies its
+own all-or-nothing transaction; only a successful `psql` exit can transition
+the ledger from `applying` to `applied`. Missing patches, checksum mismatch,
+duplicate reservation, patch failure, and ledger-finalization failure all stop
+the suite before business tests.
+
+The system preflight independently queries the ledger and requires exactly one
+row for `production_fixes.sql`, with the SHA-256 calculated from the file being
+tested and status `applied`. Verified July 20, 2026: the ordered pipeline and
+all 101 PostgreSQL system scenarios pass, and the disposable database is
+removed afterward.

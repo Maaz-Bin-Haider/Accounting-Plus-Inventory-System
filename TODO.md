@@ -108,7 +108,9 @@ intentionally placed after tests and image creation.
 - [x] Add Redis integration tests and enable Redis in the test stack when needed.
   - [x] Guarded disposable Redis DB with no host port or persistent storage.
   - [x] Real backend, independent-client, TTL, dashboard-cache, and health coverage.
-- [ ] Restore schema into a disposable DB and apply required SQL patches once.
+- [x] Restore schema into a disposable DB and apply required SQL patches once.
+  - [x] Ordered restore, fixture reset, checksum reservation, patch, verification.
+  - [x] Reject duplicate patch application and incomplete ledger finalization.
 - [x] Reject production-like database names and hosts before tests start.
 - [ ] Run Django system/deployment checks, endpoint tests, and system tests.
 - [ ] Publish test results and coverage as GitHub Actions artifacts.
