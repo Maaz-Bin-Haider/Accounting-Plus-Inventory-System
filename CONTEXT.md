@@ -1527,3 +1527,30 @@ resolves to the captured image ID. Tagging an existing image changes only
 Docker image metadata; the running application and database are untouched. The
 next approved run must confirm this rollback anchor before SQL or container
 changes are introduced.
+
+GitHub commit `7b638cb` subsequently preserved the live web image as
+`financee:rollback-before-7b638cb05d6f8643664f0c1098d379b89ec212fb` and
+verified that the running containers were unchanged. The rollback anchor is
+therefore proven on the production Docker host.
+
+## Automatic Production SQL Patch Ledger
+
+The approved workflow now crosses the first live-change boundary only after
+the tested artifact, remote checksum, verified custom-format backup, and exact
+running-image rollback tag all succeed. It rechecks the backup checksum and
+creates `deployment_meta.sql_patches` in PostgreSQL, recording patch SHA-256,
+filename, triggering source commit, backup filename, and server timestamp.
+
+If the staged `production_fixes.sql` checksum is absent from that ledger, the
+workflow runs it using the database container's matching `psql`, with
+`ON_ERROR_STOP` in addition to the patch's own `BEGIN`/`COMMIT`. Any SQL error
+therefore stops and rolls back the function replacement before deployment. The
+complete diagnostic output is retained only on EC2 as mode-0600
+`production-fixes.log`, and the success marker is required before inserting the
+ledger row. An already-recorded checksum is skipped, making repeated workflow
+runs idempotent. A final query requires exactly one matching ledger row.
+
+This milestone updates stored function definitions but still does not restart
+or replace application containers. The next approved run is intentionally the
+required production reapplication identified at the top of `TODO.md`; its log
+and ledger must be confirmed before that warning can be marked resolved.

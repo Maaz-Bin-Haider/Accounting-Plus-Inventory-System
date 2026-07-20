@@ -161,14 +161,16 @@ intentionally placed after tests and image creation.
   - [x] Stage, checksum, load, and inspect the approved image on EC2 without
         changing running containers.
   - [ ] Start the staged approved image through the deployment job.
-- [ ] Verify a PostgreSQL backup before changing the running release.
+- [x] Verify a PostgreSQL backup before changing the running release.
   - [x] Add an idempotent custom-format backup with checksum and restore-manifest validation.
-  - [ ] Confirm the verified pre-deployment backup on EC2 through GitHub Actions.
+  - [x] Confirm the verified pre-deployment backup on EC2 through GitHub Actions.
 - [x] Lock deployments so two releases cannot overlap.
-- [ ] Preserve the previously working image tag for rollback.
+- [x] Preserve the previously working image tag for rollback.
   - [x] Capture the running web image ID, assign a commit-specific rollback tag,
         and persist its container/revision metadata before live changes.
-  - [ ] Confirm the rollback anchor on EC2 through GitHub Actions.
+  - [x] Confirm the rollback anchor on EC2 through GitHub Actions.
+- [ ] Apply the checksum-verified `production_fixes.sql` transactionally and
+      record its checksum, source commit, backup, and timestamp in PostgreSQL.
 - [ ] Wait for container and HTTP health checks after deployment.
 - [ ] Run post-deployment smoke tests and roll back automatically on failure.
 - [ ] Record the deployed commit, image tag, timestamps, and result.

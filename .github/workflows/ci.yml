@@ -386,3 +386,96 @@ jobs:
           test "$(docker image inspect "${ROLLBACK_TAG}" --format '{{.Id}}')" = "${PREVIOUS_IMAGE_ID}"
           echo "Preserved running image as ${ROLLBACK_TAG}; running containers were not changed."
           REMOTE
+
+      - name: Apply and record the verified production SQL patch
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          PRODUCTION_PATH: ${{ vars.PRODUCTION_PATH }}
+        run: |
+          set -eu
+          ssh -i "${HOME}/.ssh/production_key" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "${PRODUCTION_USER}@${PRODUCTION_HOST}" \
+            sh -s -- "${PRODUCTION_PATH}" "${COMMIT_SHA}" <<'REMOTE'
+          set -eu
+          PRODUCTION_PATH=$1
+          COMMIT_SHA=$2
+          RELEASE_DIR="${PRODUCTION_PATH}/releases/${COMMIT_SHA}"
+          PATCH_PATH="${RELEASE_DIR}/production_fixes.sql"
+          PATCH_LOG="${RELEASE_DIR}/production-fixes.log"
+          BACKUP_NAME="predeploy-${COMMIT_SHA}.dump"
+          BACKUP_PATH="${PRODUCTION_PATH}/backups/${BACKUP_NAME}"
+          PATCH_SHA256="$(sha256sum "${PATCH_PATH}" | cut -d ' ' -f 1)"
+          cd "${PRODUCTION_PATH}"
+          (cd backups && sha256sum --check "${BACKUP_NAME}.sha256")
+          docker compose exec -T db sh -eu -c \
+            'exec psql --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --no-psqlrc --set=ON_ERROR_STOP=1' <<'LEDGER_SQL'
+          BEGIN;
+          SELECT pg_advisory_xact_lock(hashtext('financee-production-sql-patches'));
+          CREATE SCHEMA IF NOT EXISTS deployment_meta;
+          CREATE TABLE IF NOT EXISTS deployment_meta.sql_patches (
+              patch_sha256 text PRIMARY KEY,
+              patch_name text NOT NULL,
+              source_commit text NOT NULL,
+              backup_name text NOT NULL,
+              applied_at timestamptz NOT NULL DEFAULT clock_timestamp()
+          );
+          COMMIT;
+          LEDGER_SQL
+          APPLIED_COUNT="$(docker compose exec -T \
+            -e PATCH_SHA256="${PATCH_SHA256}" db sh -eu -c \
+            'exec psql --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --no-psqlrc --tuples-only --no-align --set=ON_ERROR_STOP=1 --set=patch_sha="$PATCH_SHA256"' <<'CHECK_SQL'
+          SELECT count(*)
+          FROM deployment_meta.sql_patches
+          WHERE patch_sha256 = :'patch_sha';
+          CHECK_SQL
+          )"
+          APPLIED_COUNT="$(printf '%s' "${APPLIED_COUNT}" | tr -d '[:space:]')"
+          case "${APPLIED_COUNT}" in
+            0)
+              if ! docker compose exec -T db sh -eu -c \
+                'exec psql --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --no-psqlrc --set=ON_ERROR_STOP=1' \
+                < "${PATCH_PATH}" > "${PATCH_LOG}" 2>&1; then
+                chmod 600 "${PATCH_LOG}"
+                tail -n 80 "${PATCH_LOG}" >&2
+                exit 1
+              fi
+              chmod 600 "${PATCH_LOG}"
+              grep -F "production_fixes.sql applied successfully." "${PATCH_LOG}"
+              docker compose exec -T \
+                -e PATCH_SHA256="${PATCH_SHA256}" \
+                -e SOURCE_COMMIT="${COMMIT_SHA}" \
+                -e BACKUP_NAME="${BACKUP_NAME}" \
+                db sh -eu -c \
+                'exec psql --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --no-psqlrc --set=ON_ERROR_STOP=1 --set=patch_sha="$PATCH_SHA256" --set=source_commit="$SOURCE_COMMIT" --set=backup_name="$BACKUP_NAME"' <<'RECORD_SQL'
+              INSERT INTO deployment_meta.sql_patches (
+                  patch_sha256, patch_name, source_commit, backup_name
+              ) VALUES (
+                  :'patch_sha', 'production_fixes.sql', :'source_commit', :'backup_name'
+              ) ON CONFLICT (patch_sha256) DO NOTHING;
+              RECORD_SQL
+              echo "Applied production_fixes.sql (${PATCH_SHA256}) and recorded it in deployment_meta.sql_patches."
+              ;;
+            1)
+              echo "production_fixes.sql (${PATCH_SHA256}) was already recorded; skipped reapplication."
+              ;;
+            *)
+              echo "Unexpected SQL patch ledger result: ${APPLIED_COUNT}" >&2
+              exit 1
+              ;;
+          esac
+          VERIFIED_COUNT="$(docker compose exec -T \
+            -e PATCH_SHA256="${PATCH_SHA256}" db sh -eu -c \
+            'exec psql --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --no-psqlrc --tuples-only --no-align --set=ON_ERROR_STOP=1 --set=patch_sha="$PATCH_SHA256"' <<'VERIFY_SQL'
+          SELECT count(*)
+          FROM deployment_meta.sql_patches
+          WHERE patch_sha256 = :'patch_sha'
+            AND patch_name = 'production_fixes.sql';
+          VERIFY_SQL
+          )"
+          test "$(printf '%s' "${VERIFIED_COUNT}" | tr -d '[:space:]')" = 1
+          REMOTE

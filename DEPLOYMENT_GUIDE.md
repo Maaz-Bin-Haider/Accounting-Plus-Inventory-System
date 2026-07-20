@@ -156,6 +156,21 @@ as mode-0600 `rollback-metadata.txt` inside the commit-specific release
 directory. This remains the rollback target even when the original image had
 only a Compose-generated name or no Git revision label.
 
+### Automatic transactional SQL patch
+
+The next step changes production database definitions. It first rechecks the
+commit-specific backup checksum, then creates the minimal
+`deployment_meta.sql_patches` ledger if needed. The staged patch is executed by
+the database container's `psql` with `ON_ERROR_STOP`; the patch's own
+`BEGIN`/`COMMIT` boundary means any SQL error rolls back all function changes.
+
+Patch output, including the five diagnostics, is stored as mode-0600
+`production-fixes.log` in the release directory. Successful execution must
+contain `production_fixes.sql applied successfully.` before the workflow records
+the SHA-256, source commit, backup filename, and application time in PostgreSQL.
+If that checksum is already recorded, the patch is not reapplied. A failure
+stops the workflow before any container restart.
+
 ---
 
 ## Part 0 - Before you start (checklist)
