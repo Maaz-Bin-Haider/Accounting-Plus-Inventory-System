@@ -79,6 +79,8 @@ intentionally placed after tests and image creation.
         balance updates, zero removal, and continuous report checks.
   - [x] Duplicate purchase serials within/across invoices and a two-connection
         race attempting to sell the same stocked serial.
+  - [x] Invoice quantity/price/date validation, monetary precision/overflow,
+        invalid calendar dates, and leap-day report boundaries.
 - [ ] Add regression coverage for every defect in `FIXES.md`.
 - [ ] Add Docker startup, health-check, static-file, and nginx proxy smoke tests.
 - [ ] Report coverage, agree a threshold, then enforce it.

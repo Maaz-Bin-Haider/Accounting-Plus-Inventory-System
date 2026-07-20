@@ -607,6 +607,49 @@ class Suite:
         )
         self.case("Continuous Integrity and Reporting", "Concurrency checkpoint", "All reports and integrity checks pass", lambda: self.checkpoint("serial concurrency"))
 
+        G = "Numeric and Date Boundary Validation"
+        self.case(
+            G, "Reject invalid purchase quantities", "Zero, negative, and fractional quantities fail",
+            lambda: self._reject_invoice_values(
+                "purchase", "qty", [0, -1, 1.5], "Quantity"
+            ),
+        )
+        self.case(
+            G, "Reject invalid sale quantities", "Zero, negative, and fractional quantities fail",
+            lambda: self._reject_invoice_values(
+                "sale", "qty", [0, -1, 1.5], "Quantity"
+            ),
+        )
+        self.case(
+            G, "Reject invalid purchase prices", "Negative and nonnumeric prices fail",
+            lambda: self._reject_invoice_values(
+                "purchase", "unit_price", [-0.01, "not-a-number"], "price"
+            ),
+        )
+        self.case(
+            G, "Reject invalid sale prices", "Negative and nonnumeric prices fail",
+            lambda: self._reject_invoice_values(
+                "sale", "unit_price", [-0.01, "not-a-number"], "price"
+            ),
+        )
+        self.case(
+            G, "Reject missing invoice dates", "Purchase and sale require dates",
+            lambda: (
+                self.expect_blocked(lambda: self._raw_invoice("purchase", None), "date"),
+                self.expect_blocked(lambda: self._raw_invoice("sale", None), "date"),
+                "Both invoice functions rejected null dates",
+            )[2],
+        )
+        self.case(
+            G, "Cash-flow amount and date boundaries", "One cent posts; overflow and invalid dates fail",
+            self._cashflow_boundaries,
+        )
+        self.case(
+            G, "Leap-day report boundary", "All dated reports accept a valid leap day",
+            self._leap_day_reports,
+        )
+        self.case("Continuous Integrity and Reporting", "Boundary checkpoint", "All reports and integrity checks pass", lambda: self.checkpoint("numeric and date boundaries"))
+
         G = "Financial Invariant Tests"
         self.case(G, "Double-entry identity", "Debits equal credits", lambda: self._double_entry())
         self.case(G, "No orphaned journal lines", "No orphan exists", lambda: self.assert_true(self.query("SELECT count(*) FROM journallines jl LEFT JOIN journalentries je ON je.journal_id=jl.journal_id WHERE je.journal_id IS NULL", one=True)[0] == 0, "No orphaned lines"))
@@ -758,6 +801,69 @@ class Suite:
             and self.active_sales(serial) == 1 and not self.stock(serial),
             f"committed={committed}, blocked={blocked}",
         )
+
+    def _raw_invoice(self, kind, invoice_date, field=None, value=None):
+        serial = f"TEST-{self.run_id}-BOUNDARY-{kind}-{field}-{value}"
+        item = {"item_name": self.names["item_a"], "qty": 1,
+                "unit_price": 100, "serials": [serial]}
+        if kind == "purchase":
+            item["serials"] = [{"serial": serial, "comment": "boundary"}]
+        if field:
+            item[field] = value
+        function = "create_purchase" if kind == "purchase" else "create_sale"
+        party_id = self.ids["vendor"] if kind == "purchase" else self.ids["customer"]
+        return self.query(
+            f"SELECT {function}(%s::bigint,%s::date,%s::jsonb,%s::integer)",
+            (party_id, invoice_date, json.dumps([item]), None), one=True,
+        )
+
+    def _reject_invoice_values(self, kind, field, values, message):
+        blocked = []
+        for value in values:
+            blocked.append(self.expect_blocked(
+                lambda value=value: self._raw_invoice(
+                    kind, date.today(), field, value
+                ),
+                message,
+            ))
+        return f"Rejected {field} values: {values}; cases={len(blocked)}"
+
+    def _cashflow_boundaries(self):
+        payment_id = self.payment(0.01)
+        posted = self.assert_cashflow_journal(
+            "payments", "payment_id", payment_id, 0.01,
+            self.ids["vendor"], None,
+        )
+        self._delete_cashflow("payments", "payment_id", "delete_payment", payment_id)
+        overflow = self.expect_blocked(lambda: self.payment(10_000_000_000), "overflow")
+        bad_date_payload = {
+            "party_name": self.names["customer"], "amount": 1,
+            "receipt_date": "2026-02-30", "method": "Cash",
+        }
+        invalid_date = self.expect_blocked(
+            lambda: self.query(
+                "SELECT make_receipt(%s::jsonb)",
+                (json.dumps(bad_date_payload),),
+            ),
+            "date",
+        )
+        return f"{posted}; {overflow}; {invalid_date}"
+
+    def _leap_day_reports(self):
+        leap_day = date(2024, 2, 29)
+        calls = [
+            ("SELECT * FROM detailed_ledger(%s,%s,%s)",
+             (self.names["customer"], leap_day, leap_day)),
+            ("SELECT * FROM get_cash_ledger_with_party(%s,%s)",
+             (leap_day, leap_day)),
+            ("SELECT * FROM sale_wise_profit(%s,%s)",
+             (leap_day, leap_day)),
+            ("SELECT monthly_income_statement(%s,%s,%s,%s)",
+             (leap_day, leap_day, 0, 0)),
+        ]
+        for statement, params in calls:
+            self.query(statement, params)
+        return f"{len(calls)} report functions accepted {leap_day}"
 
     def _double_entry(self):
         debit, credit = self.query("SELECT COALESCE(sum(debit),0),COALESCE(sum(credit),0) FROM journallines", one=True)

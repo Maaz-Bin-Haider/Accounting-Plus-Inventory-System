@@ -895,6 +895,17 @@ Verified after duplicate-serial and concurrency coverage on July 20, 2026: all
 patch, and the temporary database is removed. The race now produces exactly one
 commit and one stock-availability rejection.
 
+Numeric/date boundary system coverage exercises purchase and sale rejection of
+zero, negative, and fractional quantities; negative and nonnumeric prices; and
+missing invoice dates. Cash-flow coverage verifies that one cent posts to a
+balanced journal while numeric overflow and invalid calendar dates are blocked.
+Account, cash, profit, and monthly reports must execute for the valid leap-day
+boundary `2024-02-29`.
+
+Verified after numeric/date boundary coverage on July 20, 2026: all 91
+PostgreSQL system tests pass against the restored backup plus
+`production_fixes.sql`, and the temporary database is removed.
+
 If new failures appear, treat `system_tests/FAILED_TESTS.md` as the remediation
 backlog. After changing the stored procedures, rerun the complete suite rather
 than testing only the affected case, because sale returns and invoice mutations
