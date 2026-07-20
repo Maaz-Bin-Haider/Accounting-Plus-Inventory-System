@@ -1182,3 +1182,26 @@ coverage, all 99 restored-backup PostgreSQL system scenarios passed, and the
 production-shaped smoke checks passed. The command returned zero only after all
 three stages succeeded, and all disposable containers, networks, databases,
 volumes, and `tmpfs` storage were removed.
+
+## Deterministic Fixture Contract
+
+Django endpoint tests create their own users and permissions inside Django's
+fresh test database, use literal request dates, mock only module-local database
+boundaries, and do not load fixture files or production data.
+
+The PostgreSQL runner uses the latest backup only to obtain the production
+schema, views, triggers, and stored functions. After applying
+`production_fixes.sql`, `reset_fixture_data()` truncates every public table
+except `chartofaccounts`, resets table sequences, deletes all non-core chart
+rows, and resets the chart sequence. Exactly these seven named reference
+accounts remain: Accounts Payable, Owner's Capital, Sales Revenue, Cost of Goods
+Sold, Cash, Accounts Receivable, and Inventory. A first-class system test fails
+unless all business tables are empty and this exact account set exists before
+scenario setup.
+
+All runner-authored accounting transactions use the fixed date `2026-01-15`.
+Report reconciliation uses a deterministic `2099-12-31` upper bound so it also
+includes return functions that assign their dates within PostgreSQL. Fixture
+names remain run-prefixed for diagnostic clarity, but every assertion is scoped
+to records created by the suite. Verified July 20, 2026: the sanitized baseline
+passes all 100 PostgreSQL scenarios with zero restored business rows.

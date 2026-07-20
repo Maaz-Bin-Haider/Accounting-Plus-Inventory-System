@@ -95,7 +95,9 @@ intentionally placed after tests and image creation.
 - [x] Provide separate fast-test and full-system-test commands.
   - [x] `scripts/run_fast_tests.sh`: Django endpoint tests plus coverage gate.
   - [x] `scripts/run_full_tests.sh`: fast, PostgreSQL system, and stack smoke tests.
-- [ ] Keep all fixtures deterministic and independent of production data.
+- [x] Keep all fixtures deterministic and independent of production data.
+  - [x] Purge restored business rows and retain only seven named core accounts.
+  - [x] Assert the clean baseline and use fixed transaction/report dates.
 
 ## 2. Make tests CI-ready
 

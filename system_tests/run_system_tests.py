@@ -32,6 +32,17 @@ BACKUP = _BACKUPS[-1] if _BACKUPS else ROOT / "db_backup_missing.sql"
 FIXES = ROOT / "production_fixes.sql"
 RESULTS = Path(__file__).resolve().parent / "RESULTS.md"
 DB_PREFIX = "financee_test_"
+FIXTURE_DATE = date(2026, 1, 15)
+REPORT_END_DATE = date(2099, 12, 31)
+CORE_ACCOUNTS = (
+    "Accounts Payable",
+    "Owner's Capital",
+    "Sales Revenue",
+    "Cost of Goods Sold",
+    "Cash",
+    "Accounts Receivable",
+    "Inventory",
+)
 
 REGRESSION_CASES = {
     1: "Attempt duplicate return",
@@ -191,14 +202,14 @@ class Suite:
         payload = [{"item_name": self.names[item], "qty": len(serials), "unit_price": price,
                     "serials": [{"serial": s, "comment": "system test"} for s in serials]}]
         return self.query("SELECT create_purchase(%s::bigint,%s::date,%s::jsonb,%s::integer)",
-                          (self.ids[vendor], date.today(), json.dumps(payload), None), one=True)[0]
+                          (self.ids[vendor], FIXTURE_DATE, json.dumps(payload), None), one=True)[0]
 
     def purchase_multi(self, groups: list[tuple[str, list[str], float]]) -> int:
         payload = [{"item_name": self.names[item], "qty": len(values), "unit_price": price,
                     "serials": [{"serial": s, "comment": "system test"} for s in values]}
                    for item, values, price in groups]
         return self.query("SELECT create_purchase(%s::bigint,%s::date,%s::jsonb,%s::integer)",
-                          (self.ids["vendor"], date.today(), json.dumps(payload), None), one=True)[0]
+                          (self.ids["vendor"], FIXTURE_DATE, json.dumps(payload), None), one=True)[0]
 
     def sale(self, groups: list[tuple[str, list[str], float]], customer="customer",
              quantities: list[int] | None = None) -> int:
@@ -208,7 +219,7 @@ class Suite:
             payload.append({"item_name": self.names[item], "qty": qty,
                             "unit_price": price, "serials": values})
         return self.query("SELECT create_sale(%s::bigint,%s::date,%s::jsonb,%s::integer)",
-                          (self.ids[customer], date.today(), json.dumps(payload), None), one=True)[0]
+                          (self.ids[customer], FIXTURE_DATE, json.dumps(payload), None), one=True)[0]
 
     def sale_return(self, serials: list[str], customer="customer") -> int:
         return self.query("SELECT create_sale_return(%s::text,%s::jsonb,%s::integer)",
@@ -220,7 +231,7 @@ class Suite:
 
     def payment(self, amount=125.0) -> int:
         payload = {"party_name": self.names["vendor"], "amount": amount,
-                   "payment_date": str(date.today()), "method": "Cash",
+                   "payment_date": str(FIXTURE_DATE), "method": "Cash",
                    "reference_no": f"TEST-PMT-{self.run_id}",
                    "description": "System test payment"}
         return self.query("SELECT make_payment(%s::jsonb)",
@@ -228,7 +239,7 @@ class Suite:
 
     def receipt(self, amount=175.0) -> int:
         payload = {"party_name": self.names["customer"], "amount": amount,
-                   "receipt_date": str(date.today()), "method": "Cash",
+                   "receipt_date": str(FIXTURE_DATE), "method": "Cash",
                    "reference_no": f"TEST-RCT-{self.run_id}",
                    "description": "System test receipt"}
         return self.query("SELECT make_receipt(%s::jsonb)",
@@ -237,7 +248,7 @@ class Suite:
     def contra(self, amount=80.0) -> int:
         payload = {"from_party_name": self.names["customer"],
                    "to_party_name": self.names["vendor"], "amount": amount,
-                   "contra_date": str(date.today()),
+                   "contra_date": str(FIXTURE_DATE),
                    "reference_no": f"TEST-CON-{self.run_id}",
                    "description": "System test contra"}
         return self.query("SELECT make_contra(%s::jsonb)",
@@ -299,7 +310,7 @@ class Suite:
         return "Reports executed; no empty journals or duplicate active sold states"
 
     def run_reports(self):
-        start, end = date(2020, 1, 1), date.today()
+        start, end = date(2020, 1, 1), REPORT_END_DATE
         calls = [
             ("accounts: trial balance", "SELECT * FROM vw_trial_balance", ()),
             ("accounts: detailed ledger", "SELECT * FROM detailed_ledger(%s,%s,%s)", (self.names["customer"], start, end)),
@@ -318,7 +329,7 @@ class Suite:
             ("sales: returns", "SELECT get_sales_return_summary(%s,%s)", (start, end)),
             ("purchase: summary", "SELECT get_purchase_summary(%s,%s)", (start, end)),
             ("purchase: returns", "SELECT get_purchase_return_summary(%s,%s)", (start, end)),
-            ("monthly: position", "SELECT monthly_company_position(%s)", (date.today(),)),
+            ("monthly: position", "SELECT monthly_company_position(%s)", (FIXTURE_DATE,)),
             ("monthly: income", "SELECT monthly_income_statement(%s,%s,%s,%s)", (start, end, 0, 0)),
             ("dashboard: sales today", "SELECT fn_dash_sales_today_kpi()", ()),
             ("dashboard: sales range", "SELECT fn_dash_sales_range(%s,%s)", (start, end)),
@@ -357,8 +368,34 @@ class Suite:
         self.item("item_b", 250)
         return self.assert_true(len(self.ids) == 8, "Six parties and two items created")
 
+    def pristine_fixture(self):
+        business_counts = self.query(
+            """SELECT (SELECT count(*) FROM parties),
+                      (SELECT count(*) FROM items),
+                      (SELECT count(*) FROM journalentries),
+                      (SELECT count(*) FROM purchaseinvoices),
+                      (SELECT count(*) FROM salesinvoices)""",
+            one=True,
+        )
+        accounts = tuple(
+            row[0] for row in self.query(
+                "SELECT account_name FROM chartofaccounts ORDER BY account_id"
+            )
+        )
+        return self.assert_true(
+            business_counts == (0, 0, 0, 0, 0)
+            and accounts == CORE_ACCOUNTS,
+            f"business counts={business_counts}, accounts={accounts}",
+        )
+
     def run(self):
         G = "Master Data and Reports"
+        self.case(
+            G,
+            "Start from deterministic fixture baseline",
+            "No restored business rows and exactly seven core accounts",
+            self.pristine_fixture,
+        )
         self.case(G, "Create required master data", "All required parties and items are available", self.setup)
         self.case(G, "Run all report groups after setup", "Every report executes", lambda: (self.run_reports(), "All report calls executed")[1])
 
@@ -740,7 +777,7 @@ class Suite:
         old_journal, _ = self.journal_for(table, id_column, record_id)
         date_key = {"payment": "payment_date", "receipt": "receipt_date",
                     "contra": "contra_date"}[kind]
-        payload = {"amount": amount, date_key: str(date.today()),
+        payload = {"amount": amount, date_key: str(FIXTURE_DATE),
                    "description": f"Updated system test {kind}"}
         self.query(f"SELECT {function}(%s,%s::jsonb)",
                    (record_id, json.dumps(payload)))
@@ -845,7 +882,7 @@ class Suite:
                     barrier.wait(timeout=10)
                     cur.execute(
                         "SELECT create_sale(%s::bigint,%s::date,%s::jsonb,%s::integer)",
-                        (self.ids["customer"], date.today(), payload, None),
+                        (self.ids["customer"], FIXTURE_DATE, payload, None),
                     )
                     sale_id = cur.fetchone()[0]
                 conn.commit()
@@ -895,7 +932,7 @@ class Suite:
         for value in values:
             blocked.append(self.expect_blocked(
                 lambda value=value: self._raw_invoice(
-                    kind, date.today(), field, value
+                    kind, FIXTURE_DATE, field, value
                 ),
                 message,
             ))
@@ -999,7 +1036,7 @@ class Suite:
         )
         ledger = self.query(
             "SELECT debit,credit,running_balance FROM detailed_ledger(%s,%s,%s)",
-            (party_name, date(1900, 1, 1), date.today()),
+            (party_name, date(1900, 1, 1), REPORT_END_DATE),
         )
         self.assert_true(trial is not None and ledger,
                          f"Missing trial/ledger rows for {party_name}")
@@ -1108,6 +1145,41 @@ def restore(kwargs, name: str):
         completed = subprocess.run(command, env=env, text=True, input=fixes_sql, capture_output=True)
         if completed.returncode:
             raise RuntimeError(f"Applying {FIXES.name} failed:\n{completed.stderr[-4000:]}")
+    reset_fixture_data(kwargs, name)
+
+
+def reset_fixture_data(kwargs, name: str):
+    """Remove restored business data while retaining required reference accounts."""
+    fixture_kwargs = dict(kwargs, dbname=name)
+    conn = psycopg2.connect(**fixture_kwargs)
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """SELECT tablename FROM pg_tables
+                   WHERE schemaname = 'public' AND tablename <> 'chartofaccounts'
+                   ORDER BY tablename"""
+            )
+            tables = [sql.Identifier("public", row[0]) for row in cur.fetchall()]
+            if tables:
+                cur.execute(
+                    sql.SQL("TRUNCATE TABLE {} RESTART IDENTITY CASCADE").format(
+                        sql.SQL(", ").join(tables)
+                    )
+                )
+            cur.execute(
+                "DELETE FROM chartofaccounts WHERE account_name <> ALL(%s)",
+                (list(CORE_ACCOUNTS),),
+            )
+            cur.execute(
+                """SELECT setval(
+                       pg_get_serial_sequence('chartofaccounts', 'account_id'),
+                       (SELECT max(account_id) FROM chartofaccounts),
+                       true
+                   )"""
+            )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def write_report(db_name: str, suite: Suite | None, fatal: str | None, kept: bool):

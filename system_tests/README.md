@@ -3,8 +3,10 @@
 This folder contains destructive integration tests for the accounting and inventory
 stored procedures. The runner never uses the Django `.env` database. It creates a
 new PostgreSQL database whose name starts with `financee_test_`, restores the
-repository SQL backup into it, creates uniquely named fixtures, runs the scenarios,
-and writes `RESULTS.md` in this folder.
+repository SQL backup into it, applies `production_fixes.sql`, removes all restored
+business and user data, and retains only the seven named core ledger accounts.
+It then creates its own fixtures, runs the scenarios, and writes `RESULTS.md` in
+this folder.
 
 ## Requirements
 
