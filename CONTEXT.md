@@ -930,6 +930,17 @@ Verified after the first sales slice on July 20, 2026: all 57 Django tests pass
 against ephemeral PostgreSQL 16 with zero system-check issues, followed by
 successful destruction of the guarded test database.
 
+Sales coverage now includes the fully validated mutation branches. Tests verify
+create/update/delete permissions, the view-only group, stored-function argument
+contracts, JSON item/serial payloads, creator IDs, trimmed description writes,
+database validation rejection for returned serials, and sanitization of delete
+validation failures.
+
+Verified after completing sales mutation coverage on July 20, 2026: all 65
+Django tests pass against ephemeral PostgreSQL 16 with zero system-check issues.
+The deliberate internal-error case is logged server-side while its SQL details
+remain absent from the HTTP response.
+
 The first business endpoint slice is in `parties/tests.py`. It covers login and
 `view_party` enforcement, authorized template rendering, autocomplete query
 parameters and JSON results, list endpoint authorization and serialization, and

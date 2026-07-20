@@ -1,6 +1,7 @@
 import json
 from unittest.mock import patch
 
+from django.contrib.auth.models import Group
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -18,6 +19,24 @@ class SaleEndpointTests(UserPermissionTestMixin, TestCase):
         for attribute in ("_perm_cache", "_user_perm_cache", "_group_perm_cache"):
             self.user.__dict__.pop(attribute, None)
         self.client.force_login(self.user)
+
+    @staticmethod
+    def valid_sale_payload(**overrides):
+        payload = {
+            "action": "submit",
+            "party_name": "CUSTOMER",
+            "sale_date": "2020-01-01",
+            "description": "  Counter sale  ",
+            "force": True,
+            "items": [{
+                "item_name": "IPHONE 15",
+                "qty": 1,
+                "unit_price": 250000,
+                "serials": ["SER-001"],
+            }],
+        }
+        payload.update(overrides)
+        return payload
 
     def test_sales_page_requires_authentication(self):
         self.client.logout()
@@ -216,3 +235,170 @@ class SaleEndpointTests(UserPermissionTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()[0]["sale_id"], 42)
         self.assertIn("get_sales_summary()", cursor.execute.call_args.args[0])
+
+    @patch("sale.views.connection")
+    def test_create_sale_rejects_missing_create_permission(self, view_connection):
+        self.grant_permissions(self.user, "view_sale")
+        cursor = view_connection.cursor.return_value.__enter__.return_value
+        cursor.fetchone.side_effect = [
+            (1,), (1,), (True,), ("IPHONE 15",), (200000,),
+        ]
+        response = self.client.post(
+            reverse("sale:sales"),
+            data=json.dumps(self.valid_sale_payload()),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "error")
+        self.assertIn("permission", response.json()["message"].lower())
+
+    @patch("sale.views.connection")
+    def test_create_sale_rejects_view_only_group(self, view_connection):
+        self.grant_permissions(self.user, "view_sale", "create_sale")
+        self.user.groups.add(Group.objects.create(name="view_only_users"))
+        cursor = view_connection.cursor.return_value.__enter__.return_value
+        cursor.fetchone.side_effect = [
+            (1,), (1,), (True,), ("IPHONE 15",), (200000,),
+        ]
+        response = self.client.post(
+            reverse("sale:sales"),
+            data=json.dumps(self.valid_sale_payload()),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "error")
+
+    @patch("sale.views.connection")
+    def test_create_sale_executes_procedure_and_saves_description(
+        self, view_connection
+    ):
+        self.grant_permissions(self.user, "view_sale", "create_sale")
+        cursor = view_connection.cursor.return_value.__enter__.return_value
+        cursor.fetchone.side_effect = [
+            (1,), (1,), (True,), ("IPHONE 15",), (200000,), (7,), (42,),
+        ]
+        response = self.client.post(
+            reverse("sale:sales"),
+            data=json.dumps(self.valid_sale_payload()),
+            content_type="application/json",
+        )
+        self.assertTrue(response.json()["success"])
+        calls = cursor.execute.call_args_list
+        create_call = next(call for call in calls if "create_sale" in call.args[0])
+        self.assertEqual(create_call.args[1][0], 7)
+        self.assertEqual(create_call.args[1][1], "2020-01-01")
+        self.assertEqual(create_call.args[1][3], self.user.id)
+        submitted_items = json.loads(create_call.args[1][2])
+        self.assertEqual(submitted_items[0]["serials"], ["SER-001"])
+        description_call = next(
+            call for call in calls if "UPDATE salesinvoices" in call.args[0]
+        )
+        self.assertEqual(description_call.args[1], ["Counter sale", 42])
+
+    @patch("sale.views.connection")
+    def test_update_sale_stops_when_database_validation_rejects(
+        self, view_connection
+    ):
+        self.grant_permissions(self.user, "view_sale", "update_sale")
+        cursor = view_connection.cursor.return_value.__enter__.return_value
+        cursor.fetchone.side_effect = [
+            (1,),
+            (1,),
+            (True,),
+            ("IPHONE 15",),
+            (200000,),
+            (json.dumps({
+                "is_valid": False,
+                "message": "Returned serial blocks update.",
+                "returned_serials": ["SER-001"],
+            }),),
+        ]
+        response = self.client.post(
+            reverse("sale:sales"),
+            data=json.dumps(self.valid_sale_payload(sale_id=42)),
+            content_type="application/json",
+        )
+        self.assertFalse(response.json()["success"])
+        self.assertIn("Returned serial blocks update", response.json()["message"])
+        self.assertIn("SER-001", response.json()["message"])
+        self.assertFalse(
+            any("update_sale_invoice" in call.args[0] for call in cursor.execute.call_args_list)
+        )
+
+    @patch("sale.views.connection")
+    def test_update_sale_executes_procedure_with_creator_and_description(
+        self, view_connection
+    ):
+        self.grant_permissions(self.user, "view_sale", "update_sale")
+        cursor = view_connection.cursor.return_value.__enter__.return_value
+        cursor.fetchone.side_effect = [
+            (1,), (1,), (True,), ("IPHONE 15",), (200000,),
+            (json.dumps({"is_valid": True}),), (7,), (None,),
+        ]
+        response = self.client.post(
+            reverse("sale:sales"),
+            data=json.dumps(self.valid_sale_payload(sale_id=42)),
+            content_type="application/json",
+        )
+        self.assertTrue(response.json()["success"])
+        calls = cursor.execute.call_args_list
+        update_call = next(
+            call for call in calls if "update_sale_invoice" in call.args[0]
+        )
+        self.assertEqual(update_call.args[1][0], 42)
+        self.assertEqual(update_call.args[1][2], "CUSTOMER")
+        self.assertEqual(update_call.args[1][3], "2020-01-01")
+        self.assertEqual(update_call.args[1][4], self.user.id)
+        description_call = next(
+            call for call in calls if "UPDATE salesinvoices" in call.args[0]
+        )
+        self.assertEqual(description_call.args[1], ["Counter sale", 42])
+
+    @patch("sale.views.connection")
+    def test_delete_sale_requires_delete_permission_after_validation(
+        self, view_connection
+    ):
+        self.grant_permissions(self.user, "view_sale")
+        cursor = view_connection.cursor.return_value.__enter__.return_value
+        cursor.fetchone.return_value = (json.dumps({"is_valid": True}),)
+        response = self.client.post(
+            reverse("sale:sales"),
+            data=json.dumps({"action": "delete", "sale_id": 42}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.json()["status"], "error")
+        self.assertIn("permission", response.json()["message"].lower())
+        self.assertFalse(
+            any("delete_sale" in call.args[0] for call in cursor.execute.call_args_list)
+        )
+
+    @patch("sale.views.connection")
+    def test_delete_sale_executes_database_function(self, view_connection):
+        self.grant_permissions(self.user, "view_sale", "delete_sale")
+        cursor = view_connection.cursor.return_value.__enter__.return_value
+        cursor.fetchone.return_value = (json.dumps({"is_valid": True}),)
+        response = self.client.post(
+            reverse("sale:sales"),
+            data=json.dumps({"action": "delete", "sale_id": 42}),
+            content_type="application/json",
+        )
+        self.assertTrue(response.json()["success"])
+        delete_call = next(
+            call for call in cursor.execute.call_args_list
+            if "SELECT delete_sale" in call.args[0]
+        )
+        self.assertEqual(delete_call.args[1], [42])
+
+    @patch("sale.views.connection")
+    def test_delete_sale_hides_internal_validation_error(self, view_connection):
+        self.grant_permissions(self.user, "view_sale", "delete_sale")
+        cursor = view_connection.cursor.return_value.__enter__.return_value
+        cursor.execute.side_effect = RuntimeError("secret SQL details")
+        response = self.client.post(
+            reverse("sale:sales"),
+            data=json.dumps({"action": "delete", "sale_id": 42}),
+            content_type="application/json",
+        )
+        self.assertFalse(response.json()["success"])
+        self.assertNotIn("secret SQL details", response.json()["message"])
+        self.assertIn("Failed to Delete", response.json()["message"])

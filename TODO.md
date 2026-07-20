@@ -34,7 +34,8 @@ intentionally placed after tests and image creation.
       lookup/validation, malformed requests, and safe database failures.
   - [x] Sales page access, request validation, CSRF, navigation, serial lookup,
         bulk grouping/deduplication, and summary contracts.
-  - [ ] Sales validated create/update/delete database execution and permissions.
+  - [x] Sales validated create/update/delete execution, permissions, view-only
+        restriction, description persistence, attribution, and safe failures.
   - [ ] Purchases permissions, CRUD, navigation, summaries, and serial checks.
 - [ ] Test sale and purchase returns: permissions, lifecycle rules, CRUD,
       navigation, summaries, and safe failures.
