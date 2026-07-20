@@ -36,7 +36,8 @@ intentionally placed after tests and image creation.
         bulk grouping/deduplication, and summary contracts.
   - [x] Sales validated create/update/delete execution, permissions, view-only
         restriction, description persistence, attribution, and safe failures.
-  - [ ] Purchases permissions, CRUD, navigation, summaries, and serial checks.
+  - [x] Purchases access, validated CRUD execution, permissions, descriptions,
+        attribution, navigation, summaries, CSRF, and serial classification.
 - [ ] Test sale and purchase returns: permissions, lifecycle rules, CRUD,
       navigation, summaries, and safe failures.
 - [ ] Test payments, receipts, and contra entries: permissions, CRUD, navigation,

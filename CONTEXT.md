@@ -941,6 +941,15 @@ Django tests pass against ephemeral PostgreSQL 16 with zero system-check issues.
 The deliberate internal-error case is logged server-side while its SQL details
 remain absent from the HTTP response.
 
+`purchase/tests.py` covers purchase-page access, malformed requests, CSRF,
+create/update/delete permissions and procedure contracts, the view-only group,
+creator attribution, description persistence, database validation blocking,
+navigation, summaries, and classification of new, stocked, and historic serials.
+
+Verified after purchase coverage on July 20, 2026: all 81 Django tests pass
+against ephemeral PostgreSQL 16 with zero system-check issues and successful
+test-database destruction.
+
 The first business endpoint slice is in `parties/tests.py`. It covers login and
 `view_party` enforcement, authorized template rendering, autocomplete query
 parameters and JSON results, list endpoint authorization and serialization, and
