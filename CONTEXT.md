@@ -1205,3 +1205,25 @@ includes return functions that assign their dates within PostgreSQL. Fixture
 names remain run-prefixed for diagnostic clarity, but every assertion is scoped
 to records created by the suite. Verified July 20, 2026: the sanitized baseline
 passes all 100 PostgreSQL scenarios with zero restored business rows.
+
+## Dependency Lock Policy
+
+`requirements.txt` pins every installed production Python package, including
+the transitive asgiref, packaging, and sqlparse dependencies. The tested
+production resolution is Django 5.2.16, django-environ 0.14.0, Gunicorn 26.0.0,
+psycopg2-binary 2.9.12, Redis client 8.0.1, asgiref 3.12.1, packaging 26.2,
+and sqlparse 0.5.5. `requirements-test.txt` extends that exact production set
+with coverage 7.15.2.
+
+All three Dockerfiles pin the Python 3.12 slim multi-architecture manifest by
+SHA-256 digest. Production, test, system-test, and smoke Compose definitions
+also pin PostgreSQL 16; applicable stacks pin Redis 7 Alpine and nginx Alpine
+by immutable multi-architecture digest. Readable tags remain alongside digests,
+but the digest controls the pulled content. This keeps ARM64 EC2 and a potential
+x86_64 CI runner on the same published image release for their architecture.
+
+Dependency upgrades must update explicit versions/digests in one reviewed
+change and pass `scripts/run_full_tests.sh`; floating ranges or unreviewed tag
+refreshes must not be reintroduced. Verified July 20, 2026: all images rebuilt
+from the pinned declarations, 141 Django tests passed at 57.4% coverage, all
+100 PostgreSQL system scenarios passed, and production-stack smoke passed.

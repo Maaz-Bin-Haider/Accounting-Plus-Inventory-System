@@ -101,7 +101,9 @@ intentionally placed after tests and image creation.
 
 ## 2. Make tests CI-ready
 
-- [ ] Pin production and test dependencies reproducibly.
+- [x] Pin production and test dependencies reproducibly.
+  - [x] Exact direct/transitive Python and coverage versions.
+  - [x] Immutable multi-architecture Python/PostgreSQL/Redis/nginx image digests.
 - [x] Add an isolated Docker Compose test stack with ephemeral PostgreSQL.
 - [ ] Add Redis integration tests and enable Redis in the test stack when needed.
 - [ ] Restore schema into a disposable DB and apply required SQL patches once.

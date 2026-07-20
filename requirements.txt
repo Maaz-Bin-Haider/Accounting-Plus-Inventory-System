@@ -1,5 +1,11 @@
-Django>=5.2,<6.0
-django-environ
-psycopg2-binary
-gunicorn
-redis>=5.0
+# Direct production dependencies
+Django==5.2.16
+django-environ==0.14.0
+gunicorn==26.0.0
+psycopg2-binary==2.9.12
+redis==8.0.1
+
+# Production transitive dependencies, pinned to the tested resolution
+asgiref==3.12.1
+packaging==26.2
+sqlparse==0.5.5

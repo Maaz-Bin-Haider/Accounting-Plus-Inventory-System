@@ -2,7 +2,7 @@ name: financee-tests
 
 services:
   test-db:
-    image: postgres:16
+    image: postgres:16@sha256:eb4759788a2182f08257135e61a34f2cfc3c2914079f3465d64ee62350f4d081
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
