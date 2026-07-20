@@ -1,0 +1,6 @@
+# Production-only override used by the approval-gated deployment workflow.
+# RELEASE_IMAGE must be the exact commit-tagged image already loaded on EC2.
+services:
+  web:
+    image: ${RELEASE_IMAGE:?Set RELEASE_IMAGE to financee:<full commit SHA>}
+    build: !reset null

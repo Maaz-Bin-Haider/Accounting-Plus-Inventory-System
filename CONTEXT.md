@@ -1431,3 +1431,23 @@ contract and server prerequisites before deployment automation is introduced.
 The next pushed run will fail safely unless those values have first been added
 to the protected `production` Environment; after approval it must report
 `Production preflight passed without changing the host.`
+
+GitHub commit `0ea3dcf` subsequently passed all three jobs. The approved job's
+remote log ended with `Production preflight passed without changing the host.`,
+proving the environment-scoped credentials, strict host-key entry, ARM64 host,
+Docker/Compose installation, production path, `.env`, and existing Compose
+configuration are valid.
+
+## Immutable Deployment Compose Configuration
+
+`docker-compose.deploy.yml` is a narrow production-only override. Its web
+service requires `RELEASE_IMAGE` and explicitly clears the base file's
+`build: .` field through Compose's `!reset` directive. When merged with
+`docker-compose.yml`, the rendered web
+service therefore references only `financee:<full commit SHA>` and has no build
+configuration. Future deployment commands must use both files plus
+`--no-build`, providing a second guard against rebuilding source on EC2.
+
+This milestone changes no workflow deployment behavior and no EC2 state. Local
+validation renders the merged Compose model using a representative 40-character
+commit tag and checks that the web image is exact and the build field is absent.

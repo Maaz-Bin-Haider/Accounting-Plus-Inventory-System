@@ -81,6 +81,21 @@ requires an ARM64 host, a working Docker daemon and Compose plugin, a readable
 production `.env`, and a valid existing Compose configuration. It neither
 uploads files nor starts, stops, or modifies containers.
 
+### Immutable production Compose override
+
+Automated releases combine `docker-compose.yml` with
+`docker-compose.deploy.yml`. The override removes `build: .` from the web
+service and requires an explicit `RELEASE_IMAGE` value. It must always be the
+full approved commit tag:
+
+```bash
+RELEASE_IMAGE=financee:<40-character-commit-SHA> \
+  docker compose -f docker-compose.yml -f docker-compose.deploy.yml config
+```
+
+The deployment command must use the same two files and `--no-build`. A missing
+`RELEASE_IMAGE` is an error, and no deployment code may supply `latest`.
+
 ---
 
 ## Part 0 - Before you start (checklist)
