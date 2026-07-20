@@ -59,7 +59,9 @@ intentionally placed after tests and image creation.
   - [x] Report login and permission gates, template families, validation,
         normalization, PostgreSQL query contracts, JSON shaping, empty results,
         and unsupported methods.
-- [ ] Smoke-test every HTML page, template, and required static asset.
+- [x] Smoke-test every HTML page, template, and required static asset.
+  - [x] Compile every project template and resolve every declared static
+        dependency; reject empty custom CSS and JavaScript assets.
 - [ ] Verify CSRF on every state-changing endpoint and prevent SQL error leakage.
 - [ ] Expand PostgreSQL system tests for payment/receipt/contra accounting, party
       openings, concurrency, duplicate serials, numeric/date boundaries, return

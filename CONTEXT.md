@@ -961,6 +961,18 @@ against ephemeral PostgreSQL 16 with zero system-check issues and successful
 destruction of the guarded test database. The receivables report's leftover
 response-type debug print was removed after it appeared in the test output.
 
+`financee/test_smoke.py` provides a centralized presentation-layer guard. It
+discovers and compiles every HTML file under `templates/`, extracts every
+literal Django `{% static %}` dependency and resolves it through Django's
+configured static-file finders, and rejects empty custom CSS/JavaScript files.
+Together with the authenticated page-render assertions in each endpoint suite,
+this covers the roadmap's HTML/template/static smoke-test checkpoint without
+depending on production data.
+
+Verified after presentation smoke coverage on July 20, 2026: all 134 Django
+tests pass against ephemeral PostgreSQL 16 with zero system-check issues and
+successful destruction of the guarded test database.
+
 Sales coverage now includes the fully validated mutation branches. Tests verify
 create/update/delete permissions, the view-only group, stored-function argument
 contracts, JSON item/serial payloads, creator IDs, trimmed description writes,
