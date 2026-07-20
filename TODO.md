@@ -143,17 +143,17 @@ intentionally placed after tests and image creation.
 
 ## 4. Approval-gated Continuous Deployment
 
-- [ ] Create a protected GitHub Environment named `production` with the solo
+- [x] Create a protected GitHub Environment named `production` with the solo
       developer as required reviewer.
   - [x] Bind the production authorization job to that environment.
   - [x] Configure the environment and required reviewer in GitHub repository settings.
 - [x] Request approval only after successful CI and image creation.
   - [x] Add the environment-gated release validation job after both prerequisites.
   - [x] Confirm on GitHub that the job pauses for approval before it starts.
-- [ ] Keep secrets in the GitHub Environment and/or AWS Systems Manager, never Git.
+- [x] Keep secrets in the GitHub Environment and/or AWS Systems Manager, never Git.
   - [x] Define a least-privilege environment secret/variable contract for SSH.
-  - [ ] Configure and prove the production SSH secrets in GitHub.
-- [ ] Verify EC2 Docker, Compose, ARM64, `.env`, and Compose configuration through
+  - [x] Configure and prove the production SSH secrets in GitHub.
+- [x] Verify EC2 Docker, Compose, ARM64, `.env`, and Compose configuration through
       a read-only post-approval preflight.
 - [ ] Deploy the already-tested commit-tagged image to EC2.
   - [x] Add a production Compose override that requires `RELEASE_IMAGE` and
@@ -162,7 +162,9 @@ intentionally placed after tests and image creation.
         changing running containers.
   - [ ] Start the staged approved image through the deployment job.
 - [ ] Verify a PostgreSQL backup before changing the running release.
-- [ ] Lock deployments so two releases cannot overlap.
+  - [x] Add an idempotent custom-format backup with checksum and restore-manifest validation.
+  - [ ] Confirm the verified pre-deployment backup on EC2 through GitHub Actions.
+- [x] Lock deployments so two releases cannot overlap.
 - [ ] Preserve the previously working image tag for rollback.
 - [ ] Wait for container and HTTP health checks after deployment.
 - [ ] Run post-deployment smoke tests and roll back automatically on failure.

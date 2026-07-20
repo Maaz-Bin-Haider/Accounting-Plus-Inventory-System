@@ -1478,3 +1478,30 @@ does not change any running container or database. The next pushed approved run
 must end with `Release <commit SHA> staged and verified; running containers were
 not changed.` before backup, SQL-patch, health-check, and rollback automation is
 allowed to proceed.
+
+GitHub commit `3b47ea8` subsequently passed all three jobs. EC2 reported that
+the exact image was loaded as
+`financee:3b47ea8700ebcda50eae4aa00014345d8f4d90f0` and that the release was
+staged and verified without changing running containers.
+
+## Verified Pre-Deployment PostgreSQL Backup
+
+The staged release now also contains the repository's exact
+`production_fixes.sql`; GitHub calculates its SHA-256 before transfer and EC2
+must reproduce that checksum. The patch is not executed at this stage.
+
+After image staging, the approved workflow streams `pg_dump --format=custom`
+from the running database container into a temporary file under the existing
+host-only `backups/` directory. It requires non-empty output and has the
+container's matching `pg_restore` parse its manifest before atomically renaming
+the file to `predeploy-<full commit SHA>.dump`. The resulting backup and checksum
+are mode 0600. A final checksum check and a restore manifest of more than ten
+lines are mandatory. Re-running a commit validates and reuses its backup rather
+than overwriting it. Restore-manifest checks stream the mode-0600 host file to
+the container over stdin, so validation does not weaken backup permissions or
+depend on matching host/container numeric user IDs.
+
+The backup remains only on EC2 and is never returned as a GitHub artifact. This
+step takes a consistent database snapshot but does not execute SQL or change
+running containers. The next approved run must confirm the checksum and
+manifest before live deployment and patch application can be implemented.

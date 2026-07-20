@@ -253,9 +253,54 @@ jobs:
             deployment-artifact/production-image.tar \
             deployment-artifact/image-metadata.txt \
             docker-compose.deploy.yml \
+            production_fixes.sql \
             "${PRODUCTION_USER}@${PRODUCTION_HOST}:${PRODUCTION_PATH}/releases/${COMMIT_SHA}/"
 
       - name: Verify and load the staged image on EC2
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          PRODUCTION_PATH: ${{ vars.PRODUCTION_PATH }}
+        run: |
+          set -eu
+          PATCH_SHA256="$(sha256sum production_fixes.sql | cut -d ' ' -f 1)"
+          ssh -i "${HOME}/.ssh/production_key" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "${PRODUCTION_USER}@${PRODUCTION_HOST}" \
+            sh -s -- "${PRODUCTION_PATH}" "${COMMIT_SHA}" "${PATCH_SHA256}" <<'REMOTE'
+          set -eu
+          PRODUCTION_PATH=$1
+          COMMIT_SHA=$2
+          PATCH_SHA256=$3
+          RELEASE_DIR="${PRODUCTION_PATH}/releases/${COMMIT_SHA}"
+          METADATA="${RELEASE_DIR}/image-metadata.txt"
+          ARCHIVE="${RELEASE_DIR}/production-image.tar"
+          chmod 600 "${ARCHIVE}" "${METADATA}" \
+            "${RELEASE_DIR}/docker-compose.deploy.yml" \
+            "${RELEASE_DIR}/production_fixes.sql"
+          grep -Fx "commit_sha=${COMMIT_SHA}" "${METADATA}"
+          grep -Fx "image_tag=financee:${COMMIT_SHA}" "${METADATA}"
+          grep -Fx "platform=linux/arm64" "${METADATA}"
+          ARCHIVE_SHA256="$(sed -n 's/^archive_sha256=//p' "${METADATA}")"
+          test "$(printf '%s' "${ARCHIVE_SHA256}" | wc -c)" -eq 64
+          case "${ARCHIVE_SHA256}" in *[!0-9a-f]*) exit 1 ;; esac
+          printf '%s  %s\n' "${ARCHIVE_SHA256}" "${ARCHIVE}" | sha256sum --check
+          printf '%s  %s\n' "${PATCH_SHA256}" "${RELEASE_DIR}/production_fixes.sql" | sha256sum --check
+          docker load --input "${ARCHIVE}"
+          test "$(docker image inspect "financee:${COMMIT_SHA}" --format '{{.Architecture}}')" = arm64
+          test "$(docker image inspect "financee:${COMMIT_SHA}" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "${COMMIT_SHA}"
+          cd "${PRODUCTION_PATH}"
+          RELEASE_IMAGE="financee:${COMMIT_SHA}" docker compose \
+            -f docker-compose.yml \
+            -f "${RELEASE_DIR}/docker-compose.deploy.yml" \
+            config --quiet
+          echo "Release ${COMMIT_SHA} staged and verified; running containers were not changed."
+          REMOTE
+
+      - name: Create and verify pre-deployment database backup
         env:
           COMMIT_SHA: ${{ github.sha }}
           PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
@@ -272,24 +317,27 @@ jobs:
           set -eu
           PRODUCTION_PATH=$1
           COMMIT_SHA=$2
-          RELEASE_DIR="${PRODUCTION_PATH}/releases/${COMMIT_SHA}"
-          METADATA="${RELEASE_DIR}/image-metadata.txt"
-          ARCHIVE="${RELEASE_DIR}/production-image.tar"
-          chmod 600 "${ARCHIVE}" "${METADATA}" "${RELEASE_DIR}/docker-compose.deploy.yml"
-          grep -Fx "commit_sha=${COMMIT_SHA}" "${METADATA}"
-          grep -Fx "image_tag=financee:${COMMIT_SHA}" "${METADATA}"
-          grep -Fx "platform=linux/arm64" "${METADATA}"
-          ARCHIVE_SHA256="$(sed -n 's/^archive_sha256=//p' "${METADATA}")"
-          test "$(printf '%s' "${ARCHIVE_SHA256}" | wc -c)" -eq 64
-          case "${ARCHIVE_SHA256}" in *[!0-9a-f]*) exit 1 ;; esac
-          printf '%s  %s\n' "${ARCHIVE_SHA256}" "${ARCHIVE}" | sha256sum --check
-          docker load --input "${ARCHIVE}"
-          test "$(docker image inspect "financee:${COMMIT_SHA}" --format '{{.Architecture}}')" = arm64
-          test "$(docker image inspect "financee:${COMMIT_SHA}" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "${COMMIT_SHA}"
+          BACKUP_NAME="predeploy-${COMMIT_SHA}.dump"
+          BACKUP_DIR="${PRODUCTION_PATH}/backups"
+          BACKUP_PATH="${BACKUP_DIR}/${BACKUP_NAME}"
+          TEMP_PATH="${BACKUP_PATH}.tmp"
+          install -d -m 700 "${BACKUP_DIR}"
           cd "${PRODUCTION_PATH}"
-          RELEASE_IMAGE="financee:${COMMIT_SHA}" docker compose \
-            -f docker-compose.yml \
-            -f "${RELEASE_DIR}/docker-compose.deploy.yml" \
-            config --quiet
-          echo "Release ${COMMIT_SHA} staged and verified; running containers were not changed."
+          if [ ! -f "${BACKUP_PATH}" ]; then
+            trap 'rm -f "${TEMP_PATH}"' EXIT INT TERM
+            docker compose exec -T db sh -eu -c \
+              'exec pg_dump --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --format=custom' \
+              > "${TEMP_PATH}"
+            test -s "${TEMP_PATH}"
+            chmod 600 "${TEMP_PATH}"
+            docker compose exec -T db pg_restore --list < "${TEMP_PATH}" >/dev/null
+            mv "${TEMP_PATH}" "${BACKUP_PATH}"
+            trap - EXIT INT TERM
+            (cd "${BACKUP_DIR}" && sha256sum "${BACKUP_NAME}" > "${BACKUP_NAME}.sha256")
+            chmod 600 "${BACKUP_PATH}.sha256"
+          fi
+          (cd "${BACKUP_DIR}" && sha256sum --check "${BACKUP_NAME}.sha256")
+          MANIFEST_LINES="$(docker compose exec -T db pg_restore --list < "${BACKUP_PATH}" | wc -l)"
+          test "${MANIFEST_LINES}" -gt 10
+          echo "Verified PostgreSQL backup ${BACKUP_NAME} (${MANIFEST_LINES} manifest lines); production was not changed."
           REMOTE

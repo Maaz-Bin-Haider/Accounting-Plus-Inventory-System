@@ -117,6 +117,29 @@ Release <commit SHA> staged and verified; running containers were not changed.
 Staging adds the image to Docker's local image store but does not recreate,
 restart, stop, or otherwise modify the running production containers.
 
+### Mandatory pre-deployment backup
+
+Before any live release change, the approved workflow creates this PostgreSQL
+custom-format backup directly on EC2:
+
+```text
+<PRODUCTION_PATH>/backups/predeploy-<full-commit-SHA>.dump
+```
+
+The dump streams from the running database container to a temporary host file.
+It is accepted only when non-empty and `pg_restore --list` can read it; it is
+then atomically renamed, locked to mode 0600, and accompanied by a SHA-256 file.
+Every run rechecks that checksum and requires a nontrivial restore manifest.
+Rerunning the same commit validates and reuses its existing backup.
+
+The exact tested `production_fixes.sql` is also copied to the commit-specific
+release directory and checked against the runner's SHA-256. It is staged only—
+this milestone does not execute the patch. The expected backup success line is:
+
+```text
+Verified PostgreSQL backup predeploy-<commit SHA>.dump (... manifest lines); production was not changed.
+```
+
 ---
 
 ## Part 0 - Before you start (checklist)
