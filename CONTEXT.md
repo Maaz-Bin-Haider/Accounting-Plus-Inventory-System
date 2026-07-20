@@ -1601,7 +1601,7 @@ roadmap items are therefore proven.
 
 The production Environment now also supplies non-sensitive `PRODUCTION_URL`,
 which must be an HTTPS origin without a trailing slash. After internal image,
-container, and nginx health succeeds, the EC2 host tests the public route
+container, and nginx health succeeds, the GitHub runner tests the public route
 through Cloudflare: exact `/health/` JSON, HTTP 200 from the login page, and the
 expected immutable cache header from the login stylesheet. Each public group is
 retried three times with bounded requests.
@@ -1612,3 +1612,19 @@ and public checks to pass; the GitHub run remains failed after a healthy
 rollback. The next approved run requires `PRODUCTION_URL` to be configured as
 `https://swisstechfinance.com` and must prove all three public routes before the
 post-deployment smoke roadmap item is complete.
+
+The first public-gate attempt at commit `c2db0a4` proved the new container was
+internally healthy, but Cloudflare returned HTTP 403 to all three requests sent
+from the origin EC2 host. The identical 403 after restoring the prior image
+proved this was origin-IP bot/security treatment, not an application regression.
+The previous image was recreated and passed internal health. A diagnostic
+`docker compose ps` then also failed because it omitted required
+`RELEASE_IMAGE`; that reporting-only defect did not affect rollback.
+
+Public requests now run from the GitHub-hosted runner, representing a genuinely
+external client path. The runner checks the same health JSON, login status, and
+static cache header. If those fail, a dedicated conditional SSH step restores
+the captured rollback image and requires internal container/HTTP health. EC2
+continues to own the release and rollback health checks, while Cloudflare is no
+longer asked to proxy an origin-to-itself request. The diagnostic Compose call
+now also receives the required image variable.

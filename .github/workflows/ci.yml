@@ -486,7 +486,6 @@ jobs:
           PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
           PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
           PRODUCTION_PATH: ${{ vars.PRODUCTION_PATH }}
-          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
         run: |
           set -eu
           ssh -i "${HOME}/.ssh/production_key" \
@@ -494,11 +493,10 @@ jobs:
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
             "${PRODUCTION_USER}@${PRODUCTION_HOST}" \
-            sh -s -- "${PRODUCTION_PATH}" "${COMMIT_SHA}" "${PRODUCTION_URL}" <<'REMOTE'
+            sh -s -- "${PRODUCTION_PATH}" "${COMMIT_SHA}" <<'REMOTE'
           set -eu
           PRODUCTION_PATH=$1
           COMMIT_SHA=$2
-          PRODUCTION_URL=$3
           RELEASE_DIR="${PRODUCTION_PATH}/releases/${COMMIT_SHA}"
           OVERRIDE="${RELEASE_DIR}/docker-compose.deploy.yml"
           ROLLBACK_METADATA="${RELEASE_DIR}/rollback-metadata.txt"
@@ -508,11 +506,6 @@ jobs:
           STARTED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
           cd "${PRODUCTION_PATH}"
           command -v curl >/dev/null
-          case "${PRODUCTION_URL}" in
-            https://*/) echo "PRODUCTION_URL must not end with a slash." >&2; exit 1 ;;
-            https://*) ;;
-            *) echo "PRODUCTION_URL must be an HTTPS origin." >&2; exit 1 ;;
-          esac
           test "${ROLLBACK_IMAGE}" = "financee:rollback-before-${COMMIT_SHA}"
           docker image inspect "${RELEASE_IMAGE}" >/dev/null
           docker image inspect "${ROLLBACK_IMAGE}" >/dev/null
@@ -549,26 +542,7 @@ jobs:
             return 1
           }
 
-          verify_public_routes() {
-            attempts=0
-            while [ "${attempts}" -lt 3 ]; do
-              health_body="$(curl --fail --silent --show-error --max-time 15 "${PRODUCTION_URL}/health/")" || health_body=
-              login_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 15 "${PRODUCTION_URL}/authentication/login/")" || login_status=000
-              static_headers="$(curl --fail --silent --show-error --dump-header - --output /dev/null --max-time 15 "${PRODUCTION_URL}/static/css/login_styling.css")" || static_headers=
-              if [ "${health_body}" = '{"status": "ok"}' ] && \
-                 [ "${login_status}" = 200 ] && \
-                 printf '%s' "${static_headers}" | grep -qi 'cache-control: public, immutable'; then
-                return 0
-              fi
-              attempts=$((attempts + 1))
-              sleep 5
-            done
-            return 1
-          }
-
-          if compose_up "${RELEASE_IMAGE}" && \
-             wait_until_healthy "${RELEASE_IMAGE}" && \
-             verify_public_routes; then
+          if compose_up "${RELEASE_IMAGE}" && wait_until_healthy "${RELEASE_IMAGE}"; then
             FINISHED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
             {
               echo "status=deployed"
@@ -589,7 +563,7 @@ jobs:
 
           echo "Release ${RELEASE_IMAGE} failed health checks; rolling back to ${ROLLBACK_IMAGE}." >&2
           compose_up "${ROLLBACK_IMAGE}"
-          if wait_until_healthy "${ROLLBACK_IMAGE}" && verify_public_routes; then
+          if wait_until_healthy "${ROLLBACK_IMAGE}"; then
             FINISHED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
             {
               echo "status=rolled_back"
@@ -605,6 +579,81 @@ jobs:
             exit 1
           fi
           echo "CRITICAL: release and rollback health checks both failed." >&2
-          docker compose -f docker-compose.yml -f "${OVERRIDE}" ps >&2
+          RELEASE_IMAGE="${ROLLBACK_IMAGE}" docker compose \
+            -f docker-compose.yml -f "${OVERRIDE}" ps >&2
+          exit 1
+          REMOTE
+
+      - name: Verify public production routes through Cloudflare
+        id: public-smoke
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          set -eu
+          case "${PRODUCTION_URL}" in
+            https://*/) echo "PRODUCTION_URL must not end with a slash." >&2; exit 1 ;;
+            https://*) ;;
+            *) echo "PRODUCTION_URL must be an HTTPS origin." >&2; exit 1 ;;
+          esac
+          attempts=0
+          while [ "${attempts}" -lt 3 ]; do
+            health_body="$(curl --fail --silent --show-error --max-time 15 "${PRODUCTION_URL}/health/")" || health_body=
+            login_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 15 "${PRODUCTION_URL}/authentication/login/")" || login_status=000
+            static_headers="$(curl --fail --silent --show-error --dump-header - --output /dev/null --max-time 15 "${PRODUCTION_URL}/static/css/login_styling.css")" || static_headers=
+            if [ "${health_body}" = '{"status": "ok"}' ] && \
+               [ "${login_status}" = 200 ] && \
+               printf '%s' "${static_headers}" | grep -qi 'cache-control: public,.*immutable'; then
+              echo "Public Cloudflare health, login, and static-file checks passed."
+              exit 0
+            fi
+            attempts=$((attempts + 1))
+            sleep 5
+          done
+          echo "Public production smoke checks failed after three attempts." >&2
+          exit 1
+
+      - name: Roll back after public smoke failure
+        if: ${{ failure() && steps.public-smoke.outcome == 'failure' }}
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          PRODUCTION_PATH: ${{ vars.PRODUCTION_PATH }}
+        run: |
+          set -eu
+          ssh -i "${HOME}/.ssh/production_key" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "${PRODUCTION_USER}@${PRODUCTION_HOST}" \
+            sh -s -- "${PRODUCTION_PATH}" "${COMMIT_SHA}" <<'REMOTE'
+          set -eu
+          PRODUCTION_PATH=$1
+          COMMIT_SHA=$2
+          RELEASE_DIR="${PRODUCTION_PATH}/releases/${COMMIT_SHA}"
+          OVERRIDE="${RELEASE_DIR}/docker-compose.deploy.yml"
+          ROLLBACK_IMAGE="$(sed -n 's/^rollback_tag=//p' "${RELEASE_DIR}/rollback-metadata.txt")"
+          test "${ROLLBACK_IMAGE}" = "financee:rollback-before-${COMMIT_SHA}"
+          cd "${PRODUCTION_PATH}"
+          RELEASE_IMAGE="${ROLLBACK_IMAGE}" docker compose \
+            -f docker-compose.yml -f "${OVERRIDE}" \
+            up -d --no-build web nginx
+          attempts=0
+          while [ "${attempts}" -lt 36 ]; do
+            container_id="$(RELEASE_IMAGE="${ROLLBACK_IMAGE}" docker compose \
+              -f docker-compose.yml -f "${OVERRIDE}" ps -q web)"
+            if [ -n "${container_id}" ] && \
+               [ "$(docker inspect "${container_id}" --format '{{.State.Running}}')" = true ] && \
+               [ "$(docker inspect "${container_id}" --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}')" = healthy ]; then
+              health_body="$(curl --fail --silent --show-error --max-time 10 http://127.0.0.1/health/)" || health_body=
+              if [ "${health_body}" = '{"status": "ok"}' ]; then
+                echo "Public smoke failed; previous production image was restored and is internally healthy."
+                exit 0
+              fi
+            fi
+            attempts=$((attempts + 1))
+            sleep 5
+          done
+          echo "CRITICAL: rollback after public smoke failure is unhealthy." >&2
           exit 1
           REMOTE

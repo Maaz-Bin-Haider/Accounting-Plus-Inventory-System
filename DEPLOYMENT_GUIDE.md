@@ -188,10 +188,12 @@ three minutes it requires all of the following:
 - the container's immutable image ID equals the approved commit image;
 - `http://127.0.0.1/health/` returns exactly `{"status": "ok"}`.
 
-It then checks the public HTTPS origin through Cloudflare three times: health
-JSON, an HTTP 200 login page, and the immutable cache header on
+The GitHub runner then checks the public HTTPS origin through Cloudflare three
+times: health JSON, an HTTP 200 login page, and the immutable cache header on
 `/static/css/login_styling.css`. Public-route failure enters the same rollback
-path as container or loopback-health failure.
+boundary and triggers a dedicated SSH rollback to the internally verified prior
+image. Public checks intentionally do not run from EC2 because Cloudflare may
+return 403 to origin-to-proxy traffic even while normal external clients succeed.
 
 Success writes mode-0600 `deployment-result.txt` in the release directory and
 atomically updates `<PRODUCTION_PATH>/.deployed-commit`. If startup or health
