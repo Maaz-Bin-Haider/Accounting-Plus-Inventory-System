@@ -1554,3 +1554,12 @@ This milestone updates stored function definitions but still does not restart
 or replace application containers. The next approved run is intentionally the
 required production reapplication identified at the top of `TODO.md`; its log
 and ledger must be confirmed before that warning can be marked resolved.
+
+The first production attempt at commit `38db277` stopped before patch execution.
+The backup checksum passed and PostgreSQL created the empty
+`deployment_meta.sql_patches` table, but the remote POSIX shell treated an
+indented `RECORD_SQL` terminator as heredoc content and ended with
+`expecting ";;"`. No function was replaced, no patch row was inserted, and no
+container was changed. The terminator is now aligned at column zero in the
+rendered remote script, and that remote body is validated directly with
+Ubuntu-compatible `dash -n` in addition to whole-workflow YAML/shell checks.

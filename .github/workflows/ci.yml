@@ -452,12 +452,12 @@ jobs:
                 -e BACKUP_NAME="${BACKUP_NAME}" \
                 db sh -eu -c \
                 'exec psql --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --no-psqlrc --set=ON_ERROR_STOP=1 --set=patch_sha="$PATCH_SHA256" --set=source_commit="$SOURCE_COMMIT" --set=backup_name="$BACKUP_NAME"' <<'RECORD_SQL'
-              INSERT INTO deployment_meta.sql_patches (
-                  patch_sha256, patch_name, source_commit, backup_name
-              ) VALUES (
-                  :'patch_sha', 'production_fixes.sql', :'source_commit', :'backup_name'
-              ) ON CONFLICT (patch_sha256) DO NOTHING;
-              RECORD_SQL
+          INSERT INTO deployment_meta.sql_patches (
+              patch_sha256, patch_name, source_commit, backup_name
+          ) VALUES (
+              :'patch_sha', 'production_fixes.sql', :'source_commit', :'backup_name'
+          ) ON CONFLICT (patch_sha256) DO NOTHING;
+          RECORD_SQL
               echo "Applied production_fixes.sql (${PATCH_SHA256}) and recorded it in deployment_meta.sql_patches."
               ;;
             1)
