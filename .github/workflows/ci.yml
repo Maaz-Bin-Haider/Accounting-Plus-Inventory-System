@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Quality and full system tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Run canonical full test suite
+        run: scripts/run_full_tests.sh
+
+      - name: Publish test and coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-results-${{ github.sha }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 14

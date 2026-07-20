@@ -5,6 +5,12 @@
 > The concurrency fix has only been validated in disposable test databases;
 > no production database was changed during this work.
 
+> **Required repository security action:** `db_backup_20260718_0000.sql` is
+> currently tracked even though it contains production-origin data. Replace it
+> with a sanitized schema fixture, remove it from Git history, and audit/rotate
+> any credentials that may ever have been committed. CI artifacts must never
+> include the database dump.
+
 Target solo-developer flow:
 
 ```text
@@ -115,13 +121,15 @@ intentionally placed after tests and image creation.
 - [x] Run Django system/deployment checks, endpoint tests, and system tests.
   - [x] Shell/Python syntax and all isolated Compose configurations.
   - [x] Warning-failing Django checks under test and hardened deployment profiles.
-- [ ] Publish test results and coverage as GitHub Actions artifacts.
+- [x] Publish test results and coverage as GitHub Actions artifacts.
+  - [x] Django log plus coverage text, XML, and JSON generated outside containers.
+  - [x] PostgreSQL Markdown report copied on success or failure; 14-day CI retention.
 - [ ] Cache dependencies and image layers, never test database state.
 
 ## 3. Continuous Integration for `main`
 
-- [ ] Trigger GitHub Actions on pushes to `main` and manual dispatch.
-- [ ] Run syntax, configuration, Django, endpoint, database, and system checks.
+- [x] Trigger GitHub Actions on pushes to `main` and manual dispatch.
+- [x] Run syntax, configuration, Django, endpoint, database, and system checks.
 - [ ] Build the same ARM64-compatible Docker image used in production.
 - [ ] Tag the image with the Git commit SHA; never deploy implicit `latest`.
 - [ ] Prevent the deployment job unless every required check passes.

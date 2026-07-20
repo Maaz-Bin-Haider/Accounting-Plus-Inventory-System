@@ -3,6 +3,8 @@ set -eu
 
 COMPOSE_FILE="docker-compose.test.yml"
 
+mkdir -p artifacts
+
 cleanup() {
     docker compose -f "$COMPOSE_FILE" down --volumes --remove-orphans
 }

@@ -30,6 +30,8 @@ services:
       dockerfile: Dockerfile.test
     entrypoint: []
     command: ["scripts/run_django_tests.sh"]
+    volumes:
+      - ./artifacts:/artifacts
     environment:
       SECRET_KEY: test-only-secret-key-not-for-production
       DEBUG: "False"
@@ -46,6 +48,7 @@ services:
       REDIS_URL: ""
       TEST_REDIS_URL: redis://test-redis:6379/15
       PYTHONDONTWRITEBYTECODE: "1"
+      TEST_ARTIFACT_DIR: /artifacts
     depends_on:
       test-db:
         condition: service_healthy

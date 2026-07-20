@@ -3,6 +3,10 @@ set -eu
 
 COMPOSE_FILE="docker-compose.test.yml"
 
+mkdir -p artifacts
+rm -f artifacts/django-tests.log artifacts/coverage.txt \
+    artifacts/coverage.xml artifacts/coverage.json
+
 cleanup() {
     docker compose -f "$COMPOSE_FILE" down --volumes --remove-orphans
 }

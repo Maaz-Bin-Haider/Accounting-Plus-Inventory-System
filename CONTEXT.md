@@ -1296,3 +1296,35 @@ system suite, and production-shaped smoke suite. Verified July 20, 2026: both
 Django check modes reported zero issues, all 143 Django tests passed at 57.4%
 branch-aware coverage over 3,387 statements, all 101 PostgreSQL scenarios
 passed, and the final nginx/Redis/PostgreSQL/Gunicorn smoke checks passed.
+
+## GitHub CI and Test Artifacts
+
+`.github/workflows/ci.yml` is the first active GitHub Actions workflow. It runs
+on every push to `main` and by manual dispatch, grants the job read-only
+repository contents permission, cancels superseded runs on the same ref, limits
+the job to 30 minutes, and invokes only the canonical
+`scripts/run_full_tests.sh` command. Artifact publication uses `if: always()`
+so diagnostics survive a failed test step, and retains results for 14 days.
+
+The Django test container bind-mounts the ignored local `artifacts/` directory.
+`scripts/run_django_tests.sh` preserves the original test exit status while
+writing `django-tests.log`; when coverage data exists it also writes the human
+report `coverage.txt`, Cobertura-compatible `coverage.xml`, and detailed
+`coverage.json`. A coverage-floor failure still produces all reports and fails
+the command. `scripts/run_system_tests.sh` removes stale output before each run
+and copies the newly generated system report to
+`artifacts/postgresql-system-tests.md` during cleanup, including failure runs.
+Neither database dumps nor environment files are included in the upload path.
+
+Verified locally July 20, 2026: the workflow YAML parses, the full suite passes,
+and all five expected artifacts are generated outside the containers. The
+workflow itself becomes active only after this change is committed and pushed
+to GitHub.
+
+Repository security note: `db_backup_20260718_0000.sql` is currently tracked
+despite `.gitignore` documenting that production backups must never enter Git.
+The system suite presently needs it as its schema/function source, so removing
+it without a sanitized replacement would break CI. `TODO.md` now records the
+required remediation: create a sanitized schema fixture, switch tests to it,
+purge the production-origin dump from Git history, and audit/rotate any secrets
+that may have been committed. CI artifact paths explicitly exclude the dump.
