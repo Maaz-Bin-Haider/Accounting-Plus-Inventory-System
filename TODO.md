@@ -40,6 +40,9 @@ intentionally placed after tests and image creation.
         attribution, navigation, summaries, CSRF, and serial classification.
 - [ ] Test sale and purchase returns: permissions, lifecycle rules, CRUD,
       navigation, summaries, and safe failures.
+  - [x] Return page access, lookup state, create/update/delete procedure
+        contracts, attribution, descriptions, navigation, summaries, and CSRF.
+  - [ ] Return view-only restrictions and curated database lifecycle failures.
 - [ ] Test payments, receipts, and contra entries: permissions, CRUD, navigation,
       date lookup, balances, accounting side effects, and safe failures.
 - [ ] Test every dashboard API, permission-controlled section, parameter rule,

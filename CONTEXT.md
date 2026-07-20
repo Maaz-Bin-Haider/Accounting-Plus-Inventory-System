@@ -950,6 +950,15 @@ Verified after purchase coverage on July 20, 2026: all 81 Django tests pass
 against ephemeral PostgreSQL 16 with zero system-check issues and successful
 test-database destruction.
 
+`saleReturn/tests.py` and `purchaseReturn/tests.py` cover return-page access,
+CSRF, serial availability lookup, create/update/delete permissions and stored
+function arguments, creator IDs, description persistence, and invalid
+navigation/summary inputs for both customer and vendor return directions.
+
+Verified after the paired return slice on July 20, 2026: all 92 Django tests
+pass against ephemeral PostgreSQL 16 with zero system-check issues and
+successful destruction of the guarded test database.
+
 The first business endpoint slice is in `parties/tests.py`. It covers login and
 `view_party` enforcement, authorized template rendering, autocomplete query
 parameters and JSON results, list endpoint authorization and serialization, and
