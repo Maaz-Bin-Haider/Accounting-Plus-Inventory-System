@@ -105,7 +105,9 @@ intentionally placed after tests and image creation.
   - [x] Exact direct/transitive Python and coverage versions.
   - [x] Immutable multi-architecture Python/PostgreSQL/Redis/nginx image digests.
 - [x] Add an isolated Docker Compose test stack with ephemeral PostgreSQL.
-- [ ] Add Redis integration tests and enable Redis in the test stack when needed.
+- [x] Add Redis integration tests and enable Redis in the test stack when needed.
+  - [x] Guarded disposable Redis DB with no host port or persistent storage.
+  - [x] Real backend, independent-client, TTL, dashboard-cache, and health coverage.
 - [ ] Restore schema into a disposable DB and apply required SQL patches once.
 - [x] Reject production-like database names and hosts before tests start.
 - [ ] Run Django system/deployment checks, endpoint tests, and system tests.

@@ -10,6 +10,7 @@ incorrect local or CI command.
 """
 
 import os
+from urllib.parse import urlparse
 
 from .settings import *  # noqa: F403
 
@@ -61,13 +62,29 @@ DATABASES = {  # noqa: F405
     }
 }
 
-# Tests must never depend on an external Redis instance or share cached state.
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "financee-automated-tests",
+# Use only the explicitly configured disposable Redis service. Local runs retain
+# an in-process cache; arbitrary remote cache hosts are rejected just like DBs.
+TEST_REDIS_URL = os.environ.get("TEST_REDIS_URL", "").strip()
+if TEST_REDIS_URL:
+    parsed_redis = urlparse(TEST_REDIS_URL)
+    if parsed_redis.scheme not in {"redis", "rediss"}:
+        raise RuntimeError("TEST_REDIS_URL must use the redis or rediss scheme.")
+    if parsed_redis.hostname not in {"localhost", "127.0.0.1", "::1", "test-redis"}:
+        raise RuntimeError("Refusing to run tests against a non-test Redis host.")
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": TEST_REDIS_URL,
+            "TIMEOUT": 300,
+        }
     }
-}
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "financee-automated-tests",
+        }
+    }
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"

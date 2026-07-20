@@ -1227,3 +1227,24 @@ change and pass `scripts/run_full_tests.sh`; floating ranges or unreviewed tag
 refreshes must not be reintroduced. Verified July 20, 2026: all images rebuilt
 from the pinned declarations, 141 Django tests passed at 57.4% coverage, all
 100 PostgreSQL system scenarios passed, and production-stack smoke passed.
+
+## Redis Integration Test Contract
+
+`docker-compose.test.yml` now starts an unexposed, persistence-disabled Redis 7
+service and points Django test settings at logical database 15 through
+`TEST_REDIS_URL`. The setting accepts only `redis`/`rediss` URLs on loopback or
+the fixed `test-redis` Compose hostname; arbitrary remote Redis hosts are
+rejected. When the variable is absent, local test runs retain the isolated
+in-process cache and Redis-specific cases skip cleanly.
+
+`financee/test_redis.py` verifies Django Redis serialization and round trips
+through two independent cache clients, confirms that timeouts reach Redis, and
+forces server-side expiry before proving Django returns a miss. Because the
+whole Docker Django suite now uses Redis, the pre-existing dashboard hit/miss,
+cache-disabled, and readiness endpoint tests also exercise the real backend.
+Each test clears logical database 15, while Compose disables snapshots and AOF
+and removes the container/network after the run.
+
+Verified July 20, 2026: all 143 Redis-enabled Django tests passed against
+ephemeral PostgreSQL and Redis with zero Django system-check issues; branch
+coverage remained 57.4%, and both disposable services were removed.
