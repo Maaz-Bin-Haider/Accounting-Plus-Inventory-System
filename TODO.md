@@ -28,6 +28,12 @@ intentionally placed after tests and image creation.
 
 ## 1. Build a production-grade test foundation
 
+> **Status: optional / deferred.** The core suite (authentication, parties,
+> items, sales, purchases, returns, payments/receipts/contra, dashboard,
+> reports, security, presentation smoke, PostgreSQL system tests, coverage gate)
+> is complete and enforced in CI. The remaining unchecked sub-items below are
+> additional negative-path/edge-case coverage and are nice-to-have, not blocking.
+
 - [x] Record the test and delivery roadmap.
 - [x] Establish authentication endpoint and CSRF tests.
 - [x] Establish tests for safe PostgreSQL error translation.
@@ -181,11 +187,38 @@ intentionally placed after tests and image creation.
 
 ## 5. Production readiness
 
-- [ ] Reintroduce public Cloudflare smoke checks after creating a narrow rule
-      that permits CI monitoring of `/health/`; current EC2 and GitHub runner
-      requests receive Cloudflare 403 while normal external requests return 200.
-- [ ] Rotate the exposed Django secret key and PostgreSQL password.
-- [ ] Confirm Cloudflare SSL mode and the nginx origin-certificate configuration.
-- [ ] Enable Django proxy SSL and secure-cookie settings after HTTPS is verified.
-- [ ] Monitor uptime, container health, disk, backup age, errors, and PostgreSQL.
-- [ ] Prove a full database restore and application rollback before relying on CD.
+Active work items:
+
+- [x] Automated off-site database backup to a private GitHub repository.
+  - [x] Scheduled GitHub Actions workflow (`.github/workflows/backup.yml`) SSHes
+        to EC2, takes a verified custom-format `pg_dump`, and commits it to a
+        separate private backup repo. No S3/RDS; GitHub is the off-site store.
+  - [x] Daily schedule; 30-day retention pruned in both the EC2 `backups/offsite/`
+        staging copy and the backup repository working tree.
+- [x] Monitor uptime, container health, disk, backup age, errors, and PostgreSQL.
+  - [x] `scripts/monitor_production.sh` checks the loopback health endpoint,
+        every container's running/health state, free disk, newest backup age,
+        PostgreSQL connectivity, and recent error-log volume, exiting non-zero
+        on any problem.
+  - [x] Scheduled `.github/workflows/monitor.yml` pipes it over SSH every 30
+        minutes; a failing check fails the run so GitHub emails the alert.
+- [x] Prove a full database restore and application rollback before relying on CD.
+  - [x] `scripts/restore_rollback_drill.sh` restores a backup into a disposable
+        PostgreSQL, applies `production_fixes.sql`, and asserts core tables,
+        non-empty ledger, balanced books, and the trial-balance view.
+  - [x] The same drill exercises the production rollback mechanism
+        (`docker-compose.deploy.yml` + `RELEASE_IMAGE` + `--no-build`): a good
+        image serves, a deliberately broken release fails health, and rollback
+        to the good image recovers — all in throwaway containers.
+
+Optional / deferred (intentionally skipped for now):
+
+- [ ] _(Optional)_ Reintroduce public Cloudflare smoke checks after creating a
+      narrow rule that permits CI monitoring of `/health/`; current EC2 and
+      GitHub runner requests receive Cloudflare 403 while normal external
+      requests return 200.
+- [ ] _(Optional)_ Rotate the exposed Django secret key and PostgreSQL password.
+- [ ] _(Optional)_ Confirm Cloudflare SSL mode and the nginx origin-certificate
+      configuration.
+- [ ] _(Optional)_ Enable Django proxy SSL and secure-cookie settings after
+      HTTPS is verified.

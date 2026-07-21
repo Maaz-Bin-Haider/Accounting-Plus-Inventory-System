@@ -194,6 +194,91 @@ while ordinary external requests return 200. Re-enable public monitoring only
 after adding a narrow Cloudflare rule for the health endpoint; do not weaken
 site-wide bot or security protections merely to satisfy CI.
 
+## Unattended operations environment (backup and monitoring)
+
+The scheduled backup (`.github/workflows/backup.yml`) and monitoring
+(`.github/workflows/monitor.yml`) workflows must run without human approval, so
+they cannot use the protected `production` environment. Create a **second**
+GitHub Environment named exactly `operations` with **no** protection rules
+(no required reviewers):
+
+1. **Settings -> Environments -> New environment** named `operations`.
+2. Leave deployment protection rules disabled.
+3. Add the same connection values already used by `production`:
+
+   | Type | Name | Value |
+   | --- | --- | --- |
+   | Secret | `PRODUCTION_HOST` | EC2 hostname or Elastic IP |
+   | Secret | `PRODUCTION_USER` | SSH account, normally `ubuntu` |
+   | Secret | `PRODUCTION_SSH_KEY` | Complete private key, including header/footer |
+   | Secret | `PRODUCTION_KNOWN_HOSTS` | Verified SSH known-hosts entry for the EC2 host |
+   | Variable | `PRODUCTION_PATH` | Absolute existing project path on EC2 |
+
+### Private off-site backup repository (GitHub-only, no S3/RDS)
+
+The daily backup pushes a verified custom-format `pg_dump` to a **separate
+private GitHub repository**. Create it once and grant the workflow scoped write
+access:
+
+1. On GitHub, create a new **private** repository, e.g. `financee-db-backups`.
+   It can be empty (no README needed).
+2. Create a **fine-grained Personal Access Token** limited to *only* that
+   repository, with **Repository permissions -> Contents: Read and write**.
+   Use a bot/service account if you prefer; a personal fine-grained token works
+   for a solo setup. Set a calendar reminder to rotate it before it expires.
+3. Under **Settings -> Environments -> operations**, add:
+
+   | Type | Name | Value |
+   | --- | --- | --- |
+   | Variable | `BACKUP_REPO` | `owner/financee-db-backups` (the backup repo) |
+   | Secret | `BACKUP_REPO_TOKEN` | The fine-grained token from step 2 |
+
+The workflow stores dumps as `dumps/db-YYYYMMDD-HHMM.dump` (plus a `.sha256`),
+keeps a matching 30-day copy on EC2 under `backups/offsite/`, and prunes both
+locations to the last 30 days. It runs daily at 00:17 UTC and can be started
+manually from **Actions -> Database Backup -> Run workflow**. It never restarts
+containers or writes to the production database.
+
+> The dump contains real company data and password hashes. Keeping it in a
+> **private** repository is required; never point `BACKUP_REPO` at a public
+> repository. This GitHub off-site backup supersedes the manual S3 suggestion in
+> Part 9 below.
+
+## Scheduled monitoring
+
+`.github/workflows/monitor.yml` runs `scripts/monitor_production.sh` over SSH
+from the `operations` environment every 30 minutes. It checks the loopback
+health endpoint, every container's running/health state, free disk, the age of
+the newest backup, PostgreSQL connectivity, and recent error-log volume, and
+exits non-zero on any problem so GitHub's failed-run email is the alert. It is
+read-only. You can also run it by hand on EC2:
+
+```bash
+cd ~/Accounting-Plus-Inventory-System
+sh scripts/monitor_production.sh .
+```
+
+## Disaster-recovery drill (run before trusting CD)
+
+`scripts/restore_rollback_drill.sh` proves recovery on any Docker host without
+touching production. Run the full drill from the project directory:
+
+```bash
+DRILL_SCOPE=all sh scripts/restore_rollback_drill.sh
+```
+
+- Part 1 restores the newest `db_backup_*.sql` (or `BACKUP_FILE=<path>`, `.dump`
+  or `.sql`) into a disposable PostgreSQL, applies `production_fixes.sql`, and
+  verifies core tables, a non-empty balanced ledger, and the trial-balance view.
+- Part 2 builds the web image, deploys it as a healthy baseline through the real
+  `docker-compose.deploy.yml` override, forces a broken release that fails
+  health, and rolls back to the good image to prove recovery.
+
+Use `DRILL_SCOPE=db` for the restore check only (fast, no image build) or
+`DRILL_SCOPE=rollback` for the rollback check only. Everything is torn down
+afterward. This satisfies the "prove restore and rollback before relying on CD"
+readiness item; run it after any change to the backup, restore, or deploy paths.
+
 ---
 
 ## Part 0 - Before you start (checklist)

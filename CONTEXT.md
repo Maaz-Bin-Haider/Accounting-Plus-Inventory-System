@@ -1643,3 +1643,96 @@ health checks, automatic rollback, and deployment recording. `TODO.md` retains
 the deferred Cloudflare exception/monitoring work, repository dump remediation,
 credential rotation, TLS hardening, observability, restore/rollback drills, and
 remaining endpoint-test gaps for a future work session.
+
+## Off-Site Database Backup to a Private GitHub Repository
+
+`.github/workflows/backup.yml` is a scheduled, unattended off-site backup. It
+runs daily at 00:17 UTC (and on manual dispatch) and deliberately uses no S3 or
+RDS: the off-site store is a separate private GitHub repository chosen by the
+solo developer.
+
+Because unattended automation must not pause for the `production` environment's
+required-reviewer gate, the backup and monitoring workflows use a separate
+GitHub Environment named `operations` that has no protection rules. It holds the
+same connection values as `production` (`PRODUCTION_SSH_KEY`,
+`PRODUCTION_KNOWN_HOSTS`, `PRODUCTION_HOST`, `PRODUCTION_USER` secrets and the
+`PRODUCTION_PATH` variable) plus the backup-only `BACKUP_REPO` variable
+(`owner/name` of the private backup repo) and `BACKUP_REPO_TOKEN` secret (a
+fine-scoped token with `contents:write` on that repo only).
+
+Flow: the workflow validates the backup-repo configuration, installs the pinned
+SSH key with strict host-key checking, then over one SSH session takes a
+`pg_dump --format=custom` from the running `db` container into a mode-0700
+`backups/offsite/` staging directory on EC2, requires a non-empty dump whose
+`pg_restore --list` manifest exceeds ten lines, writes a companion `.sha256`,
+and prunes staged dumps older than 30 days by parsing the `db-YYYYMMDD-HHMM.dump`
+filename date. It then `scp`s the dump and checksum to the runner, re-verifies
+the checksum, checks out the private backup repo with the scoped token, copies
+the dump into `dumps/`, prunes repository dumps older than 30 days the same way,
+and commits/pushes only when there is a change. It never restarts containers,
+never mutates the production database, and keeps the dump off GitHub-visible
+artifacts of this repository. The staged EC2 copy is retained (not deleted) so
+the monitoring workflow has a fresh local backup-age signal and so a fast local
+restore is possible without pulling from GitHub.
+
+`DEPLOYMENT_GUIDE.md` documents the one-time `operations` environment and
+private-backup-repo setup. The workflow becomes active only after it is pushed
+to GitHub and the `operations` environment and backup repository/token exist.
+
+## Scheduled Production Monitoring
+
+`scripts/monitor_production.sh` is a read-only POSIX health monitor that runs on
+the EC2 host from the project directory. It performs six checks and reports
+every problem before exiting non-zero if any failed:
+
+1. HTTP uptime: `http://127.0.0.1/health/` must return exactly `{"status": "ok"}`.
+2. Container health: every expected service (`web`, `nginx`, `db`, `redis`) must
+   be running and, if it defines a healthcheck, report `healthy`.
+3. Disk: at least `MIN_FREE_PERCENT` (default 10%) free on the production
+   filesystem.
+4. Backup freshness: the newest `*.dump` under `backups/` or `backups/offsite/`
+   must be younger than `MAX_BACKUP_AGE_HOURS` (default 26h), which lines up with
+   the daily off-site backup.
+5. PostgreSQL: `pg_isready` succeeds and `SELECT 1` returns 1 inside the `db`
+   container.
+6. Error volume: fewer than `MONITOR_MAX_ERRORS` (default 25) error-like log
+   lines across `web`/`nginx`/`db` in the last `MONITOR_LOG_WINDOW` (default
+   30m). This is a canary threshold to avoid flapping on isolated 4xx lines.
+
+`.github/workflows/monitor.yml` pipes this script over SSH from the `operations`
+environment every 30 minutes (and on manual dispatch), using the same pinned key
+and strict host-key checking as the deploy and backup workflows. Because it uses
+the unprotected `operations` environment it runs unattended; a failed check
+fails the run, and GitHub's standard failed-run notification is the alert
+channel (no extra SMTP or third-party monitoring service). The script only reads
+state and can also be run by hand on EC2 for a quick health snapshot.
+
+## Disaster-Recovery Drill (Restore and Rollback)
+
+`scripts/restore_rollback_drill.sh` proves both halves of recovery before the CD
+pipeline is trusted, using only throwaway containers. It never contacts EC2 and
+never touches the production database. `DRILL_SCOPE` selects `all` (default),
+`db`, or `rollback`.
+
+Part 1 (database restore) starts a disposable, `tmpfs`-backed PostgreSQL 16
+(pinned to the same digest as the smoke stack), restores a backup
+(`BACKUP_FILE`, default the newest `db_backup_*.sql`; `.dump` via `pg_restore`,
+`.sql` via `psql -v ON_ERROR_STOP=1`), applies `production_fixes.sql` and
+requires its success marker, then verifies that the core tables exist, that
+`journallines` is non-empty, that debits equal credits (the books balance), and
+that `vw_trial_balance` is present.
+
+Part 2 (application rollback) builds the production image as `financee:drill-good`
+and derives a deliberately broken `financee:drill-broken` whose container starts
+but never serves `/health/`. Using the real production override
+(`docker-compose.smoke.yml` + `docker-compose.deploy.yml`, `RELEASE_IMAGE`, and
+`--no-build`, under the isolated `financee-drill` project), it deploys the good
+image as the baseline and confirms health, deploys the broken release and
+requires it to fail health, then rolls back to the good image and requires
+health to recover. This mirrors the CD failure->rollback path proven in
+production (commit `7694a64`) but exercises it on demand without risk. Every path
+tears down containers, volumes, and the temporary images.
+
+Requires a Docker host; it was validated for shell/POSIX syntax and file
+references in the authoring session (Docker was not available there to execute
+it), and is intended to be run on the developer machine or a CI runner.
