@@ -920,7 +920,7 @@ all 98 system tests pass against the latest restored backup with
 payment/receipt/contra, party opening, concurrency, duplicate serial, boundary,
 return mutation, and report-to-journal roadmap item is complete.
 
-`REGRESSION_CASES` in the PostgreSQL runner maps confirmed defects 1-9 to their
+`REGRESSION_CASES` in the PostgreSQL runner maps confirmed defects 1-10 to their
 named behavioral cases. A dedicated manifest case inspects the accumulated
 results and fails if a mapped regression is missing or did not pass. The closed
 backlog in `system_tests/FAILED_TESTS.md` now includes the concurrency defect
@@ -928,6 +928,25 @@ and the current defect-to-test mapping instead of the stale 60-test summary.
 
 Verified after enabling the executable regression manifest on July 20, 2026:
 all 99 PostgreSQL system tests pass and the disposable database is removed.
+
+FIX 10 (July 22, 2026): `get_serial_number_details` used to return one row per
+`SoldUnits` record. A serial that cycled through more than one sale
+(purchase -> sale -> sale-return -> sale again) therefore produced multiple
+rows -- the old `Returned` sale and the current `Sold` one -- with no ordering.
+Every caller reads the first row (`fetchone` / `item[0]`), so the sale-return
+lookup (`saleReturn.sale_return_lookup`) and the sale-return serial validation
+showed the PREVIOUS sale's price and customer. The reported production case was
+serial `SH0YLM37J01TV`, which displayed its old already-returned sale rate
+`1600.00` instead of its live sale rate `1.00`. `production_fixes.sql` now
+collapses `SoldUnits` to a single authoritative row via a `LATERAL` pick that
+prefers the active `Sold` record, then the most recent `sold_unit_id`, so the
+function always returns exactly one row carrying the current sale. Behaviour for
+never-sold serials (NULL sale columns, `In Stock` status) is unchanged. The
+lifecycle group gains three guards -- single-row result after resale, current
+sale rate shown (185 not 180), and the resulting return stored at the current
+rate -- and defect 10 is registered in the regression manifest. All 104
+PostgreSQL system tests pass after restoring the latest backup and applying the
+updated `production_fixes.sql`.
 
 Production-stack smoke coverage uses `docker-compose.smoke.yml`, which contains
 only smoke credentials, a tmpfs PostgreSQL database, disposable Redis/static

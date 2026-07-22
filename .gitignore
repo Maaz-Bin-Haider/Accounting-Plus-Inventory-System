@@ -12,6 +12,13 @@ __pycache__/
 db_backup_*.sql
 backups/
 
+# Real production database dumps (custom pg_dump format + checksums). These
+# hold live company data and are pulled down only for investigation; never
+# commit them. The system-test fixture db_backup_*.sql above is the only
+# database file that may be force-added for CI.
+*.dump
+*.dump.sha256
+
 # Collected static files (generated inside the container)
 staticfiles/
 artifacts/

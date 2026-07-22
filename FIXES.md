@@ -186,6 +186,45 @@ regression test requires one commit and one rejection through `create_sale`.
 
 ---
 
+## Part 4.2 - Serial lookup showed the previous sale rate (July 22, 2026)
+
+**Reported production case:** serial `SH0YLM37J01TV` cycled purchase -> sale ->
+sale-return -> sale. When the operator tried to create a second sale return, the
+form showed the PREVIOUS sale's rate (`1600.00`) instead of the current live sale
+rate (`1.00`).
+
+**Root cause:** `get_serial_number_details(serial)` `LEFT JOIN`ed `SoldUnits`
+with no status filter and no ordering, so a serial with more than one sale cycle
+returned MULTIPLE rows (the old `Returned` sale and the current `Sold` sale) in
+arbitrary heap order. Every caller reads the first row (`fetchone` / `item[0]`),
+so `saleReturn.sale_return_lookup` and the sale-return serial validation
+(`customer_name`) picked whichever row came first - usually the older, already
+returned sale. `create_sale_return` itself already stored the correct price
+(it filters `status='Sold' ORDER BY sold_unit_id DESC`), so this was a display /
+lookup defect, not a stored-value defect - but it misled the operator.
+
+**Fix (FIX 10 in `production_fixes.sql`):** collapse `SoldUnits` to a single
+authoritative row with a `LEFT JOIN LATERAL` that orders by
+`(status='Sold') DESC, sold_unit_id DESC LIMIT 1`, so the active sold record wins
+and otherwise the most recent sale is used. The function now returns exactly one
+row per serial. Never-sold serials are unaffected (NULL sale columns, `In Stock`
+status). No application code changed - the DB is the source of truth.
+
+**Delivery:** the fix lives in `production_fixes.sql` only. The CI/CD deploy job
+applies that file keyed on its SHA-256 (`deployment_meta.sql_patches` ledger), so
+changing the file means the next approved production deploy re-applies it
+automatically and records the new SHA. The whole file is idempotent
+(`CREATE OR REPLACE` inside one transaction), so re-application is safe. No manual
+psql step is required.
+
+**Tests:** the "Basic Purchase, Sale and Return Lifecycle" group (which already
+runs purchase -> sale@180 -> return -> resale@185 -> return) gains three guards:
+the lookup returns a single row after resale, it shows the current rate (185, not
+180), and the resulting sale return is stored at the current rate. Defect 10 is
+registered in `REGRESSION_CASES`. Full suite: 104 passed, 0 failed.
+
+---
+
 ## Part 5 - Deployment steps (EC2)
 
 1. **Push/pull the code** (done by you):

@@ -56,6 +56,7 @@ REGRESSION_CASES = {
     7: "Sale qty greater than serial count",
     8: "Sale qty less than serial count",
     9: "Race two sales for one serial",
+    10: "Serial lookup shows current sale rate not previous",
 }
 
 
@@ -297,6 +298,16 @@ class Suite:
         return self.query("""SELECT count(*) FROM soldunits su JOIN purchaseunits pu ON pu.unit_id=su.unit_id
                              WHERE pu.serial_number=%s AND su.status='Sold'""", (serial,), one=True)[0]
 
+    def serial_detail_rows(self, serial: str):
+        """Rows the way the app reads them (sale_return_lookup / serial validation)."""
+        return self.query(
+            "SELECT sold_price, current_status FROM get_serial_number_details(%s)", (serial,))
+
+    def lookup_sold_price(self, serial: str):
+        """The sold_price the sale-return lookup would show: first row, item[0]."""
+        rows = self.serial_detail_rows(serial)
+        return float(rows[0][0]) if rows and rows[0][0] is not None else None
+
     def checkpoint(self, label: str):
         empty = self.query("""SELECT count(*) FROM journalentries je
                               LEFT JOIN journallines jl ON jl.journal_id=je.journal_id
@@ -425,7 +436,15 @@ class Suite:
         self.case(G, "Return with correct customer", "Serial returns to stock", lambda: self.assert_true(bool(self.sale_return([s[0]])) and self.stock(s[0]), "Valid return succeeded"))
         self.case(G, "Attempt duplicate return", "Blocked", lambda: self.expect_blocked(lambda: self.sale_return([s[0]])))
         self.case(G, "Resell returned serial", "Serial becomes sold", lambda: self.assert_true(bool(self.sale([("item_a", [s[0]], 185)])) and not self.stock(s[0]), "Resale succeeded"))
+        # Regression guard for the SH0YLM37J01TV production bug: after a
+        # resale, the serial has an old 'Returned' SoldUnits row (180) and the
+        # live 'Sold' row (185). get_serial_number_details must expose exactly
+        # one row carrying the CURRENT sale price, or the sale-return lookup
+        # prefills the previous sale's rate.
+        self.case(G, "Serial lookup returns a single row after resale", "Exactly one row", lambda: self.assert_true(len(self.serial_detail_rows(s[0])) == 1, f"rows={self.serial_detail_rows(s[0])}"))
+        self.case(G, "Serial lookup shows current sale rate not previous", "Rate is 185 (resale) not 180 (prior)", lambda: self.assert_true(self.lookup_sold_price(s[0]) == 185.0, f"lookup sold_price={self.lookup_sold_price(s[0])}"))
         self.case(G, "Return after resale", "Second return succeeds", lambda: self.assert_true(bool(self.sale_return([s[0]])) and self.stock(s[0]), "Second return succeeded"))
+        self.case(G, "Return after resale used current rate", "Return item stored at 185 not 180", lambda: self.assert_true(float(self.query("SELECT sold_price FROM salesreturnitems WHERE serial_number=%s ORDER BY return_item_id DESC LIMIT 1", (s[0],), one=True)[0]) == 185.0, "Return recorded current sale price"))
         self.case(G, "Purchase return with wrong vendor", "Blocked", lambda: self.expect_blocked(lambda: self.purchase_return([s[0]], "wrong_vendor")))
         self.case(G, "Purchase-return after lifecycle", "Serial unavailable", lambda: self.assert_true(bool(self.purchase_return([s[0]])) and not self.stock(s[0]), "Purchase return succeeded"))
         self.case(G, "Sell purchase-returned serial", "Blocked", lambda: self.expect_blocked(lambda: self.sale([("item_a", [s[0]], 190)])))
@@ -768,7 +787,7 @@ class Suite:
         self.case(
             "Defect Regression Manifest",
             "Every confirmed defect retains a passing regression",
-            "Defects 1 through 9 are mapped to passing behavioral cases",
+            "Defects 1 through 10 are mapped to passing behavioral cases",
             self._regression_manifest,
         )
 
