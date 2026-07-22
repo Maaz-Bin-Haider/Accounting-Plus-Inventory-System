@@ -10,7 +10,7 @@ The system is a Django web application backed by a PostgreSQL database. The desi
 - PostgreSQL owns most accounting and inventory behavior through stored functions, views, and triggers.
 - Frontend JavaScript calls Django endpoints for create/update/delete, record navigation, lookup, summaries, and reporting.
 
-The local backup (`db_backup_20260718_0000.sql` at the time of writing; the latest `db_backup_*.sql` in the project root) is a complete PostgreSQL dump containing schema and data. It is the authoritative source for table structure, function signatures, triggers, views, and current data shape. Note: `production_fixes.sql` (July 18, 2026) supersedes several stored procedures in that dump; apply it on top when restoring.
+The committed backup (`db_backup_20260718_0000.sql` at the time of writing; the latest `db_backup_*.sql` in the project root) is a **schema-only test fixture**. As of July 22, 2026 every `COPY` business-data block was stripped out for git hygiene (it held real company, financial, and Django user data); the file now contains only the schema (tables, sequences, constraints, indexes), all functions/views/triggers, and the `chartofaccounts` reference rows (22 accounts). It remains the authoritative source for table structure, function signatures, triggers, and views. The stripping is safe for CI because the system-test runner `TRUNCATE`s every table except `chartofaccounts` at the start of each run (`reset_fixture_data`) and builds its own uniquely named fixtures, so no restored business row was ever used. Real production data now lives only in gitignored custom-format dumps (`*.dump`) transferred by scp. Note: `production_fixes.sql` supersedes several stored procedures in the fixture; apply it on top when restoring.
 
 ## Django Project
 
@@ -722,39 +722,26 @@ Trigger functions:
 
 ### Backup Row Counts
 
-Observed row counts from `COPY` blocks:
+As of July 22, 2026 the committed `db_backup_*.sql` fixture carries data for
+`chartofaccounts` only (22 reference accounts). Every other `COPY` block was
+stripped (see the schema-only note in High-Level Architecture). The system-test
+runner truncates all tables except `chartofaccounts` and builds its own
+fixtures, so these tables are intentionally empty in the committed file:
 
-| Table | Rows |
-| --- | ---: |
-| `auth_group` | 31 |
-| `auth_group_permissions` | 30 |
-| `auth_permission` | 85 |
-| `auth_user` | 7 |
-| `auth_user_groups` | 89 |
-| `auth_user_user_permissions` | 72 |
-| `chartofaccounts` | 22 |
-| `contra_entries` | 93 |
-| `django_admin_log` | 88 |
-| `django_content_type` | 6 |
-| `django_migrations` | 34 |
-| `django_session` | 47 |
-| `items` | 265 |
-| `journalentries` | 4,316 |
-| `journallines` | 10,336 |
-| `parties` | 224 |
-| `payments` | 1,452 |
-| `purchaseinvoices` | 194 |
-| `purchaseitems` | 1,346 |
-| `purchasereturnitems` | 34 |
-| `purchasereturns` | 11 |
-| `purchaseunits` | 9,084 |
-| `receipts` | 1,670 |
-| `salesinvoices` | 823 |
-| `salesitems` | 1,424 |
-| `salesreturnitems` | 55 |
-| `salesreturns` | 29 |
-| `soldunits` | 8,100 |
-| `stockmovements` | 19,417 |
+`auth_group`, `auth_group_permissions`, `auth_permission`, `auth_user`,
+`auth_user_groups`, `auth_user_user_permissions`, `contra_entries`,
+`django_admin_log`, `django_content_type`, `django_migrations`,
+`django_session`, `items`, `journalentries`, `journallines`, `parties`,
+`payments`, `purchaseinvoices`, `purchaseitems`, `purchasereturnitems`,
+`purchasereturns`, `purchaseunits`, `receipts`, `salesinvoices`, `salesitems`,
+`salesreturnitems`, `salesreturns`, `soldunits`, `stockmovements`.
+
+The original production-shaped snapshot (before stripping) had roughly: items
+265, parties 224, purchaseinvoices 194, purchaseitems 1,346, purchaseunits
+9,084, salesinvoices 823, salesitems 1,424, soldunits 8,100, payments 1,452,
+receipts 1,670, contra_entries 93, journalentries 4,316, journallines 10,336,
+stockmovements 19,417 -- retained here only as a description of live data shape,
+not of the committed fixture.
 
 ## Accounting and Inventory Concepts
 
